@@ -1,0 +1,12 @@
+
+{
+  "nodes": {
+    "n1": "RuleNode",
+    "n2": "DBNode",
+    "n3": "AINode"
+  },
+  "edges": [
+    { "from": "n1", "to": "n2", "rule": "r1" },
+    { "from": "n2", "to": "n3", "rule": "r2" }
+  ]
+}

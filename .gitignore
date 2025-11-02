@@ -1,0 +1,38 @@
+# Rust
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+
+# Backup files
+*.bak
+*.tmp
+*~
+
+# Test artifacts
+*.profraw
+*.profdata
+
+# Documentation
+/doc/
+
+# Claude Code
+.claude/
+
+# Temporary files
+README_UPDATE.txt
+*.rs.bak
