@@ -262,7 +262,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 👤 Author
 
-**James Vu** - [GitHub](https://github.com/jamesvu)
+**Ton that Vu** - [GitHub](https://github.com/tonthatvu)
 
 ---
 
