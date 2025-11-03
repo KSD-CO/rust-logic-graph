@@ -36,7 +36,13 @@ async fn main() -> anyhow::Result<()> {
 
 ```toml
 [dependencies]
-rust-logic-graph = "0.1.0"
+rust-logic-graph = "0.2.0"
+
+# With specific integrations
+rust-logic-graph = { version = "0.2.0", features = ["postgres", "openai"] }
+
+# With all integrations
+rust-logic-graph = { version = "0.2.0", features = ["all-integrations"] }
 ```
 
 ### Simple Example
@@ -76,6 +82,7 @@ cargo run --example grl_graph_flow
 
 | Document | Description |
 |----------|-------------|
+| **[Integrations Guide](docs/INTEGRATIONS.md)** | Database & AI integrations (NEW in v0.2.0) |
 | **[GRL Guide](docs/GRL.md)** | Complete GRL syntax and examples |
 | **[Use Cases](docs/USE_CASES.md)** | 33+ real-world applications |
 | **[Extending](docs/EXTENDING.md)** | Create custom nodes and integrations |
@@ -180,8 +187,8 @@ cargo run --example grl_rules
 
 ## 📦 Project Status
 
-**Version**: 0.1.0 (Alpha)
-**Status**: Production-ready core, active development
+**Version**: 0.2.0 (Beta)
+**Status**: Production-ready with real integrations
 
 ### What's Working
 - ✅ Core graph execution engine
@@ -190,15 +197,18 @@ cargo run --example grl_rules
 - ✅ Topological sorting
 - ✅ Async execution
 - ✅ JSON I/O
+- ✅ **Database integrations** (PostgreSQL, MySQL, Redis, MongoDB)
+- ✅ **AI integrations** (OpenAI, Claude, Ollama)
 - ✅ Comprehensive documentation
 
 ### Roadmap
-- [ ] Real database integrations (PostgreSQL, MySQL)
-- [ ] Real AI/LLM integrations (OpenAI, Anthropic)
-- [ ] Parallel node execution
-- [ ] GraphQL API
-- [ ] Web UI for visualization
-- [ ] Performance optimizations
+- [ ] Parallel node execution (v0.3.0)
+- [ ] Performance optimizations (v0.3.0)
+- [ ] GraphQL API (v0.6.0)
+- [ ] Web UI for visualization (v0.7.0)
+- [ ] Production release (v1.0.0)
+
+**See [ROADMAP.md](ROADMAP.md) for details**
 
 ---
 
