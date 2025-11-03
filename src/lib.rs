@@ -5,6 +5,7 @@ pub mod rule;
 pub mod orchestrator;
 pub mod io;
 pub mod integrations;
+pub mod streaming;
 
 // Re-export main types
 pub use core::{Graph, GraphDef, Edge, Context, Executor};

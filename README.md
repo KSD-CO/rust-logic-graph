@@ -27,6 +27,9 @@ async fn main() -> anyhow::Result<()> {
 - 📊 **Multiple Node Types** - RuleNode, DBNode, AINode
 - 📝 **JSON Configuration** - Simple workflow definitions
 - 🎯 **97% Drools Compatible** - Easy migration from Java
+- 🌊 **Streaming Processing** - Stream-based execution with backpressure (NEW in v0.3.0)
+- 🗄️ **Database Integrations** - PostgreSQL, MySQL, Redis, MongoDB (v0.2.0)
+- 🤖 **AI/LLM Integrations** - OpenAI, Claude, Ollama (v0.2.0)
 
 ---
 
@@ -181,14 +184,14 @@ cargo test -- --nocapture
 cargo run --example grl_rules
 ```
 
-**Result**: ✅ 6/6 tests passing
+**Result**: ✅ 14/14 tests passing
 
 ---
 
 ## 📦 Project Status
 
-**Version**: 0.2.0 (Beta)
-**Status**: Production-ready with real integrations
+**Version**: 0.3.0-dev (In Development)
+**Status**: Production-ready with streaming support
 
 ### What's Working
 - ✅ Core graph execution engine
@@ -199,11 +202,14 @@ cargo run --example grl_rules
 - ✅ JSON I/O
 - ✅ **Database integrations** (PostgreSQL, MySQL, Redis, MongoDB)
 - ✅ **AI integrations** (OpenAI, Claude, Ollama)
+- ✅ **Streaming processing** with backpressure and chunking (NEW!)
+- ✅ Stream operators (map, filter, fold)
 - ✅ Comprehensive documentation
 
 ### Roadmap
+- [x] Streaming processing (v0.3.0) - COMPLETED
 - [ ] Parallel node execution (v0.3.0)
-- [ ] Performance optimizations (v0.3.0)
+- [ ] Caching layer (v0.3.0)
 - [ ] GraphQL API (v0.6.0)
 - [ ] Web UI for visualization (v0.7.0)
 - [ ] Production release (v1.0.0)
@@ -231,6 +237,9 @@ Contributions welcome! Please:
 | `advanced_flow.rs` | Complex 6-node workflow | 120 |
 | `grl_rules.rs` | GRL rule examples | 110 |
 | `grl_graph_flow.rs` | GRL + Graph integration | 140 |
+| `postgres_flow.rs` | PostgreSQL integration | 100 |
+| `openai_flow.rs` | OpenAI GPT integration | 150 |
+| `streaming_flow.rs` | **Streaming with backpressure (NEW!)** | 200 |
 
 ---
 

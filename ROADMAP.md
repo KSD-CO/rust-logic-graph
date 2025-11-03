@@ -114,10 +114,12 @@ Project roadmap and task tracking for future development.
   - [ ] TTL support
   - [ ] Memory limits
 
-- [ ] **Streaming Processing**
-  - [ ] Stream-based node execution
-  - [ ] Backpressure handling
-  - [ ] Large dataset support
+- [x] **Streaming Processing**
+  - [x] Stream-based node execution
+  - [x] Backpressure handling with bounded channels
+  - [x] Large dataset support with chunking
+  - [x] Stream operators (map, filter, fold)
+  - [x] Example: `examples/streaming_flow.rs`
 
 - [ ] **Memory Optimization**
   - [ ] Reduce allocations
