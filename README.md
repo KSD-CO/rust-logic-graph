@@ -24,6 +24,7 @@ async fn main() -> anyhow::Result<()> {
 - 🔥 **GRL Support** - [rust-rule-engine](https://crates.io/crates/rust-rule-engine) integration with RETE algorithm
 - 🔄 **Topological Execution** - Automatic DAG-based node ordering
 - ⚡ **Async Runtime** - Built on Tokio for high concurrency
+- ⚡ **Parallel Execution** - Automatic parallel execution of independent nodes (NEW in v0.4.0)
 - 📊 **Multiple Node Types** - RuleNode, DBNode, AINode
 - 📝 **JSON Configuration** - Simple workflow definitions
 - 🎯 **97% Drools Compatible** - Easy migration from Java
@@ -39,13 +40,13 @@ async fn main() -> anyhow::Result<()> {
 
 ```toml
 [dependencies]
-rust-logic-graph = "0.2.0"
+rust-logic-graph = "0.4.0"
 
 # With specific integrations
-rust-logic-graph = { version = "0.2.0", features = ["postgres", "openai"] }
+rust-logic-graph = { version = "0.4.0", features = ["postgres", "openai"] }
 
 # With all integrations
-rust-logic-graph = { version = "0.2.0", features = ["all-integrations"] }
+rust-logic-graph = { version = "0.4.0", features = ["all-integrations"] }
 ```
 
 ### Simple Example
@@ -184,14 +185,14 @@ cargo test -- --nocapture
 cargo run --example grl_rules
 ```
 
-**Result**: ✅ 14/14 tests passing
+**Result**: ✅ 17/17 tests passing
 
 ---
 
 ## 📦 Project Status
 
-**Version**: 0.3.0-dev (In Development)
-**Status**: Production-ready with streaming support
+**Version**: 0.4.0 (Latest)
+**Status**: Production-ready with parallel execution and streaming
 
 ### What's Working
 - ✅ Core graph execution engine
@@ -203,12 +204,13 @@ cargo run --example grl_rules
 - ✅ **Database integrations** (PostgreSQL, MySQL, Redis, MongoDB)
 - ✅ **AI integrations** (OpenAI, Claude, Ollama)
 - ✅ **Streaming processing** with backpressure and chunking (NEW!)
+- ✅ **Parallel execution** with automatic layer detection (NEW!)
 - ✅ Stream operators (map, filter, fold)
 - ✅ Comprehensive documentation
 
 ### Roadmap
 - [x] Streaming processing (v0.3.0) - COMPLETED
-- [ ] Parallel node execution (v0.3.0)
+- [x] Parallel node execution (v0.3.0) - COMPLETED
 - [ ] Caching layer (v0.3.0)
 - [ ] GraphQL API (v0.6.0)
 - [ ] Web UI for visualization (v0.7.0)
@@ -240,6 +242,7 @@ Contributions welcome! Please:
 | `postgres_flow.rs` | PostgreSQL integration | 100 |
 | `openai_flow.rs` | OpenAI GPT integration | 150 |
 | `streaming_flow.rs` | **Streaming with backpressure (NEW!)** | 200 |
+| `parallel_execution.rs` | **Parallel node execution (NEW!)** | 250 |
 
 ---
 
@@ -256,6 +259,67 @@ Contributions welcome! Please:
 - ✅ **Fast** - Compiled Rust code
 - ✅ **Flexible** - Custom nodes
 - ✅ **Rule-based** - Business logic in rules
+
+---
+
+## 📝 Changelog
+
+### v0.4.0 (2025-11-06) - Parallel Execution Release
+
+**New Features:**
+- ⚡ **Parallel Node Execution** - Automatic detection and parallel execution of independent nodes
+  - Layer detection algorithm using topological sort
+  - Concurrent execution within layers
+  - Parallelism analysis and statistics
+  - Theoretical speedup calculation
+- 📊 **ParallelExecutor** - New executor with parallel capabilities
+- 📈 **Performance Analysis** - `get_parallelism_stats()` for graph analysis
+- 📝 **New Example** - `parallel_execution.rs` with 5 scenarios
+- ✅ **3 New Tests** - Comprehensive parallel execution testing
+
+**Improvements:**
+- Updated documentation with parallel execution details
+- Added parallelism comparison examples
+- Performance benchmarking utilities
+
+**Compatibility:**
+- All 17 tests passing
+- Backward compatible with v0.3.0
+
+### v0.3.0 (2025-11-03) - Streaming & Performance Release
+
+**New Features:**
+- 🌊 **Streaming Processing** - Stream-based node execution
+  - Backpressure handling with bounded channels
+  - Large dataset support with chunking
+  - Stream operators (map, filter, fold, async map)
+- 📝 **New Example** - `streaming_flow.rs` with 6 demonstrations
+- ✅ **8 New Tests** - Streaming module testing
+
+**Performance:**
+- Processed 10,000 items in chunks
+- ~432 items/sec throughput with backpressure
+
+### v0.2.0 (2025-11-02) - Integrations Release
+
+**New Features:**
+- 🗄️ **Database Integrations** - PostgreSQL, MySQL, Redis, MongoDB
+- 🤖 **AI/LLM Integrations** - OpenAI GPT-4, Claude 3.5, Ollama
+- 📝 **Integration Examples** - `postgres_flow.rs`, `openai_flow.rs`
+- 📚 **INTEGRATIONS.md** - Comprehensive integration guide
+- 🎛️ **Feature Flags** - Optional dependencies for integrations
+
+### v0.1.0 (2025-11-01) - Initial Release
+
+**Core Features:**
+- 🧠 Core graph execution engine
+- 🔥 GRL (Grule Rule Language) integration
+- 🔄 Topological sorting
+- ⚡ Async execution with Tokio
+- 📊 Three node types (Rule, DB, AI)
+- 📝 JSON I/O for graphs
+- 📚 4 working examples
+- ✅ 6/6 tests passing
 
 ---
 
