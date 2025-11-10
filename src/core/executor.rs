@@ -5,16 +5,37 @@ use tracing::{info, debug, warn};
 use crate::core::{Graph, GraphDef};
 use crate::node::{Node, RuleNode as ConcreteRuleNode, DBNode, AINode};
 use crate::rule::Rule;
+use crate::cache::{CacheManager, CacheKey};
 
 pub struct Executor {
     nodes: HashMap<String, Box<dyn Node>>,
+    cache: Option<CacheManager>,
 }
 
 impl Executor {
     pub fn new() -> Self {
         Self {
             nodes: HashMap::new(),
+            cache: None,
         }
+    }
+
+    /// Create a new executor with caching enabled
+    pub fn with_cache(cache: CacheManager) -> Self {
+        Self {
+            nodes: HashMap::new(),
+            cache: Some(cache),
+        }
+    }
+
+    /// Enable caching for this executor
+    pub fn set_cache(&mut self, cache: CacheManager) {
+        self.cache = Some(cache);
+    }
+
+    /// Get the cache manager (if enabled)
+    pub fn cache(&self) -> Option<&CacheManager> {
+        self.cache.as_ref()
     }
 
     /// Build executor from graph definition
@@ -139,10 +160,49 @@ impl Executor {
             // Execute the node
             if should_execute {
                 if let Some(node) = self.nodes.get(&node_id) {
-                    match node.run(&mut graph.context).await {
+                    // Create cache key based on node ID and current context
+                    let context_value = serde_json::to_value(&graph.context.data)?;
+                    let cache_key = CacheKey::new(&node_id, &context_value);
+
+                    // Check cache first
+                    let mut cached_hit = false;
+                    
+                    if let Some(cache) = &self.cache {
+                        if let Some(cached_value) = cache.get(&cache_key) {
+                            info!("Node '{}' result retrieved from cache", node_id);
+                            
+                            // Merge cached result into context
+                            if let serde_json::Value::Object(cached_obj) = cached_value {
+                                for (k, v) in cached_obj {
+                                    graph.context.data.insert(k, v);
+                                }
+                            }
+                            
+                            cached_hit = true;
+                        }
+                    }
+
+                    // Execute node if not cached
+                    let result = if !cached_hit {
+                        node.run(&mut graph.context).await
+                    } else {
+                        Ok(serde_json::Value::Null) // Dummy value for cached result
+                    };
+
+                    match result {
                         Ok(_) => {
                             info!("Node '{}' executed successfully", node_id);
                             execution_order.push(node_id.clone());
+
+                            // Store result in cache if caching is enabled and node was actually executed
+                            if !cached_hit {
+                                if let Some(cache) = &self.cache {
+                                    let context_result = serde_json::to_value(&graph.context.data)?;
+                                    if let Err(e) = cache.put(cache_key, context_result, None) {
+                                        warn!("Failed to cache result for node '{}': {}", node_id, e);
+                                    }
+                                }
+                            }
                         }
                         Err(e) => {
                             warn!("Node '{}' execution failed: {:?}", node_id, e);

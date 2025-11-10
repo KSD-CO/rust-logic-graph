@@ -108,11 +108,11 @@ Project roadmap and task tracking for future development.
   - [x] Parallelism analysis and statistics
   - [x] Example: `examples/parallel_execution.rs`
 
-- [ ] **Caching Layer**
-  - [ ] Node result caching
-  - [ ] Cache invalidation strategies
-  - [ ] TTL support
-  - [ ] Memory limits
+- [x] **Caching Layer**
+  - [x] Node result caching
+  - [x] Cache invalidation strategies
+  - [x] TTL support
+  - [x] Memory limits
 
 - [x] **Streaming Processing**
   - [x] Stream-based node execution
@@ -413,16 +413,16 @@ Want to help? Pick a task!
 - [x] 100% Parallel execution
 - [x] 100% Layer detection
 - [x] 100% Parallelism analysis
-- [ ] 0% Caching layer
+- [x] 100% Caching layer
 - [ ] 0% Benchmarking
 
 ### Overall Progress
 ```
-[█████████████████░░░] 85% Complete
+[█████████████████░░░] 90% Complete
 ```
 
 **Completed**: 4 major versions (v0.1.0, v0.2.0, v0.3.0, v0.4.0)
-**In Progress**: v0.4.0 (caching & benchmarking)
+**In Progress**: v0.4.0 (benchmarking remaining)
 **Remaining**: 3 versions to v1.0.0
 
 ---

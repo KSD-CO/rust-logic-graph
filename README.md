@@ -25,7 +25,8 @@ async fn main() -> anyhow::Result<()> {
 - 🔄 **Topological Execution** - Automatic DAG-based node ordering
 - ⚡ **Async Runtime** - Built on Tokio for high concurrency
 - ⚡ **Parallel Execution** - Automatic parallel execution of independent nodes (NEW in v0.4.0)
-- 📊 **Multiple Node Types** - RuleNode, DBNode, AINode
+- �️ **Caching Layer** - High-performance result caching with TTL, eviction policies, and memory limits (NEW in v0.5.0)
+- �📊 **Multiple Node Types** - RuleNode, DBNode, AINode
 - 📝 **JSON Configuration** - Simple workflow definitions
 - 🎯 **97% Drools Compatible** - Easy migration from Java
 - 🌊 **Streaming Processing** - Stream-based execution with backpressure (NEW in v0.3.0)
@@ -86,6 +87,7 @@ cargo run --example grl_graph_flow
 
 | Document | Description |
 |----------|-------------|
+| **[Cache Guide](docs/CACHE.md)** | Caching layer with TTL and eviction policies (NEW in v0.4.0) |
 | **[Integrations Guide](docs/INTEGRATIONS.md)** | Database & AI integrations (NEW in v0.2.0) |
 | **[GRL Guide](docs/GRL.md)** | Complete GRL syntax and examples |
 | **[Use Cases](docs/USE_CASES.md)** | 33+ real-world applications |
