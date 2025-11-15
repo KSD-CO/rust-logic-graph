@@ -1,0 +1,31 @@
+{
+  "nodes": {
+    "start": "RuleNode",
+    "check_price": "RuleNode",
+    "process_payment": "DBNode",
+    "send_confirmation": "AINode",
+    "end": "RuleNode"
+  },
+  "edges": [
+    {
+      "from": "start",
+      "to": "check_price",
+      "rule": null
+    },
+    {
+      "from": "check_price",
+      "to": "process_payment",
+      "rule": null
+    },
+    {
+      "from": "process_payment",
+      "to": "send_confirmation",
+      "rule": null
+    },
+    {
+      "from": "send_confirmation",
+      "to": "end",
+      "rule": null
+    }
+  ]
+}

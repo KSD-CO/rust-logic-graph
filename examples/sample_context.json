@@ -1,0 +1,7 @@
+{
+  "product_id": "12345",
+  "quantity": 2,
+  "price": 29.99,
+  "customer_email": "customer@example.com",
+  "inventory_count": 100
+}

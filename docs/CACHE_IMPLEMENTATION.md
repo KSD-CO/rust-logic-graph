@@ -1,6 +1,6 @@
 # 🗄️ Caching Layer Implementation Summary
 
-**Version**: v0.4.0  
+**Version**: v0.5.0  
 **Date**: November 10, 2025  
 **Status**: ✅ Complete
 
@@ -190,7 +190,7 @@ Complete documentation including:
 
 Updated `ROADMAP.md`:
 - ✅ Marked all caching tasks complete
-- ✅ Updated v0.4.0 progress to 100% for caching
+- ✅ Updated v0.5.0 progress to 100% for caching
 - ✅ Updated overall progress to 90%
 
 Updated `README.md`:

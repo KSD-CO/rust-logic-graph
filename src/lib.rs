@@ -8,6 +8,7 @@ pub mod integrations;
 pub mod streaming;
 pub mod parallel;
 pub mod cache;
+pub mod bench_helpers;
 
 // Re-export main types
 pub use core::{Graph, GraphDef, Edge, Context, Executor};

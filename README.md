@@ -21,15 +21,16 @@ async fn main() -> anyhow::Result<()> {
 
 ## ✨ Key Features
 
-- 🔥 **GRL Support** - [rust-rule-engine](https://crates.io/crates/rust-rule-engine) integration with RETE algorithm
+- 🔥 **GRL Support** - [rust-rule-engine v0.14.0](https://crates.io/crates/rust-rule-engine) with RETE-UL algorithm (2-24x faster)
 - 🔄 **Topological Execution** - Automatic DAG-based node ordering
 - ⚡ **Async Runtime** - Built on Tokio for high concurrency
-- ⚡ **Parallel Execution** - Automatic parallel execution of independent nodes (NEW in v0.4.0)
-- �️ **Caching Layer** - High-performance result caching with TTL, eviction policies, and memory limits (NEW in v0.5.0)
-- �📊 **Multiple Node Types** - RuleNode, DBNode, AINode
+- ⚡ **Parallel Execution** - Automatic parallel execution of independent nodes (v0.5.0)
+- 💾 **Caching Layer** - High-performance result caching with TTL, eviction policies, and memory limits (v0.5.0)
+- 🛠️ **CLI Developer Tools** - Graph validation, dry-run, profiling, and visualization (v0.5.0)
+- 📊 **Multiple Node Types** - RuleNode, DBNode, AINode
 - 📝 **JSON Configuration** - Simple workflow definitions
-- 🎯 **97% Drools Compatible** - Easy migration from Java
-- 🌊 **Streaming Processing** - Stream-based execution with backpressure (NEW in v0.3.0)
+- 🎯 **98% Drools Compatible** - Easy migration from Java
+- 🌊 **Streaming Processing** - Stream-based execution with backpressure (v0.3.0)
 - 🗄️ **Database Integrations** - PostgreSQL, MySQL, Redis, MongoDB (v0.2.0)
 - 🤖 **AI/LLM Integrations** - OpenAI, Claude, Ollama (v0.2.0)
 
@@ -41,13 +42,13 @@ async fn main() -> anyhow::Result<()> {
 
 ```toml
 [dependencies]
-rust-logic-graph = "0.4.0"
+rust-logic-graph = "0.6.0"
 
 # With specific integrations
-rust-logic-graph = { version = "0.4.0", features = ["postgres", "openai"] }
+rust-logic-graph = { version = "0.6.0", features = ["postgres", "openai"] }
 
 # With all integrations
-rust-logic-graph = { version = "0.4.0", features = ["all-integrations"] }
+rust-logic-graph = { version = "0.6.0", features = ["all-integrations"] }
 ```
 
 ### Simple Example
@@ -68,6 +69,27 @@ let mut engine = RuleEngine::new();
 engine.add_grl_rule(grl)?;
 ```
 
+### CLI Tools (NEW in v0.5.0)
+
+```bash
+# Build the CLI tool
+cargo build --release --bin rlg
+
+# Validate a graph
+./target/release/rlg validate --file examples/sample_graph.json
+
+# Visualize graph structure
+./target/release/rlg visualize --file examples/sample_graph.json --details
+
+# Profile performance
+./target/release/rlg profile --file examples/sample_graph.json --iterations 100
+
+# Dry-run without execution
+./target/release/rlg dry-run --file examples/sample_graph.json --verbose
+```
+
+**[Full CLI Documentation →](docs/CLI_TOOL.md)**
+
 ### Run Examples
 
 ```bash
@@ -87,13 +109,14 @@ cargo run --example grl_graph_flow
 
 | Document | Description |
 |----------|-------------|
-| **[Cache Guide](docs/CACHE.md)** | Caching layer with TTL and eviction policies (NEW in v0.4.0) |
-| **[Integrations Guide](docs/INTEGRATIONS.md)** | Database & AI integrations (NEW in v0.2.0) |
+| **[CLI Tool Guide](docs/CLI_TOOL.md)** | Developer tools for validation, profiling, and visualization (NEW in v0.5.0) |
+| **[Cache Guide](docs/CACHE_IMPLEMENTATION.md)** | Caching layer with TTL and eviction policies (v0.5.0) |
+| **[Migration Guide](docs/MIGRATION_GUIDE.md)** | Upgrade guide to v0.14.0 with RETE-UL (v0.5.0) |
+| **[Integrations Guide](docs/INTEGRATIONS.md)** | Database & AI integrations (v0.2.0) |
 | **[GRL Guide](docs/GRL.md)** | Complete GRL syntax and examples |
 | **[Use Cases](docs/USE_CASES.md)** | 33+ real-world applications |
 | **[Extending](docs/EXTENDING.md)** | Create custom nodes and integrations |
 | **[Implementation](docs/IMPLEMENTATION_SUMMARY.md)** | Technical details |
-| **[GRL Integration](docs/GRL_INTEGRATION_SUMMARY.md)** | Integration guide |
 
 ---
 
@@ -117,14 +140,15 @@ Rust Logic Graph powers applications in:
 
 ```
 ┌─────────────────────────────────────────┐
-│         rust-rule-engine (GRL)          │
-│        RETE Algorithm • 2-24x Faster    │
+│     rust-rule-engine v0.14.0 (GRL)      │
+│    RETE-UL Algorithm • 2-24x Faster     │
 └────────────────┬────────────────────────┘
                  │
 ┌────────────────▼────────────────────────┐
 │        Rust Logic Graph Core            │
 │  • Graph Definition                     │
-│  • Topological Executor                 │
+│  • Parallel Executor                    │
+│  • Cache Manager (NEW)                  │
 │  • Context Management                   │
 └────────────────┬────────────────────────┘
                  │
@@ -134,6 +158,11 @@ Rust Logic Graph powers applications in:
 │ Rule  │   │  DB   │   │  AI   │
 │ Node  │   │ Node  │   │ Node  │
 └───────┘   └───────┘   └───────┘
+     │            │            │
+┌────▼────────────▼────────────▼────┐
+│         CLI Developer Tools        │
+│  • Validate  • Profile  • Visualize│
+└────────────────────────────────────┘
 ```
 
 ---
@@ -167,53 +196,70 @@ rule "AutoApproval" salience 50 {
 
 ## 📊 Performance
 
-- **RETE Algorithm**: Optimized pattern matching
-- **2-24x Faster**: Than alternatives at 50+ rules
-- **97% Drools Compatible**: Easy migration path
+- **RETE-UL Algorithm**: Advanced pattern matching with unlinking (v0.14.0)
+- **2-24x Faster**: Than v0.10 at 50+ rules
+- **98% Drools Compatible**: Easy migration path
 - **Async by Default**: High concurrency support
+- **Parallel Execution**: Automatic layer-based parallelism
+- **Smart Caching**: Result caching with TTL and eviction policies
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & CLI Tools
 
 ```bash
 # Run all tests
 cargo test
 
-# Run with output
-cargo test -- --nocapture
+# Build CLI tool
+cargo build --release --bin rlg
 
-# Run specific example
-cargo run --example grl_rules
+# Validate graph
+./target/release/rlg validate --file examples/sample_graph.json
+
+# Visualize graph structure
+./target/release/rlg visualize --file examples/sample_graph.json
+
+# Profile performance
+./target/release/rlg profile --file examples/sample_graph.json --iterations 100
+
+# Dry-run execution
+./target/release/rlg dry-run --file examples/sample_graph.json --verbose
 ```
 
-**Result**: ✅ 17/17 tests passing
+**Test Results**: ✅ 32/32 tests passing
+
+**[Learn more about CLI tools →](docs/CLI_TOOL.md)**
 
 ---
 
 ## 📦 Project Status
 
-**Version**: 0.4.0 (Latest)
-**Status**: Production-ready with parallel execution and streaming
+**Version**: 0.6.0 (Latest)
+**Status**: Production-ready with parallel execution, caching, and CLI tools
 
 ### What's Working
 - ✅ Core graph execution engine
-- ✅ GRL rule engine integration
+- ✅ **RETE-UL algorithm** (v0.14.0) - 2-24x faster
 - ✅ Three node types (Rule, DB, AI)
 - ✅ Topological sorting
 - ✅ Async execution
 - ✅ JSON I/O
 - ✅ **Database integrations** (PostgreSQL, MySQL, Redis, MongoDB)
 - ✅ **AI integrations** (OpenAI, Claude, Ollama)
-- ✅ **Streaming processing** with backpressure and chunking (NEW!)
-- ✅ **Parallel execution** with automatic layer detection (NEW!)
+- ✅ **Streaming processing** with backpressure and chunking
+- ✅ **Parallel execution** with automatic layer detection
+- ✅ **Caching layer** with TTL, eviction policies, memory limits (v0.5.0)
+- ✅ **CLI Developer Tools** - validate, profile, visualize, dry-run (v0.5.0)
 - ✅ Stream operators (map, filter, fold)
 - ✅ Comprehensive documentation
 
 ### Roadmap
-- [x] Streaming processing (v0.3.0) - COMPLETED
-- [x] Parallel node execution (v0.3.0) - COMPLETED
-- [ ] Caching layer (v0.3.0)
+- [x] Streaming processing (v0.3.0) - COMPLETED ✅
+- [x] Parallel node execution (v0.4.0) - COMPLETED ✅
+- [x] Caching layer (v0.5.0) - COMPLETED ✅
+- [x] CLI Developer Tools (v0.5.0) - COMPLETED ✅
+- [x] RETE-UL upgrade (v0.5.0) - COMPLETED ✅
 - [ ] GraphQL API (v0.6.0)
 - [ ] Web UI for visualization (v0.7.0)
 - [ ] Production release (v1.0.0)
@@ -243,8 +289,18 @@ Contributions welcome! Please:
 | `grl_graph_flow.rs` | GRL + Graph integration | 140 |
 | `postgres_flow.rs` | PostgreSQL integration | 100 |
 | `openai_flow.rs` | OpenAI GPT integration | 150 |
-| `streaming_flow.rs` | **Streaming with backpressure (NEW!)** | 200 |
-| `parallel_execution.rs` | **Parallel node execution (NEW!)** | 250 |
+| `streaming_flow.rs` | Streaming with backpressure | 200 |
+| `parallel_execution.rs` | Parallel node execution | 250 |
+
+### CLI Tool Examples (v0.5.0)
+
+| File | Description |
+|------|-------------|
+| `examples/sample_graph.json` | Linear workflow with 5 nodes |
+| `examples/cyclic_graph.json` | Graph with cycle for testing |
+| `examples/sample_context.json` | Sample input data |
+
+**See [CLI_TOOL.md](docs/CLI_TOOL.md) for usage examples**
 
 ---
 
@@ -266,27 +322,44 @@ Contributions welcome! Please:
 
 ## 📝 Changelog
 
-### v0.4.0 (2025-11-06) - Parallel Execution Release
+### v0.5.0 (2025-11-06) - Performance & Developer Tools Release
+
+**Breaking Changes:**
+- ⚡ **Upgraded rust-rule-engine** from v0.10 → v0.14.0
+  - Now uses RETE-UL algorithm (2-24x faster)
+  - Better memory efficiency
+  - Improved conflict resolution
+  - See [Migration Guide](docs/MIGRATION_GUIDE.md)
 
 **New Features:**
-- ⚡ **Parallel Node Execution** - Automatic detection and parallel execution of independent nodes
+- 🛠️ **CLI Developer Tools** (`rlg` binary)
+  - Graph validation with comprehensive checks
+  - Dry-run execution mode
+  - Performance profiling with statistics
+  - ASCII graph visualization
+  - See [CLI Tool Guide](docs/CLI_TOOL.md)
+- 💾 **Caching Layer** - High-performance result caching
+  - TTL-based expiration
+  - Multiple eviction policies (LRU, LFU, FIFO)
+  - Memory limits and statistics
+  - See [Cache Guide](docs/CACHE_IMPLEMENTATION.md)
+- ⚡ **Parallel Node Execution** - Automatic detection and parallel execution
   - Layer detection algorithm using topological sort
   - Concurrent execution within layers
   - Parallelism analysis and statistics
-  - Theoretical speedup calculation
 - 📊 **ParallelExecutor** - New executor with parallel capabilities
-- 📈 **Performance Analysis** - `get_parallelism_stats()` for graph analysis
-- 📝 **New Example** - `parallel_execution.rs` with 5 scenarios
-- ✅ **3 New Tests** - Comprehensive parallel execution testing
+- 📝 **New Examples** - CLI examples and test graphs
+- ✅ **32 Tests** - Comprehensive test coverage
 
 **Improvements:**
-- Updated documentation with parallel execution details
-- Added parallelism comparison examples
+- Updated documentation with CLI tools, caching, and migration guides
 - Performance benchmarking utilities
+- Example graph files for testing
 
 **Compatibility:**
-- All 17 tests passing
-- Backward compatible with v0.3.0
+- All 32 tests passing
+- API is backward compatible (100%)
+- Performance: 2-24x faster rule matching
 
 ### v0.3.0 (2025-11-03) - Streaming & Performance Release
 
@@ -349,10 +422,11 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## 🙏 Acknowledgments
 
 Built with:
-- [rust-rule-engine](https://crates.io/crates/rust-rule-engine) - GRL support
+- [rust-rule-engine v0.14.0](https://crates.io/crates/rust-rule-engine) - GRL support with RETE-UL
 - [Tokio](https://tokio.rs/) - Async runtime
 - [Petgraph](https://github.com/petgraph/petgraph) - Graph algorithms
 - [Serde](https://serde.rs/) - Serialization
+- [Clap](https://github.com/clap-rs/clap) - CLI framework
 
 ---
 

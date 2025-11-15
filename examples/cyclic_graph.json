@@ -1,0 +1,24 @@
+{
+  "nodes": {
+    "a": "RuleNode",
+    "b": "RuleNode",
+    "c": "RuleNode"
+  },
+  "edges": [
+    {
+      "from": "a",
+      "to": "b",
+      "rule": null
+    },
+    {
+      "from": "b",
+      "to": "c",
+      "rule": null
+    },
+    {
+      "from": "c",
+      "to": "a",
+      "rule": null
+    }
+  ]
+}

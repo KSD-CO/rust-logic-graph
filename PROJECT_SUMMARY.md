@@ -259,7 +259,7 @@ cargo run --example grl_rules # Integration test
 - Caching layer
 - Benchmarking suite
 
-### v0.4.0 - Developer Experience (Q2 2025)
+### v0.5.0 - Developer Experience (Q2 2025)
 - CLI tool
 - Macro support
 - Better error messages

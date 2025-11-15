@@ -134,17 +134,17 @@ Project roadmap and task tracking for future development.
 
 ---
 
-### v0.4.0 - Developer Experience
+### v0.5.0 - Developer Experience
 
 **Priority**: Medium
 **Goal**: Make development easier
 
 #### Developer Tools
-- [ ] **CLI Tool**
-  - [ ] Graph validation
-  - [ ] Dry-run execution
-  - [ ] Performance profiling
-  - [ ] Graph visualization (ASCII)
+- [x] **CLI Tool** ✅ (v0.5.0)
+  - [x] Graph validation
+  - [x] Dry-run execution
+  - [x] Performance profiling
+  - [x] Graph visualization (ASCII)
 
 - [ ] **Macro Support**
   - [ ] `#[derive(Node)]` macro
@@ -409,7 +409,8 @@ Want to help? Pick a task!
 - [x] 100% Backpressure handling
 - [x] 100% Stream operators
 
-### v0.4.0 (Current)
+### v0.5.0 (Current)
+
 - [x] 100% Parallel execution
 - [x] 100% Layer detection
 - [x] 100% Parallelism analysis
@@ -421,8 +422,8 @@ Want to help? Pick a task!
 [█████████████████░░░] 90% Complete
 ```
 
-**Completed**: 4 major versions (v0.1.0, v0.2.0, v0.3.0, v0.4.0)
-**In Progress**: v0.4.0 (benchmarking remaining)
+**Completed**: 4 major versions (v0.1.0, v0.2.0, v0.3.0, v0.5.0)
+**In Progress**: v0.5.0 (benchmarking remaining)
 **Remaining**: 3 versions to v1.0.0
 
 ---
