@@ -30,5 +30,25 @@ cargo run --example purchasing_flow
 - Replace `DBNode` mocks with real DB integration nodes (see `src/integrations/*`).
 - Implement rule logic in `rule_engine` using GRL or the `RuleEngine` API.
 
+## Production-Grade Case Study
+
+For a complete, production-ready implementation with real MySQL databases, comprehensive documentation, and advanced monitoring, see the **[case_study/](../case_study/)** directory.
+
+The case study includes:
+- 3 versions: Mock, Real DB, and Advanced (with monitoring)
+- 4 separate MySQL databases (microservices architecture)
+- Complete documentation suite (7 files)
+- Helper scripts for easy execution
+- Performance benchmarks
+- Standalone Rust project
+
+Quick start:
+```bash
+cd case_study
+./scripts/run_mock.sh
+```
+
+See [case_study/QUICKSTART_STANDALONE.md](../case_study/QUICKSTART_STANDALONE.md) for details.
+
 Contributing
 - If you add real integrations or expand the example, keep data shapes explicit and document expected keys inserted into `graph.context`.

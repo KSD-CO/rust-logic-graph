@@ -1,0 +1,29 @@
+# Rust build artifacts
+target/
+Cargo.lock
+
+# Debug files
+*.pdb
+
+# Binaries
+*.exe
+*.so
+*.dylib
+*.dll
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.DS_Store
+
+# Environment files
+.env
+.env.local

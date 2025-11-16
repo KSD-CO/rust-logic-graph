@@ -1,0 +1,7 @@
+[build]
+# Enable parallel compilation
+jobs = 4
+
+[term]
+# Colored output
+color = 'auto'

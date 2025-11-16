@@ -48,6 +48,21 @@ This will run many sequential executions and print average execution time. Adjus
 
 ## Comparing with alternatives
 
+We've benchmarked rust-logic-graph against dagrs (v0.5.0), a comparable Rust DAG execution framework.
+
+**Quick Results:**
+- rust-logic-graph is **3-20x faster** than dagrs across all test scenarios
+- Best performance advantage with small graphs (5-10 nodes): **8-20x faster**
+- Maintains **3-4x speedup** even with larger graphs (20 nodes)
+
+For detailed comparison results, methodology, and analysis, see [COMPARISON_RESULTS.md](COMPARISON_RESULTS.md).
+
+### Running Comparison Benchmarks
+
+```bash
+cargo bench --bench comparison_dagrs
+```
+
 To compare with other engines, run the same graph workloads with each system and compare mean/median latency, throughput, and memory usage. Capture results in CSV and plot.
 
 ## CI recommendations

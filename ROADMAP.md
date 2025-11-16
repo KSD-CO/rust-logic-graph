@@ -163,10 +163,10 @@ Project roadmap and task tracking for future development.
   - [x] Profile and optimize
 
 #### Benchmarking
-- [ ] Create benchmark suite
-- [ ] Compare with alternatives
-- [ ] Performance regression tests
-- [ ] Load testing tools
+- [x] Create benchmark suite
+- [x] Compare with alternatives (3-20x faster than dagrs - see [docs/COMPARISON_RESULTS.md](docs/COMPARISON_RESULTS.md))
+- [x] Performance regression tests
+- [x] Load testing tools
 
 ---
 
