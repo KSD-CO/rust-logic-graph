@@ -28,6 +28,7 @@ async fn main() -> anyhow::Result<()> {
 - 💾 **Caching Layer** - High-performance result caching with TTL, eviction policies, and memory limits (v0.5.0)
 - 🧠 **Memory Optimization** - Context pooling and allocation tracking (v0.7.0)
 - 🛠️ **CLI Developer Tools** - Graph validation, dry-run, profiling, and visualization (v0.5.0)
+- 🎨 **Web Graph Editor** - Next.js visual editor with drag-and-drop interface (v0.8.0)
 - 📊 **Multiple Node Types** - RuleNode, DBNode, AINode
 - 📝 **JSON Configuration** - Simple workflow definitions
 - 🎯 **98% Drools Compatible** - Easy migration from Java
@@ -70,7 +71,24 @@ let mut engine = RuleEngine::new();
 engine.add_grl_rule(grl)?;
 ```
 
-### CLI Tools (NEW in v0.5.0)
+### Web Graph Editor (NEW in v0.8.0)
+
+```bash
+# Navigate to graph editor
+cd graph-editor
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to access the visual graph editor.
+
+**[Full Graph Editor Documentation →](graph-editor/README.md)**
+
+### CLI Tools (v0.5.0)
 
 ```bash
 # Build the CLI tool
@@ -110,7 +128,9 @@ cargo run --example grl_graph_flow
 
 | Document | Description |
 |----------|-------------|
-| **[CLI Tool Guide](docs/CLI_TOOL.md)** | Developer tools for validation, profiling, and visualization (NEW in v0.5.0) |
+| **[Graph Editor Guide](graph-editor/README.md)** | Visual web-based graph editor with Next.js (NEW in v0.8.0) |
+| **[Memory Optimization Guide](docs/MEMORY_OPTIMIZATION.md)** | Context pooling and allocation tracking (v0.7.0) |
+| **[CLI Tool Guide](docs/CLI_TOOL.md)** | Developer tools for validation, profiling, and visualization (v0.5.0) |
 | **[Cache Guide](docs/CACHE_IMPLEMENTATION.md)** | Caching layer with TTL and eviction policies (v0.5.0) |
 | **[Migration Guide](docs/MIGRATION_GUIDE.md)** | Upgrade guide to v0.14.0 with RETE-UL (v0.5.0) |
 | **[Integrations Guide](docs/INTEGRATIONS.md)** | Database & AI integrations (v0.2.0) |
@@ -139,32 +159,8 @@ Rust Logic Graph powers applications in:
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────┐
-│     rust-rule-engine v0.14.0 (GRL)      │
-│    RETE-UL Algorithm • 2-24x Faster     │
-└────────────────┬────────────────────────┘
-                 │
-┌────────────────▼────────────────────────┐
-│        Rust Logic Graph Core            │
-│  • Graph Definition                     │
-│  • Parallel Executor                    │
-│  • Cache Manager (NEW)                  │
-│  • Context Management                   │
-└────────────────┬────────────────────────┘
-                 │
-    ┌────────────┼────────────┐
-    │            │            │
-┌───▼───┐   ┌───▼───┐   ┌───▼───┐
-│ Rule  │   │  DB   │   │  AI   │
-│ Node  │   │ Node  │   │ Node  │
-└───────┘   └───────┘   └───────┘
-     │            │            │
-┌────▼────────────▼────────────▼────┐
-│         CLI Developer Tools        │
-│  • Validate  • Profile  • Visualize│
-└────────────────────────────────────┘
-```
+![Rust Logic Graph architecture diagram](docs/images/rust-logic-graph-architect.png)
+
 
 ---
 
@@ -251,7 +247,9 @@ cargo build --release --bin rlg
 - ✅ **Streaming processing** with backpressure and chunking
 - ✅ **Parallel execution** with automatic layer detection
 - ✅ **Caching layer** with TTL, eviction policies, memory limits (v0.5.0)
+- ✅ **Memory optimization** with context pooling (v0.7.0)
 - ✅ **CLI Developer Tools** - validate, profile, visualize, dry-run (v0.5.0)
+- ✅ **Web Graph Editor** - Next.js visual editor with drag-and-drop (v0.8.0)
 - ✅ Stream operators (map, filter, fold)
 - ✅ Comprehensive documentation
 
@@ -261,8 +259,9 @@ cargo build --release --bin rlg
 - [x] Caching layer (v0.5.0) - COMPLETED ✅
 - [x] CLI Developer Tools (v0.5.0) - COMPLETED ✅
 - [x] RETE-UL upgrade (v0.5.0) - COMPLETED ✅
-- [ ] GraphQL API (v0.6.0)
-- [ ] Web UI for visualization (v0.7.0)
+- [x] Memory Optimization (v0.7.0) - COMPLETED ✅
+- [x] Web Graph Editor (v0.8.0) - COMPLETED ✅
+- [ ] GraphQL API (v0.9.0)
 - [ ] Production release (v1.0.0)
 
 **See [ROADMAP.md](ROADMAP.md) for details**

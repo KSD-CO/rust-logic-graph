@@ -36,3 +36,42 @@ Cargo.lock
 # Temporary files
 README_UPDATE.txt
 *.rs.bak
+
+# Next.js (graph-editor)
+graph-editor/node_modules/
+graph-editor/.next/
+graph-editor/out/
+graph-editor/dist/
+graph-editor/.cache/
+graph-editor/build/
+
+# Next.js production build
+graph-editor/.vercel
+graph-editor/.netlify
+
+# Environment variables
+graph-editor/.env*.local
+graph-editor/.env.local
+graph-editor/.env.development.local
+graph-editor/.env.test.local
+graph-editor/.env.production.local
+
+# npm/yarn
+graph-editor/npm-debug.log*
+graph-editor/yarn-debug.log*
+graph-editor/yarn-error.log*
+graph-editor/package-lock.json
+graph-editor/yarn.lock
+graph-editor/pnpm-lock.yaml
+
+# TypeScript
+graph-editor/*.tsbuildinfo
+graph-editor/next-env.d.ts
+
+# Testing
+graph-editor/coverage/
+graph-editor/.nyc_output/
+
+# Misc
+graph-editor/.turbo
+graph-editor/.eslintcache
