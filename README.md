@@ -2,6 +2,8 @@
 
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub](https://img.shields.io/badge/github-KSD--CO%2Frust--logic--graph-blue.svg)](https://github.com/KSD-CO/rust-logic-graph)
+[![CI](https://github.com/KSD-CO/rust-logic-graph/actions/workflows/rust.yml/badge.svg)](https://github.com/KSD-CO/rust-logic-graph/actions)
 
 A high-performance **reasoning graph framework** for Rust with **GRL (Grule Rule Language)** support. Build complex workflows with conditional execution, topological ordering, and async processing.
 
