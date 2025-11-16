@@ -26,6 +26,7 @@ async fn main() -> anyhow::Result<()> {
 - ⚡ **Async Runtime** - Built on Tokio for high concurrency
 - ⚡ **Parallel Execution** - Automatic parallel execution of independent nodes (v0.5.0)
 - 💾 **Caching Layer** - High-performance result caching with TTL, eviction policies, and memory limits (v0.5.0)
+- 🧠 **Memory Optimization** - Context pooling and allocation tracking (v0.7.0)
 - 🛠️ **CLI Developer Tools** - Graph validation, dry-run, profiling, and visualization (v0.5.0)
 - 📊 **Multiple Node Types** - RuleNode, DBNode, AINode
 - 📝 **JSON Configuration** - Simple workflow definitions
@@ -42,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
 
 ```toml
 [dependencies]
-rust-logic-graph = "0.6.0"
+rust-logic-graph = "0.7.0"
 
 # With specific integrations
 rust-logic-graph = { version = "0.6.0", features = ["postgres", "openai"] }
@@ -235,7 +236,7 @@ cargo build --release --bin rlg
 
 ## 📦 Project Status
 
-**Version**: 0.6.0 (Latest)
+**Version**: 0.7.0 (Latest)
 **Status**: Production-ready with parallel execution, caching, and CLI tools
 
 ### What's Working

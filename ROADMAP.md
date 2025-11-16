@@ -121,10 +121,10 @@ Project roadmap and task tracking for future development.
   - [x] Stream operators (map, filter, fold)
   - [x] Example: `examples/streaming_flow.rs`
 
-- [ ] **Memory Optimization**
-  - [ ] Reduce allocations
-  - [ ] Memory pooling
-  - [ ] Profile and optimize
+- [x] **Memory Optimization** ✅ (v0.7.0)
+  - [x] Reduce allocations
+  - [x] Memory pooling
+  - [x] Profile and optimize
 
 #### Benchmarking
 - [ ] Create benchmark suite

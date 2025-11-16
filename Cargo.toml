@@ -1,7 +1,7 @@
 
 [package]
 name = "rust-logic-graph"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["James Vu <you@example.com>"]
 description = "A modular reasoning graph framework for distributed logic orchestration"
@@ -22,6 +22,8 @@ anyhow = "1"
 rust-rule-engine = "0.14.0"  # Uses RETE-UL algorithm by default (2-24x faster than v0.10)
 clap = { version = "4", features = ["derive"] }
 colored = "2"
+parking_lot = "0.12"
+once_cell = "1"
 
 # Database integrations
 sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "postgres", "mysql"], optional = true }
