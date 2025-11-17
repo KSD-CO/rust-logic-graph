@@ -161,7 +161,7 @@ Rust Logic Graph powers applications in:
 
 ## 🏗️ Architecture
 
-![Rust Logic Graph architecture diagram](docs/images/rust-logic-graph-architect.png)
+![Rust Logic Graph architecture diagram](https://raw.githubusercontent.com/KSD-CO/rust-logic-graph/main/docs/images/rust-logic-graph-architect.png)
 
 
 ---
