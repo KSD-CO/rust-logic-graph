@@ -1,26 +1,6 @@
 # Purchasing Flow Example with Real MySQL Databases
 
-> ⚠️ **OUTDATED DOCUMENTATION - v1.0**
->
-> This document references old files (`purchasing_flow_realdb.rs`) and structure that no longer exist.
->
-> **For current documentation:**
-> - **[Main README](../README.md)** - Current quick start
-> - **[GRPC.md](../GRPC.md)** - gRPC implementation
-> - **[MICROSERVICES_DEPLOYMENT.md](../MICROSERVICES_DEPLOYMENT.md)** - Production deployment
->
-> **Current commands:**
-> ```bash
-> # Monolithic
-> ./scripts/run_monolithic.sh
->
-> # Microservices
-> cd microservices && docker-compose up -d
-> ```
-
----
-
-## ⚠️ Historical Content Below (For Reference Only)
+## ⚠️ Historical Content Below 
 
 This example demonstrates the purchasing flow using the rust-logic-graph framework with **real MySQL databases**. Each node in the graph connects to a separate database to simulate different external systems in a distributed architecture.
 
