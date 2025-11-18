@@ -1,19 +1,6 @@
 # Purchasing Flow Example - Summary
 
-> ⚠️ **OUTDATED DOCUMENTATION - v1.0**
->
-> This summary references old files and structure that no longer exist.
->
-> **For current documentation:**
-> - **[Main README](../README.md)** - Current project overview
-> - **[GRPC.md](../GRPC.md)** - gRPC implementation (NEW)
-> - **[MICROSERVICES_DEPLOYMENT.md](../MICROSERVICES_DEPLOYMENT.md)** - K8s deployment
->
-> **Current structure:** Dual architecture (Monolithic + Microservices) with gRPC + REST
-
----
-
-## ⚠️ Historical Content Below (For Reference Only)
+## ⚠️ Historical Content Below
 
 ## Overview
 

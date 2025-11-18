@@ -11,7 +11,6 @@ These files document the **historical versions** and may reference old file path
 | [COMPARISON.md](COMPARISON.md) | Mock vs Real DB comparison | ⚠️ Historical |
 | [PURCHASING_FLOW_SUMMARY.md](PURCHASING_FLOW_SUMMARY.md) | Vietnamese summary | ⚠️ Historical |
 | [CASE_STUDY_INDEX.md](CASE_STUDY_INDEX.md) | Old navigation guide | ⚠️ Historical |
-| [PRESENTATION.md](PRESENTATION.md) | Slide-style presentation | ⚠️ Historical |
 
 ---
 
