@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-urls
+  namespace: purchasing-flow
+data:
+  OMS_SERVICE_URL: "http://oms-service:8081"
+  INVENTORY_SERVICE_URL: "http://inventory-service:8082"
+  SUPPLIER_SERVICE_URL: "http://supplier-service:8083"
+  UOM_SERVICE_URL: "http://uom-service:8084"
+  RULE_ENGINE_SERVICE_URL: "http://rule-engine-service:8085"
+  PO_SERVICE_URL: "http://po-service:8086"

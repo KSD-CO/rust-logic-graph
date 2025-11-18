@@ -1,5 +1,27 @@
 # Purchasing Flow Example with Real MySQL Databases
 
+> ⚠️ **OUTDATED DOCUMENTATION - v1.0**
+>
+> This document references old files (`purchasing_flow_realdb.rs`) and structure that no longer exist.
+>
+> **For current documentation:**
+> - **[Main README](../README.md)** - Current quick start
+> - **[GRPC.md](../GRPC.md)** - gRPC implementation
+> - **[MICROSERVICES_DEPLOYMENT.md](../MICROSERVICES_DEPLOYMENT.md)** - Production deployment
+>
+> **Current commands:**
+> ```bash
+> # Monolithic
+> ./scripts/run_monolithic.sh
+>
+> # Microservices
+> cd microservices && docker-compose up -d
+> ```
+
+---
+
+## ⚠️ Historical Content Below (For Reference Only)
+
 This example demonstrates the purchasing flow using the rust-logic-graph framework with **real MySQL databases**. Each node in the graph connects to a separate database to simulate different external systems in a distributed architecture.
 
 ## Prerequisites
@@ -22,10 +44,10 @@ vim .env  # or nano, code, etc.
 The `.env` file contains:
 ```bash
 # MySQL Connection Settings
-DB_USER=lune_dev
-DB_PASSWORD=rfSxLLeSqVCGNeGc
-DB_HOST=171.244.10.40
-DB_PORT=6033
+DB_USER=user
+DB_PASSWORD=pass
+DB_HOST=IP
+DB_PORT=3306
 
 # Database Names
 OMS_DB=oms_db
@@ -82,14 +104,6 @@ Each data collection node connects to its own MySQL database:
 ### Connection Information
 
 **Note:** Connection details are loaded from `case_study/.env` file (see Prerequisites above).
-
-Default demo database (pre-configured in `.env.example`):
-```
-Host: 171.244.10.40
-Port: 6033
-Username: lune_dev
-Password: rfSxLLeSqVCGNeGc
-```
 
 **To use your own database:** Edit `case_study/.env` with your credentials.
 

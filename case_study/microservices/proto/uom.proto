@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package uom;
+
+// UOM Service - Unit of Measurement conversion provider
+service UomService {
+  // Get UOM conversion data for a product
+  rpc GetConversion(ConversionRequest) returns (ConversionResponse);
+
+  // Health check
+  rpc HealthCheck(HealthRequest) returns (HealthResponse);
+}
+
+message ConversionRequest {
+  string product_id = 1;
+}
+
+message ConversionResponse {
+  string product_id = 1;
+  string base_unit = 2;
+  int32 case_qty = 3;
+  int32 pallet_qty = 4;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+}

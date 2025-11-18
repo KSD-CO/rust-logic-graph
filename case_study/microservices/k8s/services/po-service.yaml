@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: po-service
+  namespace: purchasing-flow
+spec:
+  selector:
+    app: po-service
+  ports:
+  - protocol: TCP
+    port: 8086
+    targetPort: 8086
+  type: ClusterIP

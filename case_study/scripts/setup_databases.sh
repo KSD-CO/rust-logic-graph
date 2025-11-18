@@ -3,10 +3,10 @@
 # Database setup script for purchasing_flow example
 # This script creates the databases and tables needed for the example
 
-DB_HOST="171.244.10.40"
-DB_PORT="6033"
-DB_USER="lune_dev"
-DB_PASS="rfSxLLeSqVCGNeGc"
+DB_HOST="IP"
+DB_PORT="3306"
+DB_USER="user"
+DB_PASS="pass"
 
 echo "=== Purchasing Flow Database Setup ==="
 echo "Host: $DB_HOST:$DB_PORT"

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+  namespace: purchasing-flow
+data:
+  DB_HOST: "mysql-service"
+  DB_PORT: "3306"
+  OMS_DB: "oms_db"
+  INVENTORY_DB: "inventory_db"
+  SUPPLIER_DB: "supplier_db"
+  UOM_DB: "uom_db"

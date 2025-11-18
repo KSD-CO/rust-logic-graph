@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package inventory;
+
+// Inventory Service - Inventory levels provider
+service InventoryService {
+  // Get inventory levels for a product
+  rpc GetLevels(LevelsRequest) returns (LevelsResponse);
+
+  // Health check
+  rpc HealthCheck(HealthRequest) returns (HealthResponse);
+}
+
+message LevelsRequest {
+  string product_id = 1;
+}
+
+message LevelsResponse {
+  string product_id = 1;
+  int32 available_qty = 2;
+  int32 reserved_qty = 3;
+  int32 on_order_qty = 4;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+}

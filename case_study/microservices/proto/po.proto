@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package po;
+
+// PO Service - Purchase Order creation and sending
+service PoService {
+  // Create a purchase order
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Send a purchase order
+  rpc Send(SendRequest) returns (SendResponse);
+
+  // Health check
+  rpc HealthCheck(HealthRequest) returns (HealthResponse);
+}
+
+message CreateRequest {
+  string product_id = 1;
+  string supplier_id = 2;
+  int64 qty = 3;
+  double unit_price = 4;
+  double total_amount = 5;
+}
+
+message CreateResponse {
+  PurchaseOrder po = 1;
+}
+
+message SendRequest {
+  string po_id = 1;
+}
+
+message SendResponse {
+  bool success = 1;
+  string message = 2;
+  PurchaseOrder po = 3;
+}
+
+message PurchaseOrder {
+  string po_id = 1;
+  string product_id = 2;
+  string supplier_id = 3;
+  int64 qty = 4;
+  double unit_price = 5;
+  double total_amount = 6;
+  string status = 7;
+  string created_at = 8;
+  string sent_at = 9;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+}

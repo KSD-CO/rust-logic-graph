@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rule-engine-service
+  namespace: purchasing-flow
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rule-engine-service
+  template:
+    metadata:
+      labels:
+        app: rule-engine-service
+    spec:
+      containers:
+      - name: rule-engine-service
+        image: purchasing-flow/rule-engine-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8085
+        env:
+        - name: PORT
+          value: "8085"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8085
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8085
+          initialDelaySeconds: 10
+          periodSeconds: 5

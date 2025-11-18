@@ -14,8 +14,11 @@ pub mod memory;
 // Re-export main types
 pub use core::{Graph, GraphDef, Edge, Context, Executor};
 pub use node::{Node, NodeType, RuleNode, DBNode, AINode};
-pub use rule::{Rule, RuleResult, RuleError, RuleEngine, GrlRule};
+pub use rule::{Rule, RuleResult, RuleError, RuleEngine};
 pub use orchestrator::Orchestrator;
 pub use io::GraphIO;
 pub use cache::{CacheManager, CacheConfig, EvictionPolicy};
 pub use memory::{ContextPool, PoolConfig, MemoryMetrics, AllocationTracker};
+
+// Re-export rust-rule-engine types for advanced usage
+pub use rule::{Facts, KnowledgeBase, GRLParser, Value as RuleValue, EngineConfig, RustRuleEngine};

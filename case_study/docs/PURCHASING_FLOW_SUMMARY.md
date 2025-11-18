@@ -1,5 +1,20 @@
 # Purchasing Flow Example - Summary
 
+> ⚠️ **OUTDATED DOCUMENTATION - v1.0**
+>
+> This summary references old files and structure that no longer exist.
+>
+> **For current documentation:**
+> - **[Main README](../README.md)** - Current project overview
+> - **[GRPC.md](../GRPC.md)** - gRPC implementation (NEW)
+> - **[MICROSERVICES_DEPLOYMENT.md](../MICROSERVICES_DEPLOYMENT.md)** - K8s deployment
+>
+> **Current structure:** Dual architecture (Monolithic + Microservices) with gRPC + REST
+
+---
+
+## ⚠️ Historical Content Below (For Reference Only)
+
 ## Overview
 
 Successfully upgraded the `purchasing_flow.rs` example to use **real MySQL databases** instead of mock data. Each node in the graph connects to a separate database to simulate a real microservices architecture.
@@ -71,10 +86,10 @@ cp .env.example .env
 The `.env` file contains:
 ```bash
 # MySQL Connection Settings
-DB_USER=lune_dev
-DB_PASSWORD=rfSxLLeSqVCGNeGc
-DB_HOST=171.244.10.40
-DB_PORT=6033
+DB_USER=user
+DB_PASSWORD=pass
+DB_HOST=IP
+DB_PORT=3306
 
 # Database Names
 OMS_DB=oms_db
@@ -83,13 +98,7 @@ SUPPLIER_DB=supplier_db
 UOM_DB=uom_db
 ```
 
-**Default demo database** (đã config sẵn trong `.env.example`):
-```
-Host: 171.244.10.40
-Port: 6033
-User: lune_dev
-Pass: rfSxLLeSqVCGNeGc
-```
+**Default demo database** :
 
 ### Databases & Tables
 

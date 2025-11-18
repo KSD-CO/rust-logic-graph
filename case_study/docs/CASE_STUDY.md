@@ -1,7 +1,20 @@
 # Case Study: Distributed Purchasing Flow System
 ## Real-World Production Pattern Using Rust Logic Graph
 
+> ⚠️ **OUTDATED DOCUMENTATION - v1.0**
+>
+> This case study references the old monolithic structure and file paths that no longer exist.
+>
+> **For current documentation:**
+> - **[Main README](../README.md)** - Current project overview
+> - **[GRPC.md](../GRPC.md)** - gRPC implementation (v3.0)
+> - **[MICROSERVICES_DEPLOYMENT.md](../MICROSERVICES_DEPLOYMENT.md)** - Kubernetes deployment
+>
+> **Current structure:** Dual architecture (Monolithic + Microservices) with gRPC support (5x performance improvement)
+
 ---
+
+## ⚠️ Historical Content Below (For Reference Only)
 
 ## Executive Summary
 
@@ -77,7 +90,48 @@ Manual processing is:
 
 ## Technical Architecture
 
-### High-Level Architecture
+> **⚠️ Note:** The architecture below describes the v1.0 monolithic version.
+>
+> **Current v3.0 architecture offers TWO options:**
+>
+> **Option 1: Monolithic (Clean Architecture)**
+> ```
+> ┌────────────────────────────────────────┐
+> │     Monolithic Application             │
+> │  ┌──────────┐  ┌──────────┐           │
+> │  │ Handlers │→ │ Services │           │
+> │  └──────────┘  └────┬─────┘           │
+> │                     ↓                  │
+> │            ┌────────────────┐          │
+> │            │ Graph Engine   │          │
+> │            │ (Rete + Logic) │          │
+> │            └────────┬───────┘          │
+> └─────────────────────┼──────────────────┘
+>                       ↓
+>        ┌──────────────┼──────────────┐
+>        ↓              ↓              ↓
+>    [oms_db]    [inventory_db]  [supplier_db]
+> ```
+>
+> **Option 2: Microservices (gRPC + REST)**
+> ```
+> External Clients (REST)
+>     │
+>     ↓
+> Orchestrator (Port 8080)
+>     │
+>     ├─ gRPC (50051) ──► OMS Service
+>     ├─ gRPC (50052) ──► Inventory Service
+>     ├─ gRPC (50053) ──► Supplier Service
+>     ├─ gRPC (50054) ──► UOM Service
+>     ├─ REST (8085)  ───► Rule Engine (Rete)
+>     └─ REST (8086)  ───► PO Service
+> ```
+> **Key Improvement:** gRPC provides 5x performance vs REST for inter-service calls
+
+---
+
+### High-Level Architecture (v1.0 - Historical)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

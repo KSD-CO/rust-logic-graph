@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package rule_engine;
+
+// Rule Engine Service - Business rules processing using Rete algorithm
+service RuleEngineService {
+  // Evaluate business rules
+  rpc Evaluate(EvaluateRequest) returns (EvaluateResponse);
+
+  // Health check
+  rpc HealthCheck(HealthRequest) returns (HealthResponse);
+}
+
+message EvaluateRequest {
+  OmsData oms_data = 1;
+  InventoryData inventory_data = 2;
+  SupplierData supplier_data = 3;
+}
+
+message OmsData {
+  string product_id = 1;
+  double avg_daily_demand = 2;
+  string trend = 3;
+}
+
+message InventoryData {
+  string product_id = 1;
+  string warehouse_id = 2;
+  int32 current_qty = 3;
+  int32 reserved_qty = 4;
+  int32 available_qty = 5;
+}
+
+message SupplierData {
+  string supplier_id = 1;
+  string product_id = 2;
+  int32 moq = 3;
+  int32 lead_time_days = 4;
+  double unit_price = 5;
+  bool is_active = 6;
+}
+
+message EvaluateResponse {
+  bool need_reorder = 1;
+  double shortage = 2;
+  int64 order_qty = 3;
+  double total_amount = 4;
+  bool requires_approval = 5;
+  string approval_status = 6;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+}

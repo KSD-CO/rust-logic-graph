@@ -1,0 +1,52 @@
+[package]
+name = "purchasing-flow-monolithic"
+version = "0.1.0"
+edition = "2021"
+authors = ["James Vu <you@example.com>"]
+description = "Monolithic purchasing flow with Clean Architecture using rust-logic-graph"
+license = "MIT"
+
+[[bin]]
+name = "purchasing_flow"
+path = "src/main.rs"
+
+[dependencies]
+# Main dependency - rust-logic-graph from parent directory
+rust-logic-graph = { path = "../.." }
+
+# Rule engine
+rust-rule-engine = "0.14"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "mysql"], optional = true }
+
+# Environment variables
+dotenvy = "0.15"
+
+# Time handling
+chrono = "0.4"
+
+# Atomic operations
+parking_lot = "0.12"
+
+[features]
+default = []
+mysql = ["sqlx", "rust-logic-graph/mysql"]
+all = ["mysql"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package oms;
+
+// OMS Service - Order Management System data provider
+service OmsService {
+  // Get historical order data for a product
+  rpc GetHistory(HistoryRequest) returns (HistoryResponse);
+
+  // Health check
+  rpc HealthCheck(HealthRequest) returns (HealthResponse);
+}
+
+message HistoryRequest {
+  string product_id = 1;
+}
+
+message HistoryResponse {
+  string product_id = 1;
+  double avg_daily_demand = 2;
+  string trend = 3;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+}

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator-service
+  namespace: purchasing-flow
+spec:
+  selector:
+    app: orchestrator-service
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: LoadBalancer  # Exposes the API Gateway externally

@@ -1,6 +1,28 @@
 # Purchasing Flow Example - Quick Start
 
-## TL;DR
+> ⚠️ **OUTDATED DOCUMENTATION - v1.0**
+>
+> This document references the old monolithic structure and removed files.
+>
+> **For current quick start, see [Main README](../README.md)**
+>
+> **Current commands:**
+> ```bash
+> # Monolithic
+> cd case_study
+> ./scripts/setup_databases.sh
+> ./scripts/run_monolithic.sh
+>
+> # Microservices
+> cd case_study/microservices
+> docker-compose up -d
+> ```
+
+---
+
+## ⚠️ Historical Content Below (For Reference Only)
+
+## TL;DR (OLD - No Longer Works)
 
 ```bash
 # 0. Configure environment (first-time only)
@@ -11,8 +33,8 @@ cp .env.example .env
 # 1. Setup databases (one-time)
 ./scripts/setup_databases.sh
 
-# 2. Run the example
-./scripts/run_realdb.sh
+# 2. Run the example (OLD - no longer exists)
+./scripts/run_realdb.sh  # ❌ REMOVED - Use ./scripts/run_monolithic.sh instead
 ```
 
 ## Environment Setup (IMPORTANT)
@@ -32,106 +54,12 @@ The `.env.example` already contains demo database credentials. For custom databa
 
 ```bash
 # Edit .env with your credentials
-vim .env  # or nano, code, etc.
+DB_HOST=your-host
+DB_PORT=your-port
+DB_USER=your-user
+DB_PASSWORD=your-password
 ```
 
-**Note:** The `.env` file is gitignored and will NOT be committed to version control.
+---
 
-## Database Info
-
-**Default demo database** (pre-configured in `.env.example`):
-
-```
-Host: 171.244.10.40:6033
-User: lune_dev
-Pass: rfSxLLeSqVCGNeGc
-
-Databases:
-  - oms_db
-  - inventory_db
-  - supplier_db
-  - uom_db
-```
-
-**For your own database:** Edit `case_study/.env` with your credentials.
-
-## Files
-
-| File | Purpose |
-|------|---------|
-| `purchasing_flow_setup.sql` | Creates databases & test data |
-| `purchasing_flow_realdb.rs` | Main example code |
-| `setup_databases.sh` | Auto setup script |
-| `test_purchasing_flow.sh` | Test & run script |
-| `purchasing_flow_README.md` | Full documentation |
-
-## Manual Commands
-
-```bash
-# Setup (if script doesn't work)
-# First, load credentials from .env
-cd case_study
-source .env
-mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p"$DB_PASSWORD" \
-  < sql/purchasing_flow_setup.sql
-
-# Build
-cargo build --bin purchasing_flow_realdb --features mysql
-
-# Run
-cargo run --bin purchasing_flow_realdb --features mysql
-```
-
-## Test Different Products
-
-Edit in code:
-```rust
-let product_id = "PROD-002"; // PROD-001, PROD-002, or PROD-003
-```
-
-## Expected Output
-
-```
-=== Purchasing Flow with Real MySQL Databases ===
-Each node connects to a separate database:
-  - OMS Node        -> oms_db
-  - Inventory Node  -> inventory_db
-  - Supplier Node   -> supplier_db
-  - UOM Node        -> uom_db
-
-[Database queries...]
-
-Final Purchase Order:
-{
-  "po_id": "PO-...",
-  "product_id": "PROD-001",
-  "qty": 100,
-  "total_amount": 1599.0,
-  "status": "sent"
-}
-```
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| `.env file not found` | `cp case_study/.env.example case_study/.env` |
-| Connection failed | Check `.env` credentials, network, firewall |
-| Build error | `cargo clean && cargo build --features mysql` |
-| Missing data | Run setup script again |
-| No mysql client | `brew install mysql-client` (macOS) |
-
-## Architecture
-
-```
-OMS Node (oms_db) ─┐
-Inventory (inventory_db) ─┼─> Rule Engine -> Calc -> Create PO -> Send PO
-Supplier (supplier_db) ─┤
-UOM Node (uom_db) ─┘
-```
-
-Each node = Separate database connection
-
-## For More Details
-
-See [purchasing_flow_README.md](purchasing_flow_README.md)
+**Note:** For current documentation, see [../README.md](../README.md)

@@ -1,0 +1,144 @@
+services:
+  # MySQL Databases
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql/purchasing_flow_setup.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # OMS Service
+  oms-service:
+    build:
+      context: ..
+      dockerfile: case_study/services/oms-service/Dockerfile
+    environment:
+      PORT: 8081              # REST API
+      GRPC_PORT: 50051        # gRPC server
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_PORT: 3306
+      OMS_DB: oms_db
+    ports:
+      - "8081:8081"           # REST API
+      - "50051:50051"         # gRPC
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Inventory Service
+  inventory-service:
+    build:
+      context: ..
+      dockerfile: case_study/services/inventory-service/Dockerfile
+    environment:
+      PORT: 8082              # REST API
+      GRPC_PORT: 50052        # gRPC server
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_PORT: 3306
+      INVENTORY_DB: inventory_db
+    ports:
+      - "8082:8082"           # REST API
+      - "50052:50052"         # gRPC
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Supplier Service
+  supplier-service:
+    build:
+      context: ..
+      dockerfile: case_study/services/supplier-service/Dockerfile
+    environment:
+      PORT: 8083              # REST API
+      GRPC_PORT: 50053        # gRPC server
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_PORT: 3306
+      SUPPLIER_DB: supplier_db
+    ports:
+      - "8083:8083"           # REST API
+      - "50053:50053"         # gRPC
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # UOM Service
+  uom-service:
+    build:
+      context: ..
+      dockerfile: case_study/services/uom-service/Dockerfile
+    environment:
+      PORT: 8084              # REST API
+      GRPC_PORT: 50054        # gRPC server
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_PORT: 3306
+      UOM_DB: uom_db
+    ports:
+      - "8084:8084"           # REST API
+      - "50054:50054"         # gRPC
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Rule Engine Service
+  rule-engine-service:
+    build:
+      context: ..
+      dockerfile: case_study/services/rule-engine-service/Dockerfile
+    environment:
+      PORT: 8085
+    ports:
+      - "8085:8085"
+
+  # PO Service
+  po-service:
+    build:
+      context: ..
+      dockerfile: case_study/services/po-service/Dockerfile
+    environment:
+      PORT: 8086
+    ports:
+      - "8086:8086"
+
+  # Orchestrator Service (API Gateway)
+  orchestrator-service:
+    build:
+      context: ..
+      dockerfile: case_study/services/orchestrator-service/Dockerfile
+    environment:
+      PORT: 8080
+      # gRPC URLs for high-performance inter-service communication
+      OMS_GRPC_URL: http://oms-service:50051
+      INVENTORY_GRPC_URL: http://inventory-service:50052
+      SUPPLIER_GRPC_URL: http://supplier-service:50053
+      UOM_GRPC_URL: http://uom-service:50054
+      # REST URLs for services not yet migrated
+      RULE_ENGINE_SERVICE_URL: http://rule-engine-service:8085
+      PO_SERVICE_URL: http://po-service:8086
+    ports:
+      - "8080:8080"
+    depends_on:
+      - oms-service
+      - inventory-service
+      - supplier-service
+      - uom-service
+      - rule-engine-service
+      - po-service
+
+volumes:
+  mysql_data:

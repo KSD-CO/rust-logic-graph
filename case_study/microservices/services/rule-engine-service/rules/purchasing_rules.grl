@@ -1,0 +1,46 @@
+// Purchasing Flow Business Rules
+// Pure GRL for rust-rule-engine v0.14.0
+// NOTE: All calculations done in Rust, GRL only does conditional checks
+
+// Rule 1: Check for approval requirement (high value orders)
+rule "Flag high-value orders for approval" salience 100 {
+    when
+        total_amount > 10000
+    then
+        requires_approval = true;
+        approval_status = "pending";
+}
+
+// Rule 2: Auto-approve low value orders
+rule "Auto-approve orders under $10000" salience 90 {
+    when
+        total_amount <= 10000 && total_amount > 0
+    then
+        requires_approval = false;
+        approval_status = "auto_approved";
+}
+
+// Rule 3: Validate supplier is active
+rule "Ensure supplier is active" salience 110 {
+    when
+        is_active == false
+    then
+        order_qty = 0.0;
+        total_amount = 0.0;
+        supplier_error = "Supplier is not active";
+}
+
+// Rule 4: Set need_reorder flag
+rule "Set reorder flag" salience 95 {
+    when
+        shortage > 0
+    then
+        need_reorder = true;
+}
+
+rule "No reorder needed" salience 95 {
+    when
+        shortage <= 0
+    then
+        need_reorder = false;
+}

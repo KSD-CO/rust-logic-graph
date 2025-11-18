@@ -1,29 +1,35 @@
-# Rust build artifacts
+# Rust
 target/
-Cargo.lock
-
-# Debug files
+**/*.rs.bk
 *.pdb
 
-# Binaries
-*.exe
-*.so
-*.dylib
-*.dll
-
-# IDE files
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.vs/
-
-# OS files
 .DS_Store
-Thumbs.db
-*.DS_Store
 
 # Environment files
 .env
 .env.local
+.env.*.local
+
+# Docker
+.dockerignore
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+dist/
+build/
+
+# Service-specific
+services/*/target/
+shared/*/target/
+
+# Kubernetes secrets (don't commit real secrets!)
+k8s/secrets/*.yaml.real
