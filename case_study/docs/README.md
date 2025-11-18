@@ -1,18 +1,11 @@
 # Historical Documentation (v1.0)
 
-> ⚠️ **This directory contains outdated documentation from the original monolithic structure.**
->
-> **For current documentation, see [../README.md](../README.md)**
-
----
-
 ## 📚 Files in This Directory
 
 These files document the **historical versions** and may reference old file paths:
 
 | File | Purpose | Status |
 |------|---------|--------|
-| [QUICKSTART.md](QUICKSTART.md) | Old quick start guide | ⚠️ Outdated |
 | [CASE_STUDY.md](CASE_STUDY.md) | Original technical analysis | ⚠️ Historical |
 | [purchasing_flow_README.md](purchasing_flow_README.md) | Technical reference | ⚠️ Historical |
 | [COMPARISON.md](COMPARISON.md) | Mock vs Real DB comparison | ⚠️ Historical |
