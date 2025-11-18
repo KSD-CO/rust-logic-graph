@@ -1,18 +1,5 @@
 # Purchasing Flow Case Study - Complete Index
 
-> ⚠️ **OUTDATED DOCUMENTATION - v1.0**
->
-> This directory contains historical documentation from the original monolithic version.
->
-> **For current documentation, see:**
-> - **[Main README](../README.md)** - Project overview
-> - **[GRPC.md](../GRPC.md)** - gRPC implementation
-> - **[MICROSERVICES_DEPLOYMENT.md](../MICROSERVICES_DEPLOYMENT.md)** - Kubernetes deployment
->
-> **Current structure:** Dual architecture (Monolithic + Microservices) with gRPC support
-
----
-
 ## ⚠️ Historical Content Below (For Reference Only)
 
 ## 📚 Overview

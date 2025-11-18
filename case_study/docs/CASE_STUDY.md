@@ -1,23 +1,6 @@
 # Case Study: Distributed Purchasing Flow System
 ## Real-World Production Pattern Using Rust Logic Graph
 
-> ⚠️ **OUTDATED DOCUMENTATION - v1.0**
->
-> This case study references the old monolithic structure and file paths that no longer exist.
->
-> **For current documentation:**
-> - **[Main README](../README.md)** - Current project overview
-> - **[GRPC.md](../GRPC.md)** - gRPC implementation (v3.0)
-> - **[MICROSERVICES_DEPLOYMENT.md](../MICROSERVICES_DEPLOYMENT.md)** - Kubernetes deployment
->
-> **Current structure:** Dual architecture (Monolithic + Microservices) with gRPC support (5x performance improvement)
-
----
-
-## ⚠️ Historical Content Below (For Reference Only)
-
-## Executive Summary
-
 **Challenge**: Build a scalable purchasing automation system that integrates with multiple external systems (OMS, Inventory, Supplier Management, UOM) to automatically calculate order quantities and generate purchase orders.
 
 **Solution**: Implemented using `rust-logic-graph` framework with distributed database architecture, demonstrating real-world production patterns including:
@@ -124,8 +107,8 @@ Manual processing is:
 >     ├─ gRPC (50052) ──► Inventory Service
 >     ├─ gRPC (50053) ──► Supplier Service
 >     ├─ gRPC (50054) ──► UOM Service
->     ├─ REST (8085)  ───► Rule Engine (Rete)
->     └─ REST (8086)  ───► PO Service
+>     ├─ REST (50055)  ───► Rule Engine (Rete)
+>     └─ REST (50056)  ───► PO Service
 > ```
 > **Key Improvement:** gRPC provides 5x performance vs REST for inter-service calls
 
