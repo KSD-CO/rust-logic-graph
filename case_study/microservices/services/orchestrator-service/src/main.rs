@@ -191,6 +191,12 @@ async fn execute_purchasing_flow(
 
     let rule_result_grpc = grpc_response.into_inner();
 
+    // Extract flags we need before moving data
+    let should_create_po = rule_result_grpc.should_create_po;
+    let should_send_po = rule_result_grpc.should_send_po;
+    let po_status = rule_result_grpc.po_status.clone();
+    let send_method = rule_result_grpc.send_method.clone();
+
     // Convert gRPC response to REST model for compatibility
     let rule_result = RuleEngineResponse {
         need_reorder: rule_result_grpc.need_reorder,
@@ -201,21 +207,43 @@ async fn execute_purchasing_flow(
         approval_status: rule_result_grpc.approval_status,
     };
 
-    tracing::info!("Step 2: Rules evaluated - order_qty: {}, total: ${:.2}",
-                   rule_result.order_qty, rule_result.total_amount);
+    tracing::info!("Step 2: Rules evaluated - need_reorder: {}, order_qty: {}, total: ${:.2}, should_create_po: {}, should_send_po: {}",
+                   rule_result.need_reorder, rule_result.order_qty, rule_result.total_amount,
+                   should_create_po, should_send_po);
 
-    // Step 3: Create Purchase Order (if needed)
-    if !rule_result.need_reorder || rule_result.order_qty <= 0 {
-        tracing::info!("No reorder needed. Workflow complete.");
-        return Ok(Json(PurchasingFlowResponse {
+    // Step 3: Execute workflow based on rules decisions (orchestrator executes, rules decide)
+    match execute_workflow_actions(&state, &req, &rule_result, should_create_po, should_send_po, &po_status, &send_method, &supplier_data).await {
+        Ok(response) => Ok(Json(response)),
+        Err(status) => Err(status),
+    }
+}
+
+/// Execute workflow actions based on rule engine decisions
+/// Orchestrator is a pure executor - rules engine makes all business decisions
+async fn execute_workflow_actions(
+    state: &AppState,
+    req: &PurchasingFlowRequest,
+    rule_result: &RuleEngineResponse,
+    should_create_po: bool,
+    should_send_po: bool,
+    po_status: &str,
+    send_method: &str,
+    supplier_data: &SupplierData,
+) -> Result<PurchasingFlowResponse, StatusCode> {
+    
+    // Action 1: Check if PO creation is needed (decided by rules via should_create_po flag)
+    if !should_create_po {
+        tracing::info!("Workflow: No PO creation (rules decided: should_create_po=false)");
+        return Ok(PurchasingFlowResponse {
             success: true,
             po: None,
-            calculation: Some(rule_result),
-            message: "No reorder needed".to_string(),
-        }));
+            calculation: Some(rule_result.clone()),
+            message: "No PO creation needed based on business rules".to_string(),
+        });
     }
 
-    tracing::info!("Step 3: Creating Purchase Order via gRPC...");
+    // Action 2: Create Purchase Order (rules approved via should_create_po=true)
+    tracing::info!("Workflow: Creating PO (rules decided: should_create_po=true, po_status={})", po_status);
 
     let mut po_client = PoServiceClient::connect(state.po_grpc_url.clone())
         .await
@@ -245,53 +273,71 @@ async fn execute_purchasing_flow(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    tracing::info!("Step 3: PO created - {}", created_po_grpc.po_id);
+    tracing::info!("Workflow: PO created - {} (status: {})", created_po_grpc.po_id, po_status);
 
-    // Step 4: Send Purchase Order
-    tracing::info!("Step 4: Sending Purchase Order via gRPC...");
+    // Action 3: Send Purchase Order (if rules decided should_send_po=true)
+    let final_po = if should_send_po {
+        tracing::info!("Workflow: Sending PO (rules decided: should_send_po=true, method={})", send_method);
 
-    let send_po_request = po::SendRequest {
-        po_id: created_po_grpc.po_id.clone(),
-    };
+        let send_po_request = po::SendRequest {
+            po_id: created_po_grpc.po_id.clone(),
+        };
 
-    let sent_po_grpc_response = po_client
-        .send(Request::new(send_po_request))
-        .await
-        .map_err(|e| {
-            tracing::error!("gRPC call to send PO failed: {}", e);
+        let sent_po_grpc_response = po_client
+            .send(Request::new(send_po_request))
+            .await
+            .map_err(|e| {
+                tracing::error!("gRPC call to send PO failed: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+        let sent_po_grpc = sent_po_grpc_response.into_inner().po.ok_or_else(|| {
+            tracing::error!("PO not found in send response");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    let sent_po_grpc = sent_po_grpc_response.into_inner().po.ok_or_else(|| {
-        tracing::error!("PO not found in send response");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+        tracing::info!("Workflow: PO sent successfully - {}", sent_po_grpc.po_id);
 
-    tracing::info!("Step 4: PO sent successfully - {}", sent_po_grpc.po_id);
+        // Convert gRPC PO to REST model for response
+        PurchaseOrder {
+            po_id: sent_po_grpc.po_id,
+            product_id: sent_po_grpc.product_id,
+            supplier_id: sent_po_grpc.supplier_id,
+            qty: sent_po_grpc.qty,
+            unit_price: sent_po_grpc.unit_price,
+            total_amount: sent_po_grpc.total_amount,
+            status: sent_po_grpc.status,
+            created_at: sent_po_grpc.created_at,
+            sent_at: if sent_po_grpc.sent_at.is_empty() {
+                None
+            } else {
+                Some(sent_po_grpc.sent_at)
+            },
+        }
+    } else {
+        tracing::info!("Workflow: PO created but not sent (rules decided: should_send_po=false, requires_approval={})",
+            rule_result.requires_approval);
 
-    // Convert gRPC PO to REST model for response
-    let final_po = PurchaseOrder {
-        po_id: sent_po_grpc.po_id,
-        product_id: sent_po_grpc.product_id,
-        supplier_id: sent_po_grpc.supplier_id,
-        qty: sent_po_grpc.qty,
-        unit_price: sent_po_grpc.unit_price,
-        total_amount: sent_po_grpc.total_amount,
-        status: sent_po_grpc.status,
-        created_at: sent_po_grpc.created_at,
-        sent_at: if sent_po_grpc.sent_at.is_empty() {
-            None
-        } else {
-            Some(sent_po_grpc.sent_at)
-        },
+        // Convert created PO (not sent)
+        PurchaseOrder {
+            po_id: created_po_grpc.po_id,
+            product_id: created_po_grpc.product_id,
+            supplier_id: created_po_grpc.supplier_id,
+            qty: created_po_grpc.qty,
+            unit_price: created_po_grpc.unit_price,
+            total_amount: created_po_grpc.total_amount,
+            status: created_po_grpc.status,
+            created_at: created_po_grpc.created_at,
+            sent_at: None,
+        }
     };
 
-    Ok(Json(PurchasingFlowResponse {
+    Ok(PurchasingFlowResponse {
         success: true,
         po: Some(final_po),
-        calculation: Some(rule_result),
-        message: "Purchasing flow completed successfully".to_string(),
-    }))
+        calculation: Some(rule_result.clone()),
+        message: "Purchasing flow completed - orchestrator executed rules decisions".to_string(),
+    })
 }
 
 async fn fetch_oms_data(state: &AppState, product_id: &str) -> anyhow::Result<OmsHistoryData> {

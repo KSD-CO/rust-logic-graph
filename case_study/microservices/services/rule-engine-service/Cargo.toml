@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 purchasing-models = { path = "../../shared/models" }
 rust-logic-graph = { path = "../../../../" }
+rust-rule-engine = "0.17"
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
@@ -19,6 +20,7 @@ anyhow = "1"
 parking_lot = "0.12"
 tonic = "0.11"
 prost = "0.12"
+chrono = "0.4"
 
 [build-dependencies]
 tonic-build = "0.11"

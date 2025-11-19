@@ -156,53 +156,25 @@ impl RuleEngine {
             Ok(_) => {
                 debug!("Rules executed successfully");
 
-                // Convert facts back to JSON
-                let mut result = HashMap::new();
-
                 // Helper to convert Value to JsonValue
                 let convert_value = |val: &Value| -> Option<JsonValue> {
                     match val {
                         Value::Boolean(b) => Some(JsonValue::Bool(*b)),
                         Value::Number(n) => Some(JsonValue::from(*n)),
                         Value::String(s) => Some(JsonValue::String(s.clone())),
+                        Value::Integer(i) => Some(JsonValue::from(*i)),
                         _ => None,
                     }
                 };
 
-                // Get original context values
-                for key in context.keys() {
-                    if let Some(rr_value) = facts.get(key) {
-                        if let Some(value) = convert_value(&rr_value) {
-                            result.insert(key.clone(), value);
-                        }
-                    }
-                }
-
-                // Get commonly set output variables (variables that rules typically create)
-                // This is a convenience to catch common outputs without iterating all facts
-                for key in &[
-                    "need_reorder",
-                    "shortage",
-                    "order_qty",
-                    "total_amount",
-                    "demand_lead_time",
-                    "safety_multiplier",
-                    "requires_approval",
-                    "approval_status",
-                    "approval_reason",
-                    "supplier_error",
-                    "priority",
-                    "discount",
-                    "eligible",
-                    "result",  // For tests
-                    "message", // For tests
-                    "high_rule_fired", // For tests
-                    "medium_rule_fired", // For tests
-                ] {
-                    if let Some(rr_value) = facts.get(key) {
-                        if let Some(value) = convert_value(&rr_value) {
-                            result.insert(key.to_string(), value);
-                        }
+                // Get ALL facts from the engine after rule execution
+                // This captures all values set by rules (including Expression Evaluation results)
+                let all_facts = facts.get_all_facts();
+                
+                let mut result = HashMap::new();
+                for (key, value) in all_facts {
+                    if let Some(json_value) = convert_value(&value) {
+                        result.insert(key, json_value);
                     }
                 }
 

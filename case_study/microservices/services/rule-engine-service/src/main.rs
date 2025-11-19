@@ -15,6 +15,8 @@ use parking_lot::Mutex;
 use tower_http::trace::TraceLayer;
 use tonic::{transport::Server, Request, Response, Status};
 
+mod action_executor;
+
 // Include generated gRPC code
 pub mod rule_engine {
     tonic::include_proto!("rule_engine");
@@ -46,113 +48,110 @@ impl GrpcRuleEngineService for RuleEngineGrpcService {
         tracing::info!("gRPC: Evaluating rules for product: {}",
             req.oms_data.as_ref().map(|d| d.product_id.as_str()).unwrap_or("unknown"));
 
-        // Convert gRPC request to context
+        // Convert gRPC request to context (HashMap with JSON values)
         let mut context = HashMap::new();
 
-        // Extract data
+        // Extract raw data
         let avg_daily_demand = req.oms_data.as_ref().map(|d| d.avg_daily_demand).unwrap_or(0.0);
-        let trend = req.oms_data.as_ref().map(|d| d.trend.as_str()).unwrap_or("stable");
         let available_qty = req.inventory_data.as_ref().map(|d| d.available_qty).unwrap_or(0) as f64;
         let moq = req.supplier_data.as_ref().map(|d| d.moq).unwrap_or(0) as f64;
         let lead_time_days = req.supplier_data.as_ref().map(|d| d.lead_time_days).unwrap_or(0) as f64;
         let unit_price = req.supplier_data.as_ref().map(|d| d.unit_price).unwrap_or(0.0);
         let is_active = req.supplier_data.as_ref().map(|d| d.is_active).unwrap_or(false);
 
-        // PRE-CALCULATE ALL values (GRL doesn't support arithmetic operations!)
-        let demand_lead_time = avg_daily_demand * lead_time_days;
-        let shortage = if available_qty < demand_lead_time {
-            demand_lead_time - available_qty
-        } else {
-            0.0
-        };
+        // Calculate required_qty for GRL
+        let required_qty = avg_daily_demand * lead_time_days;
 
-        // Apply trend adjustments
-        let adjusted_shortage = if shortage > 0.0 {
-            match trend {
-                "increasing" => shortage * 1.2,
-                "decreasing" => shortage * 0.9,
-                _ => shortage, // stable or unknown
-            }
-        } else {
-            0.0
-        };
-
-        // Calculate order qty
-        let order_qty_calc = if adjusted_shortage > 0.0 {
-            if adjusted_shortage < moq {
-                moq
-            } else {
-                adjusted_shortage
-            }
-        } else {
-            0.0
-        };
-
-        // Calculate total
-        let total_amount_calc = order_qty_calc * unit_price;
-
+        // Add all input fields to context
         if let Some(oms) = &req.oms_data {
             context.insert("product_id".to_string(), json!(oms.product_id));
             context.insert("avg_daily_demand".to_string(), json!(avg_daily_demand));
-            context.insert("trend".to_string(), json!(trend));
+            context.insert("trend".to_string(), json!(oms.trend));
         }
 
-        if let Some(_inv) = &req.inventory_data {
-            context.insert("available_qty".to_string(), json!(available_qty));
-        }
+        context.insert("available_qty".to_string(), json!(available_qty));
+        context.insert("moq".to_string(), json!(moq));
+        context.insert("lead_time_days".to_string(), json!(lead_time_days));
+        context.insert("unit_price".to_string(), json!(unit_price));
+        context.insert("is_active".to_string(), json!(is_active));
+        context.insert("required_qty".to_string(), json!(required_qty));
 
-        if let Some(_sup) = &req.supplier_data {
-            context.insert("moq".to_string(), json!(moq));
-            context.insert("lead_time_days".to_string(), json!(lead_time_days));
-            context.insert("unit_price".to_string(), json!(unit_price));
-            context.insert("is_active".to_string(), json!(is_active));
-        }
+        // Initialize output fields (required for rules to work properly)
+    context.insert("shortage".to_string(), json!(0.0));
+    context.insert("order_qty".to_string(), json!(0.0));
+    context.insert("total_amount".to_string(), json!(0.0));
+    context.insert("need_reorder".to_string(), json!(false));
+    context.insert("requires_approval".to_string(), json!(false));
+    context.insert("approval_status".to_string(), json!(""));
+    context.insert("discount_amount".to_string(), json!(0.0));
+    context.insert("final_amount".to_string(), json!(0.0));
+    context.insert("tax_amount".to_string(), json!(0.0));
+    context.insert("grand_total".to_string(), json!(0.0));
+    context.insert("should_create_po".to_string(), json!(false));
+    context.insert("should_send_po".to_string(), json!(false));
+    context.insert("po_status".to_string(), json!(""));
+    context.insert("send_method".to_string(), json!(""));
 
-        // Add ALL pre-calculated values
-        context.insert("demand_lead_time".to_string(), json!(demand_lead_time));
-        context.insert("shortage".to_string(), json!(shortage));
-        context.insert("adjusted_shortage".to_string(), json!(adjusted_shortage));
-        context.insert("order_qty".to_string(), json!(order_qty_calc));
-        context.insert("total_amount".to_string(), json!(total_amount_calc));
+    tracing::info!("Input to GRL v0.17: required_qty={}, available_qty={}, moq={}, unit_price={}",
+            required_qty, available_qty, moq, unit_price);
 
-        tracing::info!("Pre-calc: shortage={}, adj_shortage={}, order_qty={}, total={}",
-            shortage, adjusted_shortage, order_qty_calc, total_amount_calc);
-
-        // Execute rules
+        // Execute rules with action handlers (wrapper handles Facts conversion)
         let mut engine = self.engine.lock();
-        let result_context = engine.evaluate(&context)
+        let result_json = engine.evaluate(&context)
             .map_err(|e| Status::internal(format!("Rule evaluation failed: {}", e)))?;
 
-        tracing::info!("Full result context: {:?}", result_context);
+        tracing::info!("GRL v0.17 evaluation results: {:?}", result_json);
 
-        // Extract results from rule engine (GRL handles all logic now)
-        let need_reorder = result_context.get("need_reorder")
+        // Extract results from JSON response
+        let need_reorder = result_json.get("need_reorder")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-        let shortage = result_context.get("shortage")
+        let shortage = result_json.get("shortage")
             .and_then(|v| v.as_f64())
             .unwrap_or(0.0);
 
-        let order_qty = result_context.get("order_qty")
+        let order_qty = result_json.get("order_qty")
             .and_then(|v| v.as_f64())
             .unwrap_or(0.0).ceil() as i64;
 
-        let total_amount = result_context.get("total_amount")
+        let total_amount = result_json.get("total_amount")
             .and_then(|v| v.as_f64())
             .unwrap_or(0.0);
 
-        let requires_approval = result_context.get("requires_approval")
+        let requires_approval = result_json.get("requires_approval")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-        let approval_status = result_context.get("approval_status")
+        let approval_status = result_json.get("approval_status")
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string();
 
-        tracing::info!("gRPC: Rule evaluation completed: need_reorder={}, shortage={}, order_qty={}, total={}, approval={}",
-            need_reorder, shortage, order_qty, total_amount, requires_approval);
+        let grand_total = result_json.get("grand_total")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+
+        let should_create_po = result_json.get("should_create_po")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        let should_send_po = result_json.get("should_send_po")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        let po_status = result_json.get("po_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        let send_method = result_json.get("send_method")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        tracing::info!("gRPC: ✅ shortage={:.0}, order_qty={}, total=${:.2}, approval={}, grand_total=${:.2}, should_create_po={}, should_send_po={}",
+            shortage, order_qty, total_amount, requires_approval, grand_total, should_create_po, should_send_po);
 
         Ok(Response::new(EvaluateResponse {
             need_reorder,
@@ -161,6 +160,11 @@ impl GrpcRuleEngineService for RuleEngineGrpcService {
             total_amount,
             requires_approval,
             approval_status,
+            should_create_po,
+            should_send_po,
+            po_status,
+            send_method,
+            grand_total,
         }))
     }
 
@@ -180,7 +184,7 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
     dotenvy::dotenv().ok();
 
-    tracing::info!("Initializing Rule Engine Service with GRL...");
+    tracing::info!("Initializing Rule Engine Service with GRL v0.17 + Action Handlers...");
 
     // Create RuleEngine with GRL rules
     let mut engine = RuleEngine::new();
@@ -208,7 +212,10 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    tracing::info!("✓ Rule Engine initialized successfully");
+    // 🎯 Custom action handlers disabled - orchestrator handles execution
+    // action_executor::register_action_handlers(engine.inner_mut());
+
+    tracing::info!("✓ Rule Engine initialized successfully (calculation mode)");
 
     let engine_arc = Arc::new(Mutex::new(engine));
 
@@ -270,54 +277,85 @@ async fn evaluate_rules(
 ) -> Result<Json<RuleEngineResponse>, StatusCode> {
     tracing::info!("HTTP: Evaluating rules for product: {}", request.oms_data.product_id);
 
-    // Convert request data to context (HashMap<String, serde_json::Value>)
+    // Convert request data to context (HashMap with JSON values)
     let mut context = HashMap::new();
 
-    // Add all fields to context from nested structures
-    context.insert("product_id".to_string(), json!(request.oms_data.product_id));
-    context.insert("avg_daily_demand".to_string(), json!(request.oms_data.avg_daily_demand));
-    context.insert("trend".to_string(), json!(request.oms_data.trend));
-    context.insert("available_qty".to_string(), json!(request.inventory_data.available_qty));
-    context.insert("moq".to_string(), json!(request.supplier_data.moq));
-    context.insert("lead_time_days".to_string(), json!(request.supplier_data.lead_time_days));
-    context.insert("unit_price".to_string(), json!(request.supplier_data.unit_price));
-    context.insert("is_active".to_string(), json!(request.supplier_data.is_active));
+    // Extract values
+    let avg_daily_demand = request.oms_data.avg_daily_demand;
+    let available_qty = request.inventory_data.available_qty as f64;
+    let lead_time_days = request.supplier_data.lead_time_days as f64;
+    let unit_price = request.supplier_data.unit_price;
+    let moq = request.supplier_data.moq as f64;
+    let is_active = request.supplier_data.is_active;
 
-    // Execute rules
+    // Calculate required_qty
+    let required_qty = avg_daily_demand * lead_time_days;
+
+    // Add all input fields to context
+    context.insert("product_id".to_string(), json!(request.oms_data.product_id));
+    context.insert("avg_daily_demand".to_string(), json!(avg_daily_demand));
+    context.insert("trend".to_string(), json!(request.oms_data.trend));
+    context.insert("available_qty".to_string(), json!(available_qty));
+    context.insert("moq".to_string(), json!(moq));
+    context.insert("lead_time_days".to_string(), json!(lead_time_days));
+    context.insert("unit_price".to_string(), json!(unit_price));
+    context.insert("is_active".to_string(), json!(is_active));
+    context.insert("required_qty".to_string(), json!(required_qty));
+
+    // Initialize output fields (required for rules to work properly)
+    context.insert("shortage".to_string(), json!(0.0));
+    context.insert("order_qty".to_string(), json!(0.0));
+    context.insert("total_amount".to_string(), json!(0.0));
+    context.insert("need_reorder".to_string(), json!(false));
+    context.insert("requires_approval".to_string(), json!(false));
+    context.insert("approval_status".to_string(), json!(""));
+    context.insert("discount_amount".to_string(), json!(0.0));
+    context.insert("final_amount".to_string(), json!(0.0));
+    context.insert("tax_amount".to_string(), json!(0.0));
+    context.insert("grand_total".to_string(), json!(0.0));
+
+    tracing::info!("Input to GRL v0.17: required_qty={}, available_qty={}, moq={}, unit_price={}, is_active={}", 
+        required_qty, available_qty, moq, unit_price, is_active);
+
+    // Execute rules with action handlers (wrapper handles Facts conversion)
     let mut engine = state.engine.lock();
-    let result_context = match engine.evaluate(&context) {
-        Ok(ctx) => ctx,
+    let result_json = match engine.evaluate(&context) {
+        Ok(json) => json,
         Err(e) => {
             tracing::error!("Rule evaluation failed: {}", e);
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
 
-    // Extract results from context
-    let need_reorder = result_context.get("need_reorder")
+    // Extract results from JSON response
+    let need_reorder = result_json.get("need_reorder")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let shortage = result_context.get("shortage")
+    let shortage = result_json.get("shortage")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.0);
 
-    let order_qty = result_context.get("order_qty")
+    let order_qty = result_json.get("order_qty")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.0) as i64;
 
-    let total_amount = result_context.get("total_amount")
+    let total_amount = result_json.get("total_amount")
         .and_then(|v| v.as_f64())
         .unwrap_or(0.0);
 
-    let requires_approval = result_context.get("requires_approval")
+    let requires_approval = result_json.get("requires_approval")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let approval_status = result_context.get("approval_status")
+    let approval_status = result_json.get("approval_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unknown")
         .to_string();
+
+    let grand_total = result_json.get("grand_total")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
 
     let response = RuleEngineResponse {
         need_reorder,
@@ -328,8 +366,8 @@ async fn evaluate_rules(
         approval_status,
     };
 
-    tracing::info!("HTTP: Rule evaluation completed: need_reorder={}, order_qty={}",
-        response.need_reorder, response.order_qty);
+    tracing::info!("HTTP: ✅ shortage={:.0}, order_qty={}, total=${:.2}, grand_total=${:.2}",
+        response.shortage, response.order_qty, response.total_amount, grand_total);
 
     Ok(Json(response))
 }

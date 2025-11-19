@@ -6,6 +6,9 @@ authors = ["James Vu <you@example.com>"]
 description = "Monolithic purchasing flow with Clean Architecture using rust-logic-graph"
 license = "MIT"
 
+# Prevent workspace inheritance from parent directories
+[workspace]
+
 [[bin]]
 name = "purchasing_flow"
 path = "src/main.rs"
@@ -15,7 +18,7 @@ path = "src/main.rs"
 rust-logic-graph = { path = "../.." }
 
 # Rule engine
-rust-rule-engine = "0.14"
+rust-rule-engine = "0.17"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
@@ -30,7 +33,17 @@ anyhow = "1"
 thiserror = "1"
 
 # Database
-sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "mysql"], optional = true }
+sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "mysql"] }
+
+# HTTP server
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+hyper = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Environment variables
 dotenvy = "0.15"
@@ -42,9 +55,8 @@ chrono = "0.4"
 parking_lot = "0.12"
 
 [features]
-default = []
-mysql = ["sqlx", "rust-logic-graph/mysql"]
-all = ["mysql"]
+default = ["mysql"]
+mysql = []
 
 [profile.release]
 opt-level = 3

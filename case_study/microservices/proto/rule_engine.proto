@@ -47,6 +47,13 @@ message EvaluateResponse {
   double total_amount = 4;
   bool requires_approval = 5;
   string approval_status = 6;
+  
+  // Workflow execution flags
+  bool should_create_po = 7;
+  bool should_send_po = 8;
+  string po_status = 9;
+  string send_method = 10;
+  double grand_total = 11;
 }
 
 message HealthRequest {}

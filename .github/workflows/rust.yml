@@ -18,10 +18,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build
+    - name: Build library
       run: cargo build --verbose
-    - name: Run tests
+    - name: Run library tests
       run: cargo test --verbose
+    - name: Build examples
+      run: cargo build --examples --verbose
+    - name: Build monolithic case study
+      run: cd case_study/monolithic && cargo build --verbose
+      continue-on-error: true
 
   publish:
     name: Publish to crates.io

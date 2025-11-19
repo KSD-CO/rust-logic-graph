@@ -13,7 +13,7 @@ impl UomService {
 
     pub async fn get_uom_conversion(&self, product_id: &str) -> Result<UomConversionData> {
         let row = sqlx::query(
-            "SELECT product_id, base_unit, case_qty, pallet_qty FROM uom_conversion WHERE product_id = ?"
+            "SELECT product_id, from_uom, to_uom, CAST(conversion_factor AS DOUBLE) as conversion_factor FROM uom_conversion WHERE product_id = ?"
         )
         .bind(product_id)
         .fetch_one(&self.pool)
@@ -21,9 +21,9 @@ impl UomService {
 
         Ok(UomConversionData {
             product_id: row.get("product_id"),
-            base_unit: row.get("base_unit"),
-            case_qty: row.get("case_qty"),
-            pallet_qty: row.get("pallet_qty"),
+            from_uom: row.get("from_uom"),
+            to_uom: row.get("to_uom"),
+            conversion_factor: row.get("conversion_factor"),
         })
     }
 }

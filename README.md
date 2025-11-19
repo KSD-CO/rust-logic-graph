@@ -7,18 +7,6 @@
 
 A high-performance **reasoning graph framework** for Rust with **GRL (Grule Rule Language)** support. Build complex workflows with conditional execution, topological ordering, and async processing.
 
-```rust
-use rust_logic_graph::{Graph, Orchestrator, GraphIO};
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let def = GraphIO::load_from_file("workflow.json")?;
-    let mut graph = Graph::new(def);
-    Orchestrator::execute_graph(&mut graph).await?;
-    Ok(())
-}
-```
-
 ---
 
 ## ✨ Key Features
@@ -46,13 +34,13 @@ async fn main() -> anyhow::Result<()> {
 
 ```toml
 [dependencies]
-rust-logic-graph = "0.7.0"
+rust-logic-graph = "0.8.0"
 
 # With specific integrations
-rust-logic-graph = { version = "0.6.0", features = ["postgres", "openai"] }
+rust-logic-graph = { version = "0.8.0", features = ["postgres", "openai"] }
 
 # With all integrations
-rust-logic-graph = { version = "0.6.0", features = ["all-integrations"] }
+rust-logic-graph = { version = "0.8.0", features = ["all-integrations"] }
 ```
 
 ### Simple Example
@@ -75,6 +63,11 @@ engine.add_grl_rule(grl)?;
 
 ### Web Graph Editor (NEW in v0.8.0)
 
+**🌐 Online Editor**: [https://logic-graph-editor.amalthea.cloud/](https://logic-graph-editor.amalthea.cloud/)
+
+Try the visual graph editor online - no installation required! Create workflows, define rules, and visualize your logic graphs with drag-and-drop.
+
+**Local Development:**
 ```bash
 # Navigate to graph editor
 cd graph-editor
@@ -126,10 +119,120 @@ cargo run --example grl_graph_flow
 
 ---
 
+## 🏢 Real-World Case Study: Purchasing Flow System
+
+See a complete production implementation in **[case_study/](case_study/)** - A full-featured purchasing automation system built with Rust Logic Graph.
+
+### 📊 System Overview
+
+**Problem**: Automate purchasing decisions for inventory replenishment across multiple products, warehouses, and suppliers.
+
+**Solution**: Business rules in GRL decide when/how much to order. Orchestrator executes the workflows.
+
+### 🎯 Two Architecture Implementations
+
+**1. Microservices (v4.0)** - 7 services with gRPC
+- Orchestrator (port 8080) - Workflow coordination
+- OMS Service (port 50051) - Order management data
+- Inventory Service (port 50052) - Stock levels
+- Supplier Service (port 50053) - Supplier information
+- UOM Service (port 50054) - Unit conversions
+- Rule Engine (port 50055) - GRL business rules
+- PO Service (port 50056) - Purchase order management
+
+**2. Monolithic** - Single HTTP service
+- Same business logic as microservices
+- Single process on port 8080
+- Shared GRL rules file
+- Direct function calls instead of gRPC
+
+### 🔥 GRL Business Rules (15 Rules)
+
+```grl
+rule "CalculateShortage" salience 120 no-loop {
+    when
+        required_qty > 0
+    then
+        Log("Calculating shortage...");
+        shortage = required_qty - available_qty;
+        Log("Shortage calculated");
+}
+
+rule "OrderMOQWhenShortageIsLess" salience 110 no-loop {
+    when
+        shortage > 0 && shortage < moq && is_active == true
+    then
+        Log("Shortage less than MOQ, ordering MOQ");
+        order_qty = moq;
+}
+```
+
+**See full rules**: [purchasing_rules.grl](case_study/microservices/services/rule-engine-service/rules/purchasing_rules.grl)
+
+### 📈 Key Features
+
+- ✅ **GRL-based decision making** - 15 business rules with salience-based priority
+- ✅ **Automated PO creation** - Rules calculate shortage, determine order quantity
+- ✅ **Multi-service coordination** - Data from OMS, Inventory, Supplier, UOM
+- ✅ **Flag-based execution** - Rules decide (set flags), Orchestrator executes (creates PO, sends to supplier)
+- ✅ **Kubernetes deployment** - Full K8s manifests with health checks
+- ✅ **Docker Compose** - Local development environment
+- ✅ **Test automation** - End-to-end flow testing scripts
+- ✅ **Both architectures share same GRL rules** - Proves portability
+
+### 🚀 Quick Start
+
+```bash
+# Microservices (Docker Compose)
+cd case_study/microservices
+docker-compose up -d
+
+# Test the flow
+curl -X POST http://localhost:8080/purchasing/flow \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": "PROD-002"}'
+
+# Monolithic (Single Process)
+cd case_study/monolithic
+cargo run --bin purchasing_flow
+
+# Test (different terminal)
+curl -X POST http://localhost:8080/purchasing/flow \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": "PROD-002"}'
+```
+
+### 📚 Case Study Documentation
+
+| Document | Description |
+|----------|-------------|
+| **[Case Study Overview](case_study/docs/README.md)** | Architecture, design decisions, deployment |
+| **[Purchasing Flow Guide](case_study/docs/purchasing_flow_README.md)** | Implementation details, testing, examples |
+| **[Technical Summary](case_study/docs/PURCHASING_FLOW_SUMMARY.md)** | Data flow, GRL rules, API specifications |
+| **[GRL Integration](case_study/docs/GRL_INTEGRATION_SUMMARY.md)** | How GRL rules work in the system |
+| **[Kubernetes Guide](case_study/docs/KUBERNETES.md)** | K8s deployment, scaling, monitoring |
+| **[Testing Guide](case_study/microservices/TESTING.md)** | Test data, scripts, validation |
+
+### 🎯 Results
+
+**For product PROD-002:**
+- Demand: 50 units/day, Lead time: 5 days
+- Required qty: 250 units (50 × 5)
+- Available: 5 units
+- **Shortage: 245 units** ← GRL calculates
+- **Order qty: 245 units** ← GRL decides
+- **Total: $3,797.50** ← GRL computes (245 × $15.5)
+- **PO created & sent** ← Orchestrator executes
+
+**Logs from both architectures are identical** - proving GRL rules are truly portable!
+
+---
+
 ## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
+| **[🏢 Case Study: Purchasing Flow](case_study/docs/README.md)** | Real production system with microservices & monolithic implementations |
 | **[Graph Editor Guide](graph-editor/README.md)** | Visual web-based graph editor with Next.js (NEW in v0.8.0) |
 | **[Memory Optimization Guide](docs/MEMORY_OPTIMIZATION.md)** | Context pooling and allocation tracking (v0.7.0) |
 | **[CLI Tool Guide](docs/CLI_TOOL.md)** | Developer tools for validation, profiling, and visualization (v0.5.0) |
@@ -234,8 +337,8 @@ cargo build --release --bin rlg
 
 ## 📦 Project Status
 
-**Version**: 0.7.0 (Latest)
-**Status**: Production-ready with parallel execution, caching, and CLI tools
+**Version**: 0.8.0 (Latest)
+**Status**: Production-ready with web graph editor and real-world case study
 
 ### What's Working
 - ✅ Core graph execution engine
@@ -252,6 +355,7 @@ cargo build --release --bin rlg
 - ✅ **Memory optimization** with context pooling (v0.7.0)
 - ✅ **CLI Developer Tools** - validate, profile, visualize, dry-run (v0.5.0)
 - ✅ **Web Graph Editor** - Next.js visual editor with drag-and-drop (v0.8.0)
+- ✅ **Production Case Study** - Purchasing flow with microservices & monolithic (v0.8.0)
 - ✅ Stream operators (map, filter, fold)
 - ✅ Comprehensive documentation
 
@@ -263,6 +367,7 @@ cargo build --release --bin rlg
 - [x] RETE-UL upgrade (v0.5.0) - COMPLETED ✅
 - [x] Memory Optimization (v0.7.0) - COMPLETED ✅
 - [x] Web Graph Editor (v0.8.0) - COMPLETED ✅
+- [x] Production Case Study (v0.8.0) - COMPLETED ✅
 - [ ] GraphQL API (v0.9.0)
 - [ ] Production release (v1.0.0)
 
@@ -323,6 +428,33 @@ Contributions welcome! Please:
 ---
 
 ## 📝 Changelog
+
+### v0.8.0 (2025-11-20) - Web Editor & Production Case Study Release
+
+**New Features:**
+- 🎨 **Web Graph Editor** - Next.js visual editor with drag-and-drop
+  - Online version: https://logic-graph-editor.amalthea.cloud/
+  - React Flow-based graph visualization
+  - Real-time node editing and validation
+  - Export/import JSON workflows
+  - See [Graph Editor Guide](graph-editor/README.md)
+- 🏢 **Production Case Study** - Complete purchasing flow system
+  - Microservices architecture (7 services with gRPC)
+  - Monolithic architecture (single HTTP service)
+  - 15 GRL business rules for purchasing decisions
+  - Kubernetes deployment manifests
+  - Docker Compose for local development
+  - Shared GRL rules proving portability
+  - See [Case Study Documentation](case_study/docs/README.md)
+
+**Improvements:**
+- Updated README with case study section
+- Added online graph editor link
+- Comprehensive production examples
+
+**Compatibility:**
+- All tests passing
+- API backward compatible
 
 ### v0.5.0 (2025-11-06) - Performance & Developer Tools Release
 

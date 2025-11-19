@@ -11,9 +11,9 @@ impl OmsService {
         Self { pool }
     }
 
-    pub async fn get_history(&self, product_id: &str) -> Result<OmsHistoryData> {
+    pub async fn get_oms_history(&self, product_id: &str) -> Result<OmsHistoryData> {
         let row = sqlx::query(
-            "SELECT product_id, avg_daily_demand, trend FROM oms_history WHERE product_id = ?"
+            "SELECT product_id, CAST(avg_daily_demand AS DOUBLE) as avg_daily_demand, trend FROM oms_history WHERE product_id = ?"
         )
         .bind(product_id)
         .fetch_one(&self.pool)

@@ -35,7 +35,7 @@ impl PurchasingFlowHandler {
 
         // Step 1: Fetch data from all services in parallel
         let (oms_data, inventory_data, supplier_data, uom_data) = tokio::try_join!(
-            self.oms_service.get_history(product_id),
+            self.oms_service.get_oms_history(product_id),
             self.inventory_service.get_inventory(product_id),
             self.supplier_service.get_supplier_info(product_id),
             self.uom_service.get_uom_conversion(product_id),
@@ -72,7 +72,7 @@ impl PurchasingFlowHandler {
         let purchase_order = PurchaseOrder {
             product_id: context.oms_data.product_id.clone(),
             order_qty: rule_result.recommended_qty,
-            order_unit: context.uom_data.base_unit.clone(),
+            order_unit: context.uom_data.from_uom.clone(),
             supplier_id: format!("SUPP-{}", context.supplier_data.product_id),
             expected_delivery_date: expected_delivery_date.format("%Y-%m-%d").to_string(),
             total_cost: rule_result.recommended_qty * context.supplier_data.unit_price,

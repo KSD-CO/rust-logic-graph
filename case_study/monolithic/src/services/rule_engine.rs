@@ -1,82 +1,113 @@
 use crate::models::{PurchasingContext, RuleEvaluationResult};
 use anyhow::Result;
-use rust_logic_graph::rete::{IncrementalEngine, TemplateBuilder};
-use rust_logic_graph::grl::GrlReteLoader;
-use parking_lot::Mutex;
-use std::sync::Arc;
+use rust_logic_graph::RuleEngine;
+use serde_json::{json, Value};
+use std::collections::HashMap;
+use std::sync::Mutex;
 
 pub struct RuleEngineService {
-    engine: Arc<Mutex<IncrementalEngine>>,
+    engine: Mutex<RuleEngine>,
 }
 
 impl RuleEngineService {
     pub fn new(rule_file_path: &str) -> Result<Self> {
-        let mut engine = IncrementalEngine::new();
-
-        // Create template for purchasing data
-        let purchasing_template = TemplateBuilder::new("PurchasingData")
-            .float_field("avg_daily_demand")
-            .string_field("trend")
-            .float_field("available_qty")
-            .float_field("reserved_qty")
-            .float_field("moq")
-            .integer_field("lead_time")
-            .float_field("unit_price")
-            .build();
-
-        engine.templates_mut().register(purchasing_template);
-
-        // Load rules from GRL file
-        GrlReteLoader::load_from_file(rule_file_path, &mut engine)?;
-
-        Ok(Self {
-            engine: Arc::new(Mutex::new(engine)),
-        })
+        tracing::info!("🔧 Initializing Rule Engine Service (Monolithic with GRL)");
+        tracing::info!("📂 Loading rules from: {}", rule_file_path);
+        
+        let grl_content = std::fs::read_to_string(rule_file_path)?;
+        let engine = RuleEngine::from_grl(&grl_content)?;
+        
+        tracing::info!("✅ GRL rules loaded successfully");
+        
+        Ok(Self { engine: Mutex::new(engine) })
     }
 
     pub fn evaluate(&self, context: &PurchasingContext) -> Result<RuleEvaluationResult> {
-        let mut engine = self.engine.lock();
-
-        // Prepare facts
-        let mut facts = std::collections::HashMap::new();
-        facts.insert("avg_daily_demand".to_string(), context.oms_data.avg_daily_demand.into());
-        facts.insert("trend".to_string(), context.oms_data.trend.clone().into());
-        facts.insert("available_qty".to_string(), context.inventory_data.available_qty.into());
-        facts.insert("reserved_qty".to_string(), context.inventory_data.reserved_qty.into());
-        facts.insert("moq".to_string(), context.supplier_data.moq.into());
-        facts.insert("lead_time".to_string(), (context.supplier_data.lead_time as i64).into());
-        facts.insert("unit_price".to_string(), context.supplier_data.unit_price.into());
-
-        // Insert facts and fire rules
-        let _handle = engine.insert_with_template("PurchasingData", facts)?;
-        engine.reset();
-        let fired_count = engine.fire_all();
-
-        // Extract results
-        let should_order = fired_count > 0;
-        let recommended_qty = if should_order {
-            self.calculate_order_qty(context)
-        } else {
-            0.0
-        };
+        tracing::info!("📊 Starting rule evaluation for product: {}", context.oms_data.product_id);
+        
+        // Calculate required_qty (demand during lead time) - this is an INPUT to GRL
+        let required_qty = context.oms_data.avg_daily_demand * (context.supplier_data.lead_time as f64);
+        
+        // Prepare input facts for rule engine
+        let mut facts: HashMap<String, Value> = HashMap::new();
+        facts.insert("product_id".to_string(), json!(context.oms_data.product_id));
+        facts.insert("avg_daily_demand".to_string(), json!(context.oms_data.avg_daily_demand));
+        facts.insert("trend".to_string(), json!(context.oms_data.trend));
+        facts.insert("available_qty".to_string(), json!(context.inventory_data.available_qty));
+        facts.insert("reserved_qty".to_string(), json!(context.inventory_data.reserved_qty));
+        facts.insert("warehouse_id".to_string(), json!(context.inventory_data.warehouse_id));
+        facts.insert("supplier_id".to_string(), json!(context.supplier_data.supplier_id));
+        facts.insert("moq".to_string(), json!(context.supplier_data.moq));
+        facts.insert("lead_time_days".to_string(), json!(context.supplier_data.lead_time));
+        facts.insert("unit_price".to_string(), json!(context.supplier_data.unit_price));
+        facts.insert("conversion_factor".to_string(), json!(context.uom_data.conversion_factor));
+        facts.insert("from_uom".to_string(), json!(context.uom_data.from_uom));
+        facts.insert("to_uom".to_string(), json!(context.uom_data.to_uom));
+        
+        // Required qty - calculated INPUT field (not output!)
+        facts.insert("required_qty".to_string(), json!(required_qty));
+        
+        // Supplier status
+        facts.insert("is_active".to_string(), json!(true));
+        
+        // Initialize output fields
+        facts.insert("shortage".to_string(), json!(0.0));
+        facts.insert("order_qty".to_string(), json!(0.0));
+        facts.insert("total_amount".to_string(), json!(0.0));
+        facts.insert("need_reorder".to_string(), json!(false));
+        facts.insert("supplier_error".to_string(), json!(""));
+        
+        tracing::info!("📋 Input facts prepared: required_qty={}, available_qty={}, moq={}, unit_price={}", 
+            required_qty, context.inventory_data.available_qty, context.supplier_data.moq, context.supplier_data.unit_price);
+        
+        // Evaluate rules (needs mutable access to engine)
+        let mut engine = self.engine.lock().unwrap();
+        let result = engine.evaluate(&facts)?;
+        
+        // Extract results from GRL evaluation
+        let need_reorder = result.get("need_reorder")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+            
+        let order_qty = result.get("order_qty")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        
+        let shortage = result.get("shortage")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+            
+        let total_amount = result.get("total_amount")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        
+        // Log detailed results
+        tracing::info!("📋 GRL Rules Evaluated:");
+        tracing::info!("   ├── Required Qty (Demand): {}", required_qty);
+        tracing::info!("   ├── Available Qty: {}", context.inventory_data.available_qty);
+        tracing::info!("   ├── Shortage: {}", shortage);
+        tracing::info!("   ├── Order Qty: {}", order_qty);
+        tracing::info!("   ├── Total Amount: ${:.2}", total_amount);
+        tracing::info!("   └── Need Reorder: {}", need_reorder);
+        
+        if !need_reorder || order_qty == 0.0 {
+            tracing::info!("✅ No order needed: sufficient inventory or no shortage");
+            return Ok(RuleEvaluationResult {
+                should_order: false,
+                recommended_qty: 0.0,
+                reason: "No order needed: sufficient inventory".to_string(),
+            });
+        }
+        
+        tracing::info!("✅ Order recommended by GRL rules");
+        tracing::info!("📋 LOG: Shortage detected: {} units", shortage);
+        tracing::info!("📋 LOG: Order quantity determined: {} units", order_qty);
+        tracing::info!("📋 LOG: Total cost: ${:.2}", total_amount);
 
         Ok(RuleEvaluationResult {
-            should_order,
-            recommended_qty,
-            reason: format!("{} rules fired", fired_count),
+            should_order: true,
+            recommended_qty: order_qty,
+            reason: format!("Order approved: calculated {} units", order_qty),
         })
-    }
-
-    fn calculate_order_qty(&self, context: &PurchasingContext) -> f64 {
-        let safety_stock = context.oms_data.avg_daily_demand * context.supplier_data.lead_time as f64;
-        let reorder_point = safety_stock * 1.5;
-        let current_available = context.inventory_data.available_qty - context.inventory_data.reserved_qty;
-
-        if current_available < reorder_point {
-            let order_qty = (context.oms_data.avg_daily_demand * (context.supplier_data.lead_time as f64 + 7.0)) - current_available;
-            order_qty.max(context.supplier_data.moq)
-        } else {
-            0.0
-        }
     }
 }

@@ -12,6 +12,7 @@ pub struct OmsHistoryData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InventoryData {
     pub product_id: String,
+    pub warehouse_id: String,
     pub available_qty: f64,
     pub reserved_qty: f64,
 }
@@ -19,6 +20,7 @@ pub struct InventoryData {
 /// Supplier information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SupplierData {
+    pub supplier_id: String,
     pub product_id: String,
     pub moq: f64,          // Minimum Order Quantity
     pub lead_time: i32,    // Days
@@ -29,9 +31,9 @@ pub struct SupplierData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UomConversionData {
     pub product_id: String,
-    pub base_unit: String,
-    pub case_qty: f64,
-    pub pallet_qty: f64,
+    pub from_uom: String,
+    pub to_uom: String,
+    pub conversion_factor: f64,
 }
 
 /// Purchase Order

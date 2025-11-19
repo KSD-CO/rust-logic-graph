@@ -1,15 +1,28 @@
 # Case Study: Distributed Purchasing Flow System
 ## Real-World Production Pattern Using Rust Logic Graph
 
+> **📚 HISTORICAL DOCUMENTATION (v1.0-v2.0)**
+> 
+> This document describes the **original monolithic architecture** with MySQL DBNodes and graph-based execution.
+> 
+> **For current v4.0 microservices architecture, see:**
+> - **[Purchasing Flow README](purchasing_flow_README.md)** - Complete implementation guide
+> - **[Purchasing Flow Summary](PURCHASING_FLOW_SUMMARY.md)** - Technical overview
+> - **[Documentation Index](README.md)** - All current documentation
+>
+> This file is preserved as **historical reference** showing the evolution from monolithic to microservices architecture.
+
+---
+
 **Challenge**: Build a scalable purchasing automation system that integrates with multiple external systems (OMS, Inventory, Supplier Management, UOM) to automatically calculate order quantities and generate purchase orders.
 
-**Solution**: Implemented using `rust-logic-graph` framework with distributed database architecture, demonstrating real-world production patterns including:
+**Solution (v1.0-v2.0)**: Implemented using `rust-logic-graph` framework with distributed database architecture, demonstrating real-world production patterns including:
 - Multi-database integration (4 separate MySQL databases)
 - Asynchronous data collection from distributed sources
 - Rule-based decision engine
 - Automated purchase order generation
 
-**Results**:
+**Results (Historical)**:
 - ✅ Successfully processes purchase orders with real-time data
 - ✅ Scales horizontally with independent database connections
 - ✅ Production-ready error handling and monitoring
@@ -72,6 +85,31 @@ Manual processing is:
 ---
 
 ## Technical Architecture
+
+> **⚠️ ARCHITECTURE EVOLUTION**
+>
+> This section documents the **historical v1.0-v2.0 monolithic architecture**.
+>
+> **Current v4.0 Architecture (November 2024):**
+> - **7 independent microservices** (Orchestrator, OMS, Inventory, Supplier, UOM, Rule Engine, PO)
+> - **gRPC communication** (Tonic framework with Protocol Buffers)
+> - **GRL rules in calculation mode** (no action calls, flag-based execution)
+> - **5 separate MySQL databases** (one per domain service)
+> - **Flag-based workflow**: Rules decide → Orchestrator executes
+> - **Performance**: 30-50ms end-to-end latency
+>
+> For complete current architecture details, see [purchasing_flow_README.md](purchasing_flow_README.md)
+
+---
+
+### Historical Architecture Evolution
+
+**v1.0**: Monolithic application with MySQL DBNodes in graph execution
+**v2.0**: Added GRL rules with action handlers (CreatePurchaseOrder, SendPurchaseOrder)
+**v3.0**: Introduced monolithic vs microservices options
+**v4.0**: Pure microservices with flag-based execution (current)
+
+### Original Monolithic Architecture (v1.0-v2.0)
 
 > **⚠️ Note:** The architecture below describes the v1.0 monolithic version.
 >
@@ -623,6 +661,26 @@ The purchasing flow example serves as a **blueprint** for building similar syste
 
 ### A. File Structure
 
+**Current v4.0 Microservices:**
+```
+case_study/microservices/
+├── proto/
+│   └── *.proto                     # gRPC service definitions
+├── services/
+│   ├── orchestrator-service/       # REST API + workflow orchestration
+│   ├── oms-service/                # Order Management gRPC service
+│   ├── inventory-service/          # Inventory gRPC service
+│   ├── supplier-service/           # Supplier gRPC service
+│   ├── uom-service/                # UOM gRPC service
+│   ├── rule-engine-service/        # GRL evaluation service
+│   │   └── rules/
+│   │       └── purchasing_rules.grl # 15 business rules
+│   └── po-service/                 # Purchase Order gRPC service
+├── shared/                         # Shared types and utilities
+└── scripts/                        # Deployment and testing scripts
+```
+
+**Historical v1.0-v2.0 Monolithic:**
 ```
 examples/
 ├── purchasing_flow.rs              # Mock version (baseline)
@@ -641,6 +699,43 @@ examples/
 See [purchasing_flow_setup.sql](purchasing_flow_setup.sql) for complete schema.
 
 ### C. Running the Case Study
+
+**Current v4.0 Microservices:**
+
+```bash
+# 1. Setup databases (one-time)
+cd case_study/microservices
+./scripts/setup_databases.sh
+
+# 2. Start all services (7 terminals)
+# Terminal 1: OMS Service
+cd services/oms-service && cargo run
+
+# Terminal 2: Inventory Service  
+cd services/inventory-service && cargo run
+
+# Terminal 3: Supplier Service
+cd services/supplier-service && cargo run
+
+# Terminal 4: UOM Service
+cd services/uom-service && cargo run
+
+# Terminal 5: Rule Engine Service
+cd services/rule-engine-service && cargo run
+
+# Terminal 6: PO Service
+cd services/po-service && cargo run
+
+# Terminal 7: Orchestrator Service
+cd services/orchestrator-service && cargo run
+
+# 3. Test the flow
+curl -X POST http://localhost:8080/purchasing/flow \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": "PROD-001"}'
+```
+
+**Historical v1.0-v2.0 Monolithic:**
 
 ```bash
 # Setup (one-time)
@@ -662,7 +757,21 @@ cargo run --example purchasing_flow_realdb --features mysql
 
 ---
 
-**Author**: James Vu
-**Version**: 0.7.0
-**Date**: November 2024
+**Author**: James Vu  
+**Current Version**: v4.0 (Microservices Architecture)  
+**Historical Version**: v1.0-v2.0 (documented in this file)  
+**Date**: November 2024  
 **License**: MIT
+
+---
+
+## Version History
+
+| Version | Date | Architecture | Key Changes |
+|---------|------|--------------|-------------|
+| **v4.0** | Nov 2024 | Microservices (gRPC) | Flag-based execution, 7 services, 30-50ms latency |
+| **v3.0** | Oct 2024 | Hybrid (Monolithic + Microservices) | Added microservices option with REST |
+| **v2.0** | Sep 2024 | Monolithic (Graph + GRL) | Added GRL rules with action handlers |
+| **v1.0** | Aug 2024 | Monolithic (Graph only) | MySQL DBNodes, custom calculation nodes |
+
+**For current implementation details, see [purchasing_flow_README.md](purchasing_flow_README.md)**
