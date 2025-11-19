@@ -1,4 +1,4 @@
-use rust_logic_graph::{RuleEngine, GrlRule};
+use rust_logic_graph::RuleEngine;
 use std::collections::HashMap;
 use serde_json::json;
 
@@ -13,6 +13,7 @@ fn main() -> anyhow::Result<()> {
     context1.insert("age".to_string(), json!(25));
     context1.insert("verified".to_string(), json!(false));
 
+    let mut engine1 = RuleEngine::new();
     let grl1 = r#"
 rule "AgeVerification" {
     when
@@ -22,8 +23,9 @@ rule "AgeVerification" {
 }
 "#;
 
-    let rule1 = GrlRule::new("age_verify", grl1);
-    match rule1.evaluate(&context1) {
+    engine1.add_grl_rule(grl1)?;
+
+    match engine1.evaluate(&context1) {
         Ok(result) => println!("✓ Rule executed: {:?}", result),
         Err(e) => println!("✗ Rule failed: {}", e),
     }
@@ -69,16 +71,23 @@ rule "RegularDiscount" salience 5 {
     context3.insert("temperature".to_string(), json!(35.0));
     context3.insert("alert".to_string(), json!(false));
 
-    let rule3 = GrlRule::from_simple(
-        "temperature_alert",
-        "temperature > 30.0",
-        "alert = true"
-    );
+    // Use a small GRL snippet and the RuleEngine for this helper example
+    let rule3_grl = r#"
+rule "temperature_alert" {
+    when
+        temperature > 30.0
+    then
+        alert = true;
+}
+"#;
 
     println!("Generated GRL:");
-    println!("{}", rule3.grl_content);
+    println!("{}", rule3_grl);
 
-    match rule3.evaluate(&context3) {
+    let mut engine3 = RuleEngine::new();
+    engine3.add_grl_rule(rule3_grl)?;
+
+    match engine3.evaluate(&context3) {
         Ok(result) => println!("✓ Temperature alert: {:?}", result),
         Err(e) => println!("✗ Rule failed: {}", e),
     }
