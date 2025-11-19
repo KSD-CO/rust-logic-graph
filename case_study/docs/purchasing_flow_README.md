@@ -41,7 +41,6 @@ This example demonstrates a **production-ready microservices architecture** for 
                              ▼
                     ┌────────────────────────┐
                     │ Rule Engine Service    │ (Port 50055 - gRPC)
-                    │      :8085 - HTTP      │
                     │  ┌──────────────────┐  │
                     │  │ GRL Rule Engine  │  │ • Evaluates business rules
                     │  │ Decision Maker   │  │ • Returns calculations + flags

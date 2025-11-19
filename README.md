@@ -155,8 +155,7 @@ This separation keeps rules pure (no side-effects) and centralizes execution dec
            │ gRPC with context data
            ▼
         ┌────────────────────────┐
-        │ Rule Engine Service    │ (Port 50055 - gRPC)
-        │      :8085 - HTTP      │
+  │ Rule Engine Service    │ (Port 50055 - gRPC)
         │  ┌──────────────────┐  │
         │  │ GRL Rule Engine  │  │ • Evaluates business rules
         │  │ Decision Maker   │  │ • Returns calculations + flags
