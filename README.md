@@ -113,19 +113,33 @@ rule "OrderMOQWhenShortageIsLess" salience 110 no-loop {
 
 ### Microservices Communication Flow
 
-This case study uses a gRPC-based communication pattern between small services. The high-level flow:
+After v0.8.0 refactor, the Orchestrator now uses **rust-logic-graph's Graph/Executor pattern** to coordinate microservices:
 
-- The Orchestrator receives a purchasing request (HTTP/gRPC) and queries services (OMS, Inventory, Supplier, UOM) to build a context for rule evaluation.
-- The Orchestrator sends the context to the Rule Engine service (gRPC). The Rule Engine evaluates the shared GRL rules and returns decision flags rather than performing side-effects.
-- Decision flags include fields like: `should_create_po`, `should_send_po`, `po_status`, `send_method`, and computed values such as `order_qty`, `shortage`, `total_amount`.
-- Based on flags, the Orchestrator calls the PO Service to create a purchase order, and if `should_send_po` is true, it instructs the Supplier Service to send the PO using the selected `send_method` (email/API).
+- The Orchestrator receives a purchasing request (HTTP) and creates a **Graph** with 6 custom **gRPC Nodes**.
+- Each Node wraps a gRPC call to a service: `OmsGrpcNode`, `InventoryGrpcNode`, `SupplierGrpcNode`, `UomGrpcNode`, `RuleEngineGrpcNode`, `PoGrpcNode`.
+- The **Executor** runs the graph in topological order:
+  1. **Data Collection Phase** (parallel): OMS, Inventory, Supplier, UOM nodes execute simultaneously via gRPC
+  2. **Rule Evaluation Phase**: RuleEngineGrpcNode waits for all data, then evaluates GRL rules
+  3. **Execution Phase**: PoGrpcNode creates/sends PO based on rule decisions
+- All business logic (decision flags, calculations) comes from GRL rules. The Orchestrator is a pure executor.
 
-Typical proto message fields (summary):
+**Graph Topology**:
+```
+OMS Node ────┐
+             │
+Inventory ───┼──→ RuleEngine Node ──→ PO Node
+             │
+Supplier ────┤
+             │
+UOM Node ────┘
+```
 
-- EvaluateRequest: product_id, required_qty, available_qty, moq, unit_price, lead_time
-- EvaluateResponse: should_create_po, should_send_po, po_status, send_method, order_qty, total_amount
-
-This separation keeps rules pure (no side-effects) and centralizes execution decisions in the Orchestrator.
+**Benefits of Graph/Executor Pattern**:
+- ✅ **Declarative**: Define workflow as nodes + edges instead of imperative code
+- ✅ **Parallel Execution**: Data nodes run concurrently automatically
+- ✅ **Type Safety**: Custom Node implementations with Rust's type system
+- ✅ **Testable**: Each node can be tested in isolation
+- ✅ **Consistent**: Same pattern used in monolithic and microservices
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -133,67 +147,91 @@ This separation keeps rules pure (no side-effects) and centralizes execution dec
 └────────────────────────────────┬────────────────────────────────────┘
          │ POST /purchasing/flow
          ▼
-        ┌────────────────────────┐
-        │  Orchestrator Service  │ (Port 8080 - HTTP)
-        │  ┌──────────────────┐  │
-        │  │ Workflow Manager │  │ • Fetches data from services
-        │  │ Pure Executor    │  │ • Calls rule engine for decisions
-        │  └──────────────────┘  │ • Executes based on flags
-        └────────┬───────────────┘
-           │ (gRPC calls - parallel)
-  ┌────────────────────┼────────────────────┬───────────────┐
-  │                    │                    │               │
-  ▼                    ▼                    ▼               ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐   ┌──────────────┐
-│ OMS Service  │    │   Inventory  │    │   Supplier   │   │ UOM Service  │
-│   :50051     │    │   Service    │    │   Service    │   │   :50054     │
-│              │    │    :50052    │    │    :50053    │   │              │
-│ • History    │    │ • Levels     │    │ • Info       │   │ • Conversion │
-│ • Demand     │    │ • Available  │    │ • Pricing    │   │ • Factors    │
-└──────────────┘    └──────────────┘    └──────────────┘   └──────────────┘
-           │
-           │ gRPC with context data
-           ▼
-        ┌────────────────────────┐
-        │ Rule Engine Service    │ (Port 50055 - gRPC)
+        ┌────────────────────────────────────────────────────────────┐
+        │            Orchestrator Service (Port 8080)                │
+        │  ┌──────────────────────────────────────────────────────┐  │
+        │  │          rust-logic-graph Graph Executor             │  │
+        │  │                                                       │  │
+        │  │  Creates Graph with 6 gRPC Nodes:                   │  │
+        │  │  • OmsGrpcNode      → gRPC call to OMS :50051       │  │
+        │  │  • InventoryGrpcNode → gRPC call to Inventory :50052│  │
+        │  │  • SupplierGrpcNode → gRPC call to Supplier :50053  │  │
+        │  │  • UomGrpcNode      → gRPC call to UOM :50054       │  │
+        │  │  • RuleEngineGrpcNode → gRPC call to Rules :50055   │  │
+        │  │  • PoGrpcNode       → gRPC call to PO :50056        │  │
+        │  │                                                       │  │
+        │  │  Executor runs topology: Data → Rules → PO          │  │
+        │  └──────────────────────────────────────────────────────┘  │
+        └────────┬────────────────────────────────────────────────────┘
+                 │
+                 │ Graph Executor orchestrates via gRPC:
+                 │
+   ┌─────────────┼──────────────────┬────────────────┬──────────────┐
+   │ (Parallel)  │  (Parallel)      │   (Parallel)   │  (Parallel)  │
+   ▼             ▼                  ▼                ▼              │
+┌──────────┐  ┌────────────┐  ┌─────────────┐  ┌───────────┐      │
+│OMS :50051│  │Inventory   │  │Supplier     │  │UOM :50054 │      │
+│          │  │:50052      │  │:50053       │  │           │      │
+│• History │  │• Levels    │  │• Pricing    │  │• Convert  │      │
+│• Demand  │  │• Available │  │• Lead Time  │  │• Factors  │      │
+└────┬─────┘  └─────┬──────┘  └──────┬──────┘  └─────┬─────┘      │
+     │              │                 │               │            │
+     └──────────────┴─────────────────┴───────────────┘            │
+                          │                                        │
+                          │ Data collected in Graph Context        │
+                          ▼                                        │
+                   ┌─────────────────┐                             │
+                   │ Rule Engine     │ (Port 50055 - gRPC)         │
+                   │     :50055      │                             │
+                   │                 │                             │
+                   │ • GRL Rules     │ • Evaluates 15 rules        │
+                   │ • Calculations  │ • Returns decision flags    │
+                   │ • Decision Flags│ • NO side effects          │
+                   └────────┬────────┘                             │
+                            │                                      │
+                            │ Returns decisions to Graph Context   │
+                            ▼                                      │
+                   ┌─────────────────┐                             │
+                   │ PO Service      │ (Port 50056 - gRPC)         │
+                   │    :50056       │◄────────────────────────────┘
+                   │                 │
+                   │ • Create PO     │ • Executes based on flags
+                   │ • Send to       │ • Email/API delivery
+                   │   Supplier      │
+                   └─────────────────┘
+```
         │  ┌──────────────────┐  │
         │  │ GRL Rule Engine  │  │ • Evaluates business rules
-        │  │ Decision Maker   │  │ • Returns calculations + flags
-        │  │ (Calculation     │  │ • NO execution/side effects
-        │  │  Mode)           │  │
-        │  └─────────┬────────┘  │
-        │            │           │
-        │     ┌──────▼────────┐  │
-        │     │ GRL Rules     │  │
-        │     │ (15 rules)    │  │
-        │     └───────────────┘  │
-        └────────────────────────┘
-           │
-           │ Returns: {
-           │   should_create_po: true,
-           │   should_send_po: true,
-           │   order_qty: 245,
-           │   total_amount: 3797.50,
-           │   approval_status: "auto_approved"
-           │ }
-           ▼
-        ┌────────────────────────┐
-        │  Orchestrator reads    │
-        │  flags & executes:     │
-        └────────┬───────────────┘
-           │
-    ┌────────────┴─────────────┐
-    │                          │
-    ▼                          ▼
-  ┌──────────────┐          ┌──────────────┐
-  │ PO Service   │          │  (Future)    │
-  │   :50056     │          │ Notification │
-  │              │          │   Service    │
-  │ • CreatePO   │          │              │
-  │ • SendPO     │          │ • Alerts     │
-  └──────────────┘          │ • Emails     │
-          └──────────────┘
+                   │ • Send to       │ • Email/API delivery
+                   │   Supplier      │
+                   └─────────────────┘
 ```
+
+**Note**: The Rule Engine service returns decision flags and calculations to the Graph Context. The PoGrpcNode then reads these flags from the context to determine whether to create/send the PO.
+
+### Where rust-logic-graph is Used
+
+**Monolithic App** (`case_study/monolithic/`):
+- Uses `Graph`, `Executor`, and custom `Node` implementations
+- 6 DB nodes query local MySQL databases directly
+- `RuleEngineNode` calls in-process `RuleEngine`
+- Single process, no network calls
+
+**Orchestrator Microservice** (`case_study/microservices/services/orchestrator-service/`):
+- Uses `Graph`, `Executor`, and custom gRPC `Node` implementations  
+- 6 gRPC nodes make network calls to remote services
+- Same graph topology as monolithic
+- Distributed across multiple processes
+
+**Rule Engine Service** (`case_study/microservices/services/rule-engine-service/`):
+- Uses `RuleEngine` for GRL evaluation
+- Exposed via gRPC endpoint
+- Stateless service (no graph execution)
+
+**Other Microservices** (OMS, Inventory, Supplier, UOM, PO):
+- Standard gRPC services with database access
+- Do NOT use rust-logic-graph directly
+- Called by Orchestrator's Graph Executor
 
 ### Web Graph Editor (NEW in v0.8.0)
 

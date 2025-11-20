@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 purchasing-models = { path = "../../shared/models" }
+rust-logic-graph = { path = "../../../../" }
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
@@ -18,6 +19,7 @@ tower-http = { version = "0.5", features = ["trace", "cors"] }
 anyhow = "1"
 chrono = "0.4"
 rust-rule-engine = "0.17"
+async-trait = "0.1"
 
 # gRPC dependencies
 tonic = "0.11"

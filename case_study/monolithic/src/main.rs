@@ -3,6 +3,7 @@ mod config;
 mod services;
 mod handlers;
 mod utils;
+mod graph_executor;
 
 use anyhow::Result;
 use axum::{
@@ -12,7 +13,7 @@ use axum::{
     Json, Router,
 };
 use config::AppConfig;
-use handlers::PurchasingFlowHandler;
+use graph_executor::PurchasingGraphExecutor;
 use services::{InventoryService, OmsService, RuleEngineService, SupplierService, UomService};
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
@@ -20,7 +21,7 @@ use utils::create_pool;
 
 #[derive(Clone)]
 struct AppState {
-    handler: Arc<PurchasingFlowHandler>,
+    executor: Arc<PurchasingGraphExecutor>,
 }
 
 #[derive(serde::Deserialize)]
@@ -99,8 +100,8 @@ async fn main() -> Result<()> {
     
     let rule_engine = RuleEngineService::new(grl_file)?;
 
-    // Create purchasing flow handler
-    let handler = Arc::new(PurchasingFlowHandler::new(
+    // Create graph executor (replaces PurchasingFlowHandler)
+    let executor = Arc::new(PurchasingGraphExecutor::new(
         oms_service,
         inventory_service,
         supplier_service,
@@ -108,7 +109,7 @@ async fn main() -> Result<()> {
         rule_engine,
     ));
 
-    let state = AppState { handler };
+    let state = AppState { executor };
 
     // Build router
     let cors = CorsLayer::new()
@@ -136,7 +137,7 @@ async fn handle_purchasing_flow(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     tracing::info!("📦 Processing purchasing flow for product: {}", req.product_id);
 
-    match state.handler.execute(&req.product_id).await {
+    match state.executor.execute(&req.product_id).await {
         Ok(Some(po)) => {
             tracing::info!("✅ Purchase order created for product: {}", po.product_id);
             Ok(Json(serde_json::json!({

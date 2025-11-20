@@ -10,77 +10,116 @@ This example demonstrates a **production-ready microservices architecture** for 
 
 ## Architecture Overview
 
-### Microservices Communication Flow
+### Microservices Communication Flow (v0.8.0+)
+
+After the v0.8.0 refactor, the Orchestrator now uses **rust-logic-graph's Graph/Executor pattern** to coordinate microservices:
+
+**How it works:**
+1. Orchestrator creates a **Graph** with 6 custom **gRPC Nodes**
+2. Each Node wraps a gRPC call to a microservice
+3. **Executor** runs nodes in topological order:
+   - **Data Phase** (parallel): OMS, Inventory, Supplier, UOM nodes
+   - **Rule Phase**: RuleEngine node evaluates GRL rules
+   - **Action Phase**: PO node creates/sends purchase order
+4. All data flows through the Graph Context between nodes
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         CLIENT (HTTP REST)                          │
 └────────────────────────────────┬────────────────────────────────────┘
-                                 │ POST /purchasing/flow
-                                 ▼
-                    ┌────────────────────────┐
-                    │  Orchestrator Service  │ (Port 8080 - HTTP)
-                    │  ┌──────────────────┐  │
-                    │  │ Workflow Manager │  │ • Fetches data from services
-                    │  │ Pure Executor    │  │ • Calls rule engine for decisions
-                    │  └──────────────────┘  │ • Executes based on flags
-                    └────────┬───────────────┘
-                             │ (gRPC calls - parallel)
-        ┌────────────────────┼────────────────────┬───────────────┐
-        │                    │                    │               │
-        ▼                    ▼                    ▼               ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐   ┌──────────────┐
-│ OMS Service  │    │   Inventory  │    │   Supplier   │   │ UOM Service  │
-│   :50051     │    │   Service    │    │   Service    │   │   :50054     │
-│              │    │    :50052    │    │    :50053    │   │              │
-│ • History    │    │ • Levels     │    │ • Info       │   │ • Conversion │
-│ • Demand     │    │ • Available  │    │ • Pricing    │   │ • Factors    │
-└──────────────┘    └──────────────┘    └──────────────┘   └──────────────┘
-                             │
-                             │ gRPC with context data
-                             ▼
-                    ┌────────────────────────┐
-                    │ Rule Engine Service    │ (Port 50055 - gRPC)
-                    │  ┌──────────────────┐  │
-                    │  │ GRL Rule Engine  │  │ • Evaluates business rules
-                    │  │ Decision Maker   │  │ • Returns calculations + flags
-                    │  │ (Calculation     │  │ • NO execution/side effects
-                    │  │  Mode)           │  │
-                    │  └─────────┬────────┘  │
-                    │            │           │
-                    │     ┌──────▼────────┐  │
-                    │     │ GRL Rules     │  │
-                    │     │ (15 rules)    │  │
-                    │     └───────────────┘  │
-                    └────────────────────────┘
-                             │
-                             │ Returns: {
-                             │   should_create_po: true,
-                             │   should_send_po: true,
-                             │   order_qty: 245,
-                             │   total_amount: 3797.50,
-                             │   approval_status: "auto_approved"
-                             │ }
-                             ▼
-                    ┌────────────────────────┐
-                    │  Orchestrator reads    │
-                    │  flags & executes:     │
-                    └────────┬───────────────┘
-                             │
-                ┌────────────┴─────────────┐
-                │                          │
-                ▼                          ▼
-        ┌──────────────┐          ┌──────────────┐
-        │ PO Service   │          │  (Future)    │
-        │   :50056     │          │ Notification │
-        │              │          │   Service    │
-        │ • CreatePO   │          │              │
-        │ • SendPO     │          │ • Alerts     │
-        └──────────────┘          │ • Emails     │
-                                  └──────────────┘
+         │ POST /purchasing/flow
+         ▼
+        ┌────────────────────────────────────────────────────────────┐
+        │            Orchestrator Service (Port 8080)                │
+        │  ┌──────────────────────────────────────────────────────┐  │
+        │  │          rust-logic-graph Graph Executor             │  │
+        │  │                                                       │  │
+        │  │  Creates Graph with 6 gRPC Nodes:                   │  │
+        │  │  • OmsGrpcNode      → gRPC to OMS :50051            │  │
+        │  │  • InventoryGrpcNode → gRPC to Inventory :50052     │  │
+        │  │  • SupplierGrpcNode → gRPC to Supplier :50053       │  │
+        │  │  • UomGrpcNode      → gRPC to UOM :50054            │  │
+        │  │  • RuleEngineGrpcNode → gRPC to Rules :50055        │  │
+        │  │  • PoGrpcNode       → gRPC to PO :50056             │  │
+        │  │                                                       │  │
+        │  │  Graph Topology:                                     │  │
+        │  │  OMS ────┐                                           │  │
+        │  │  Inventory ─┼─→ RuleEngine ──→ PO                   │  │
+        │  │  Supplier ──┤                                        │  │
+        │  │  UOM ────┘                                           │  │
+        │  └──────────────────────────────────────────────────────┘  │
+        └────────┬────────────────────────────────────────────────────┘
+                 │
+   ┌─────────────┼──────────────────┬────────────────┬──────────────┐
+   │ (Parallel)  │  (Parallel)      │   (Parallel)   │  (Parallel)  │
+   ▼             ▼                  ▼                ▼              │
+┌──────────┐  ┌────────────┐  ┌─────────────┐  ┌───────────┐      │
+│OMS :50051│  │Inventory   │  │Supplier     │  │UOM :50054 │      │
+│          │  │:50052      │  │:50053       │  │           │      │
+│• History │  │• Levels    │  │• Pricing    │  │• Convert  │      │
+│• Demand  │  │• Available │  │• Lead Time  │  │• Factors  │      │
+└────┬─────┘  └─────┬──────┘  └──────┬──────┘  └─────┬─────┘      │
+     │              │                 │               │            │
+     └──────────────┴─────────────────┴───────────────┘            │
+                          │                                        │
+                          │ Data stored in Graph Context           │
+                          ▼                                        │
+                   ┌─────────────────┐                             │
+                   │ Rule Engine     │ (Port 50055 - gRPC)         │
+                   │     :50055      │                             │
+                   │                 │                             │
+                   │ • GRL Rules     │ • Evaluates 15 rules        │
+                   │ • Calculations  │ • Returns decision flags    │
+                   │ • Decision Flags│ • NO side effects          │
+                   └────────┬────────┘                             │
+                            │                                      │
+                            │ Flags stored in Graph Context        │
+                            ▼                                      │
+                   ┌─────────────────┐                             │
+                   │ PO Service      │ (Port 50056 - gRPC)         │
+                   │    :50056       │◄────────────────────────────┘
+                   │                 │
+                   │ • Create PO     │ • Reads flags from context
+                   │ • Send to       │ • Executes based on rules
+                   │   Supplier      │ • Email/API delivery
+                   └─────────────────┘
 ```
 
 ### Key Principles
+
+### Where `rust-logic-graph` is used (Updated v0.8.0)
+
+After the v0.8.0 refactor, `rust-logic-graph` is now used extensively in the case study:
+
+**Orchestrator Service** (`case_study/microservices/services/orchestrator-service/`):
+- Uses `Graph`, `Executor`, and custom gRPC `Node` implementations
+- Each node wraps a gRPC call to a microservice
+- `OmsGrpcNode`, `InventoryGrpcNode`, `SupplierGrpcNode`, `UomGrpcNode`, `RuleEngineGrpcNode`, `PoGrpcNode`
+- Graph executor runs nodes in topological order (data → rules → action)
+- See: `src/graph_executor.rs` and `src/main.rs`
+
+**Monolithic App** (`case_study/monolithic/`):
+- Uses `Graph`, `Executor`, and custom database `Node` implementations
+- Nodes query local MySQL databases directly instead of gRPC
+- Same graph topology as microservices orchestrator
+- In-process execution, no network calls
+- See: `src/graph_executor.rs` and `src/main.rs`
+
+**Rule Engine Service** (`case_study/microservices/services/rule-engine-service/`):
+- Uses `RuleEngine` for GRL rule evaluation
+- Exposed via gRPC endpoint
+- Stateless service (does not use Graph/Executor)
+- See: `src/main.rs`
+
+**Other Microservices** (OMS, Inventory, Supplier, UOM, PO):
+- Standard gRPC services with database access
+- Do NOT use `rust-logic-graph` directly
+- Called by Orchestrator's Graph Executor nodes
+
+**Key Insight**: The Graph/Executor pattern is used differently in monolithic vs microservices:
+- **Monolithic**: Nodes execute database queries directly
+- **Microservices**: Nodes execute gRPC calls to remote services
+- **Same topology, different execution model!**
 
 #### 1. **Separation of Concerns**
 
@@ -88,16 +127,14 @@ This example demonstrates a **production-ready microservices architecture** for 
 - ✅ Calculates business logic (shortage, order_qty, totals)
 - ✅ Evaluates conditions (MOQ, approval thresholds)
 - ✅ Returns decision flags (should_create_po, should_send_po)
-- ❌ Does NOT call services
-- ❌ Does NOT create POs
-- ❌ Does NOT send emails
 
-**Orchestrator (Executor):**
-- ✅ Fetches data from multiple services
-- ✅ Calls rule engine for decisions
-- ✅ Reads flags and executes workflows
-- ✅ Calls PO service, notification service, etc.
-- ❌ Does NOT contain business logic
+**Orchestrator Graph Executor:**
+- ✅ Defines workflow as Graph (nodes + edges)
+- ✅ Executes nodes in topological order
+- ✅ Data nodes run in parallel automatically
+- ✅ Context shared between nodes
+- ✅ Type-safe with custom Node implementations
+
 
 #### 2. **gRPC Communication**
 
@@ -110,18 +147,28 @@ All inter-service communication uses gRPC for:
 #### 3. **Data Flow**
 
 ```
-Client Request
-    → Orchestrator fetches data (parallel gRPC calls)
-    → Orchestrator calls Rule Engine with context
-    → Rule Engine evaluates GRL rules
-    → Rule Engine returns {calculations + flags}
-    → Orchestrator reads flags
-    → IF should_create_po = true
-        → Orchestrator calls PO service
-    → IF should_send_po = true
-        → Orchestrator calls PO send
-    → Response to client
+Client Request (HTTP POST)
+    → Orchestrator creates Graph with 6 gRPC Nodes
+    → Executor starts graph execution
+    → Phase 1 (Parallel): OMS, Inventory, Supplier, UOM nodes fetch data via gRPC
+        → Results stored in Graph Context
+    → Phase 2: RuleEngine node reads context, calls Rule Engine gRPC
+        → Rule Engine evaluates 15 GRL rules
+        → Returns {calculations + decision flags}
+        → Flags stored in Graph Context
+    → Phase 3: PO node reads flags from context
+        → IF should_create_po = true → Create PO via gRPC
+        → IF should_send_po = true → Send PO via gRPC
+    → Graph execution completes
+    → Response to client with PO details
 ```
+
+**Benefits of Graph/Executor Pattern:**
+- ✅ **Declarative**: Workflow defined as nodes + edges (not imperative code)
+- ✅ **Automatic Parallelism**: Data nodes execute concurrently
+- ✅ **Type Safety**: Custom Node trait implementations
+- ✅ **Testability**: Each node can be tested in isolation
+- ✅ **Consistency**: Same pattern in monolithic and microservices
 
 ## Services
 
