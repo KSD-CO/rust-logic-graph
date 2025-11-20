@@ -3,6 +3,7 @@ mod config;
 mod services;
 mod handlers;
 mod utils;
+mod graph_config;
 mod graph_executor;
 
 use anyhow::Result;

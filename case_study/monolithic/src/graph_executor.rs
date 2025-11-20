@@ -5,6 +5,7 @@ use serde_json::{json, Value};
 use std::sync::Arc;
 use async_trait::async_trait;
 
+use crate::graph_config::GraphConfig;
 use crate::services::{OmsService, InventoryService, SupplierService, UomService, RuleEngineService};
 use crate::models::{PurchaseOrder, PurchasingContext};
 
@@ -304,80 +305,59 @@ impl PurchasingGraphExecutor {
     }
     
     pub async fn execute(&self, product_id: &str) -> anyhow::Result<Option<PurchaseOrder>> {
+        self.execute_with_config(product_id, "purchasing_flow_graph.yaml").await
+    }
+    
+    /// Execute with custom graph configuration file
+    pub async fn execute_with_config(&self, product_id: &str, config_path: &str) -> anyhow::Result<Option<PurchaseOrder>> {
         tracing::info!("🎯 Graph Executor: Starting purchasing flow for {}", product_id);
+        tracing::info!("📋 Loading graph config from: {}", config_path);
         
-        // Build graph definition
-        let mut nodes = std::collections::HashMap::new();
-        nodes.insert("oms_history".to_string(), NodeType::DBNode);
-        nodes.insert("inventory_levels".to_string(), NodeType::DBNode);
-        nodes.insert("supplier_info".to_string(), NodeType::DBNode);
-        nodes.insert("uom_conversion".to_string(), NodeType::DBNode);
-        nodes.insert("rule_engine".to_string(), NodeType::RuleNode);
-        nodes.insert("create_po".to_string(), NodeType::RuleNode);
+        // Load graph configuration from YAML
+        let graph_config = GraphConfig::from_yaml_file(config_path)
+            .map_err(|e| anyhow::anyhow!("Failed to load graph config: {}", e))?;
         
-        let mut edges = Vec::new();
+        // Convert to GraphDef
+        let graph_def = graph_config.to_graph_def()?;
         
-        // Data collection nodes -> rule_engine
-        edges.push(rust_logic_graph::core::Edge {
-            from: "oms_history".to_string(),
-            to: "rule_engine".to_string(),
-            rule: None,
-        });
-        edges.push(rust_logic_graph::core::Edge {
-            from: "inventory_levels".to_string(),
-            to: "rule_engine".to_string(),
-            rule: None,
-        });
-        edges.push(rust_logic_graph::core::Edge {
-            from: "supplier_info".to_string(),
-            to: "rule_engine".to_string(),
-            rule: None,
-        });
-        edges.push(rust_logic_graph::core::Edge {
-            from: "uom_conversion".to_string(),
-            to: "rule_engine".to_string(),
-            rule: None,
-        });
+        tracing::info!("✅ Graph loaded: {} nodes, {} edges", graph_def.nodes.len(), graph_def.edges.len());
         
-        // rule_engine -> create_po
-        edges.push(rust_logic_graph::core::Edge {
-            from: "rule_engine".to_string(),
-            to: "create_po".to_string(),
-            rule: None,
-        });
-        
-        let graph_def = GraphDef { nodes, edges };
-        
-        // Build executor and register nodes
+        // Build executor and register nodes dynamically
         let mut executor = Executor::new();
         
-        executor.register_node(Box::new(OmsNode::new(
-            self.oms_service.clone(),
-            product_id.to_string(),
-        )));
-        
-        executor.register_node(Box::new(InventoryNode::new(
-            self.inventory_service.clone(),
-            product_id.to_string(),
-        )));
-        
-        executor.register_node(Box::new(SupplierNode::new(
-            self.supplier_service.clone(),
-            product_id.to_string(),
-        )));
-        
-        executor.register_node(Box::new(UomNode::new(
-            self.uom_service.clone(),
-            product_id.to_string(),
-        )));
-        
-        executor.register_node(Box::new(RuleEngineNode::new(
-            self.rule_engine.clone(),
-        )));
-        
-        executor.register_node(Box::new(CreatePoNode::new(
-            product_id.to_string(),
-        )));
+        // Register nodes based on configuration
+        for (node_id, _node_type) in &graph_def.nodes {
+            let node: Box<dyn Node> = match node_id.as_str() {
+                "oms_history" => Box::new(OmsNode::new(
+                    self.oms_service.clone(),
+                    product_id.to_string(),
+                )),
+                "inventory_levels" => Box::new(InventoryNode::new(
+                    self.inventory_service.clone(),
+                    product_id.to_string(),
+                )),
+                "supplier_info" => Box::new(SupplierNode::new(
+                    self.supplier_service.clone(),
+                    product_id.to_string(),
+                )),
+                "uom_conversion" => Box::new(UomNode::new(
+                    self.uom_service.clone(),
+                    product_id.to_string(),
+                )),
+                "rule_engine" => Box::new(RuleEngineNode::new(
+                    self.rule_engine.clone(),
+                )),
+                "create_po" => Box::new(CreatePoNode::new(
+                    product_id.to_string(),
+                )),
+                _ => {
+                    tracing::warn!("⚠️ Unknown node in config: {}", node_id);
+                    continue;
+                }
+            };
+            
+            executor.register_node(node);
+        }
         
         // Execute graph
         let mut graph = Graph::new(graph_def);
