@@ -53,7 +53,6 @@ impl GraphConfig {
                 "DBNode" => NodeType::DBNode,
                 "RuleNode" => NodeType::RuleNode,
                 "AINode" => NodeType::AINode,
-                "APINode" => NodeType::APINode,
                 _ => anyhow::bail!("Unknown node type: {}", node_config.r#type),
             };
             nodes.insert(node_id.clone(), node_type);
