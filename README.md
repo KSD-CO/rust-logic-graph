@@ -19,8 +19,9 @@ A high-performance **reasoning graph framework** for Rust with **GRL (Grule Rule
 - 🧠 **Memory Optimization** - Context pooling and allocation tracking (v0.7.0)
 - 🛠️ **CLI Developer Tools** - Graph validation, dry-run, profiling, and visualization (v0.5.0)
 - 🎨 **Web Graph Editor** - Next.js visual editor with drag-and-drop interface (v0.8.0)
-- 📊 **Multiple Node Types** - RuleNode, DBNode, AINode
-- 📝 **JSON Configuration** - Simple workflow definitions
+- � **YAML Configuration** - Declarative graph definitions with external config files (v0.8.5)
+- �📊 **Multiple Node Types** - RuleNode, DBNode, AINode
+- 📝 **JSON/YAML Configuration** - Simple workflow definitions
 - 🎯 **98% Drools Compatible** - Easy migration from Java
 - 🌊 **Streaming Processing** - Stream-based execution with backpressure (v0.3.0)
 - 🗄️ **Database Integrations** - PostgreSQL, MySQL, Redis, MongoDB (v0.2.0)
@@ -34,13 +35,13 @@ A high-performance **reasoning graph framework** for Rust with **GRL (Grule Rule
 
 ```toml
 [dependencies]
-rust-logic-graph = "0.8.0"
+rust-logic-graph = "0.8.5"
 
 # With specific integrations
-rust-logic-graph = { version = "0.8.0", features = ["postgres", "openai"] }
+rust-logic-graph = { version = "0.8.5", features = ["postgres", "openai"] }
 
 # With all integrations
-rust-logic-graph = { version = "0.8.0", features = ["all-integrations"] }
+rust-logic-graph = { version = "0.8.5", features = ["all-integrations"] }
 ```
 
 ### Simple Example
@@ -111,6 +112,53 @@ rule "OrderMOQWhenShortageIsLess" salience 110 no-loop {
 
 **See full rules**: [purchasing_rules.grl](case_study/microservices/services/rule-engine-service/rules/purchasing_rules.grl)
 
+### YAML Configuration (NEW in v0.8.5)
+
+Both Monolithic and Microservices implementations now support **YAML-based graph configuration**:
+
+```yaml
+# purchasing_flow_graph.yaml
+nodes:
+  oms_grpc:
+    type: DBNode
+    description: "Fetch order management data"
+  
+  inventory_grpc:
+    type: DBNode
+    description: "Fetch inventory levels"
+  
+  rule_engine_grpc:
+    type: RuleNode
+    description: "Evaluate business rules"
+    dependencies:
+      - oms_grpc
+      - inventory_grpc
+
+edges:
+  - from: oms_grpc
+    to: rule_engine_grpc
+  - from: inventory_grpc
+    to: rule_engine_grpc
+```
+
+**Benefits:**
+- ✅ **70% less code** - Graph definition moves from code to YAML
+- ✅ **No recompile** - Change workflows without rebuilding
+- ✅ **Multiple workflows** - Easy to create variants (urgent, standard, approval)
+- ✅ **Better readability** - Clear, declarative graph structure
+- ✅ **Easy testing** - Test with different configurations
+
+**Usage:**
+```rust
+// Default config
+executor.execute("PROD-001").await?;
+
+// Custom workflow
+executor.execute_with_config("PROD-001", "urgent_flow.yaml").await?;
+```
+
+**Documentation**: See [YAML_CONFIGURATION_SUMMARY.md](case_study/YAML_CONFIGURATION_SUMMARY.md)
+
 ### Microservices Communication Flow
 
 After v0.8.0 refactor, the Orchestrator now uses **rust-logic-graph's Graph/Executor pattern** to coordinate microservices:
@@ -145,68 +193,63 @@ UOM Node ────┘
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         CLIENT (HTTP REST)                          │
 └────────────────────────────────┬────────────────────────────────────┘
-         │ POST /purchasing/flow
-         ▼
+                                 │ POST /purchasing/flow
+                                 ▼
         ┌────────────────────────────────────────────────────────────┐
         │            Orchestrator Service (Port 8080)                │
-        │  ┌──────────────────────────────────────────────────────┐  │
-        │  │          rust-logic-graph Graph Executor             │  │
-        │  │                                                       │  │
-        │  │  Creates Graph with 6 gRPC Nodes:                   │  │
-        │  │  • OmsGrpcNode      → gRPC call to OMS :50051       │  │
-        │  │  • InventoryGrpcNode → gRPC call to Inventory :50052│  │
-        │  │  • SupplierGrpcNode → gRPC call to Supplier :50053  │  │
-        │  │  • UomGrpcNode      → gRPC call to UOM :50054       │  │
-        │  │  • RuleEngineGrpcNode → gRPC call to Rules :50055   │  │
-        │  │  • PoGrpcNode       → gRPC call to PO :50056        │  │
-        │  │                                                       │  │
-        │  │  Executor runs topology: Data → Rules → PO          │  │
-        │  └──────────────────────────────────────────────────────┘  │
-        └────────┬────────────────────────────────────────────────────┘
-                 │
-                 │ Graph Executor orchestrates via gRPC:
+        │  ┌─────────────────────────────────────────────────────┐   │
+        │  │          rust-logic-graph Graph Executor            │   │
+        │  │                                                     │   │
+        │  │  Creates Graph with 6 gRPC Nodes:                   │   │
+        │  │  • OmsGrpcNode      → gRPC to OMS :50051            │   │
+        │  │  • InventoryGrpcNode → gRPC to Inventory :50052     │   │
+        │  │  • SupplierGrpcNode → gRPC to Supplier :50053       │   │
+        │  │  • UomGrpcNode      → gRPC to UOM :50054            │   │
+        │  │  • RuleEngineGrpcNode → gRPC to Rules :50055        │   │
+        │  │  • PoGrpcNode       → gRPC to PO :50056             │   │
+        │  │                                                     │   │
+        │  │  Graph Topology:                                    │   │
+        │  │  OMS ───────┐                                       │   │
+        │  │  Inventory ─┼─→ RuleEngine ──→ PO                   │   │
+        │  │  Supplier ──┤                                       │   │
+        │  │  UOM ───────┘                                       │   │
+        │  └─────────────────────────────────────────────────────┘   │
+        └────────┬───────────────────────────────────────────────────┘
                  │
    ┌─────────────┼──────────────────┬────────────────┬──────────────┐
    │ (Parallel)  │  (Parallel)      │   (Parallel)   │  (Parallel)  │
    ▼             ▼                  ▼                ▼              │
-┌──────────┐  ┌────────────┐  ┌─────────────┐  ┌───────────┐      │
-│OMS :50051│  │Inventory   │  │Supplier     │  │UOM :50054 │      │
-│          │  │:50052      │  │:50053       │  │           │      │
-│• History │  │• Levels    │  │• Pricing    │  │• Convert  │      │
-│• Demand  │  │• Available │  │• Lead Time  │  │• Factors  │      │
-└────┬─────┘  └─────┬──────┘  └──────┬──────┘  └─────┬─────┘      │
-     │              │                 │               │            │
-     └──────────────┴─────────────────┴───────────────┘            │
-                          │                                        │
-                          │ Data collected in Graph Context        │
-                          ▼                                        │
-                   ┌─────────────────┐                             │
-                   │ Rule Engine     │ (Port 50055 - gRPC)         │
-                   │     :50055      │                             │
-                   │                 │                             │
-                   │ • GRL Rules     │ • Evaluates 15 rules        │
-                   │ • Calculations  │ • Returns decision flags    │
-                   │ • Decision Flags│ • NO side effects          │
-                   └────────┬────────┘                             │
-                            │                                      │
-                            │ Returns decisions to Graph Context   │
-                            ▼                                      │
-                   ┌─────────────────┐                             │
-                   │ PO Service      │ (Port 50056 - gRPC)         │
-                   │    :50056       │◄────────────────────────────┘
+┌──────────┐  ┌────────────┐  ┌─────────────┐  ┌───────────┐        │
+│OMS :50051│  │Inventory   │  │Supplier     │  │UOM :50054 │        │
+│          │  │:50052      │  │:50053       │  │           │        │
+│• History │  │• Levels    │  │• Pricing    │  │• Convert  │        │
+│• Demand  │  │• Available │  │• Lead Time  │  │• Factors  │        │
+└────┬─────┘  └─────┬──────┘  └──────┬──────┘  └─────┬─────┘        │
+     │              │                │               │              │
+     └──────────────┴────────────────┴───────────────┘              │
+                          │                                         │
+                          │ Data stored in Graph Context            │
+                          ▼                                         │
+                   ┌─────────────────┐                              │
+                   │ Rule Engine     │ (Port 50055 - gRPC)          │
+                   │     :50055      │                              │
+                   │                 │                              │
+                   │ • GRL Rules     │ • Evaluates 15 rules         │
+                   │ • Calculations  │ • Returns decision flags     │
+                   │ • Decision Flags│ • NO side effects            │
+                   └────────┬────────┘                              │
+                            │                                       │
+                            │ Flags stored in Graph Context         │
+                            ▼                                       │
+                   ┌─────────────────┐                              │
+                   │ PO Service      │ (Port 50056 - gRPC)          │
+                   │    :50056       │◄─────────────────────────────┘
                    │                 │
-                   │ • Create PO     │ • Executes based on flags
-                   │ • Send to       │ • Email/API delivery
-                   │   Supplier      │
+                   │ • Create PO     │ • Reads flags from context
+                   │ • Send to       │ • Executes based on rules
+                   │   Supplier      │ • Email/API delivery
                    └─────────────────┘
 ```
-        │  ┌──────────────────┐  │
-        │  │ GRL Rule Engine  │  │ • Evaluates business rules
-                   │ • Send to       │ • Email/API delivery
-                   │   Supplier      │
-                   └─────────────────┘
-```
-
 **Note**: The Rule Engine service returns decision flags and calculations to the Graph Context. The PoGrpcNode then reads these flags from the context to determine whether to create/send the PO.
 
 ### Where rust-logic-graph is Used
@@ -283,6 +326,7 @@ cargo run --example grl_graph_flow
 | Document | Description |
 |----------|-------------|
 | **[🏢 Case Study: Purchasing Flow](case_study/docs/README.md)** | Real production system with microservices & monolithic implementations |
+| **[📋 YAML Configuration Guide](case_study/YAML_CONFIGURATION_SUMMARY.md)** | Declarative graph configuration with YAML (NEW in v0.8.5) |
 | **[Graph Editor Guide](graph-editor/README.md)** | Visual web-based graph editor with Next.js (NEW in v0.8.0) |
 | **[Memory Optimization Guide](docs/MEMORY_OPTIMIZATION.md)** | Context pooling and allocation tracking (v0.7.0) |
 | **[CLI Tool Guide](docs/CLI_TOOL.md)** | Developer tools for validation, profiling, and visualization (v0.5.0) |
@@ -387,8 +431,8 @@ cargo build --release --bin rlg
 
 ## 📦 Project Status
 
-**Version**: 0.8.0 (Latest)
-**Status**: Production-ready with web graph editor and real-world case study
+**Version**: 0.8.5 (Latest)
+**Status**: Production-ready with YAML configuration, web graph editor, and real-world case study
 
 ### What's Working
 - ✅ Core graph execution engine
@@ -406,6 +450,7 @@ cargo build --release --bin rlg
 - ✅ **CLI Developer Tools** - validate, profile, visualize, dry-run (v0.5.0)
 - ✅ **Web Graph Editor** - Next.js visual editor with drag-and-drop (v0.8.0)
 - ✅ **Production Case Study** - Purchasing flow with microservices & monolithic (v0.8.0)
+- ✅ **YAML Configuration** - Declarative graph definitions (v0.8.5)
 - ✅ Stream operators (map, filter, fold)
 - ✅ Comprehensive documentation
 
@@ -418,6 +463,7 @@ cargo build --release --bin rlg
 - [x] Memory Optimization (v0.7.0) - COMPLETED ✅
 - [x] Web Graph Editor (v0.8.0) - COMPLETED ✅
 - [x] Production Case Study (v0.8.0) - COMPLETED ✅
+- [x] YAML Configuration (v0.8.5) - COMPLETED ✅
 - [ ] GraphQL API (v0.9.0)
 - [ ] Production release (v1.0.0)
 
@@ -478,6 +524,66 @@ Contributions welcome! Please:
 ---
 
 ## 📝 Changelog
+
+### v0.8.5 (2025-11-20) - YAML Configuration Release
+
+**New Features:**
+- 📋 **YAML Configuration Support** - Declarative graph definitions
+  - Load graph structure from YAML files instead of hardcoded
+  - `GraphConfig` module for parsing YAML configurations
+  - Support for both JSON and YAML formats
+  - 70% code reduction in graph executors
+  - See [YAML Configuration Guide](case_study/YAML_CONFIGURATION_SUMMARY.md)
+- 🔧 **Enhanced Graph Executor API**
+  - `execute()` - Use default configuration
+  - `execute_with_config(config_path)` - Load custom YAML config
+  - Dynamic node registration from config
+- 📝 **Multiple Workflow Support**
+  - Standard flow (full process)
+  - Simplified flow (skip optional steps)
+  - Urgent flow (fast-track)
+  - Easy to create custom workflows
+- 📚 **Comprehensive Documentation**
+  - YAML configuration guide with examples
+  - Before/After comparison showing improvements
+  - Multiple workflow examples
+  - Integration guides for both architectures
+
+**Improvements:**
+- Monolithic and Microservices both support YAML configs
+- Reduced boilerplate code by 70% in executors
+- Better separation of concerns (config vs. code)
+- Easier testing with multiple configurations
+- No recompilation needed for workflow changes
+
+**Examples:**
+```yaml
+# purchasing_flow_graph.yaml
+nodes:
+  oms_grpc:
+    type: DBNode
+    description: "Fetch OMS data"
+  rule_engine_grpc:
+    type: RuleNode
+    dependencies: [oms_grpc]
+
+edges:
+  - from: oms_grpc
+    to: rule_engine_grpc
+```
+
+```rust
+// Use default config
+executor.execute("PROD-001").await?;
+
+// Use custom config
+executor.execute_with_config("PROD-001", "urgent_flow.yaml").await?;
+```
+
+**Compatibility:**
+- All tests passing
+- API backward compatible
+- Existing hardcoded graphs still work
 
 ### v0.8.0 (2025-11-20) - Web Editor & Production Case Study Release
 
@@ -618,6 +724,6 @@ Built with:
 
 **⭐ Star us on GitHub if you find this useful! ⭐**
 
-[Documentation](docs/) • [Examples](examples/) • [Use Cases](docs/USE_CASES.md)
+[Documentation](docs/) • [Examples](examples/) • [Use Cases](docs/USE_CASES.md) • [YAML Config Guide](case_study/YAML_CONFIGURATION_SUMMARY.md)
 
 </div>
