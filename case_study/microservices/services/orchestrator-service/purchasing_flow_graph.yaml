@@ -1,0 +1,52 @@
+# Graph configuration for purchasing flow
+# This defines the nodes and their dependencies for the orchestrator service
+
+nodes:
+  oms_grpc:
+    type: DBNode
+    description: "Fetch order management system history data"
+  
+  inventory_grpc:
+    type: DBNode
+    description: "Fetch current inventory levels"
+  
+  supplier_grpc:
+    type: DBNode
+    description: "Fetch supplier information and pricing"
+  
+  uom_grpc:
+    type: DBNode
+    description: "Fetch unit of measurement conversions"
+  
+  rule_engine_grpc:
+    type: RuleNode
+    description: "Evaluate business rules for purchasing decisions"
+    dependencies:
+      - oms_grpc
+      - inventory_grpc
+      - supplier_grpc
+      - uom_grpc
+  
+  po_grpc:
+    type: RuleNode
+    description: "Create and send purchase order"
+    dependencies:
+      - rule_engine_grpc
+
+# Edges are derived from dependencies above
+# Format: from -> to
+edges:
+  - from: oms_grpc
+    to: rule_engine_grpc
+  
+  - from: inventory_grpc
+    to: rule_engine_grpc
+  
+  - from: supplier_grpc
+    to: rule_engine_grpc
+  
+  - from: uom_grpc
+    to: rule_engine_grpc
+  
+  - from: rule_engine_grpc
+    to: po_grpc
