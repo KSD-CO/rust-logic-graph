@@ -27,57 +27,57 @@ After the v0.8.0 refactor, the Orchestrator now uses **rust-logic-graph's Graph/
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         CLIENT (HTTP REST)                          │
 └────────────────────────────────┬────────────────────────────────────┘
-         │ POST /purchasing/flow
-         ▼
+                                 │ POST /purchasing/flow
+                                 ▼
         ┌────────────────────────────────────────────────────────────┐
         │            Orchestrator Service (Port 8080)                │
-        │  ┌──────────────────────────────────────────────────────┐  │
-        │  │          rust-logic-graph Graph Executor             │  │
-        │  │                                                       │  │
-        │  │  Creates Graph with 6 gRPC Nodes:                   │  │
-        │  │  • OmsGrpcNode      → gRPC to OMS :50051            │  │
-        │  │  • InventoryGrpcNode → gRPC to Inventory :50052     │  │
-        │  │  • SupplierGrpcNode → gRPC to Supplier :50053       │  │
-        │  │  • UomGrpcNode      → gRPC to UOM :50054            │  │
-        │  │  • RuleEngineGrpcNode → gRPC to Rules :50055        │  │
-        │  │  • PoGrpcNode       → gRPC to PO :50056             │  │
-        │  │                                                       │  │
-        │  │  Graph Topology:                                     │  │
-        │  │  OMS ────┐                                           │  │
-        │  │  Inventory ─┼─→ RuleEngine ──→ PO                   │  │
-        │  │  Supplier ──┤                                        │  │
-        │  │  UOM ────┘                                           │  │
-        │  └──────────────────────────────────────────────────────┘  │
-        └────────┬────────────────────────────────────────────────────┘
+        │  ┌─────────────────────────────────────────────────────┐   │
+        │  │          rust-logic-graph Graph Executor            │   │
+        │  │                                                     │   │
+        │  │  Creates Graph with 6 gRPC Nodes:                   │   │
+        │  │  • OmsGrpcNode      → gRPC to OMS :50051            │   │
+        │  │  • InventoryGrpcNode → gRPC to Inventory :50052     │   │
+        │  │  • SupplierGrpcNode → gRPC to Supplier :50053       │   │
+        │  │  • UomGrpcNode      → gRPC to UOM :50054            │   │
+        │  │  • RuleEngineGrpcNode → gRPC to Rules :50055        │   │
+        │  │  • PoGrpcNode       → gRPC to PO :50056             │   │
+        │  │                                                     │   │
+        │  │  Graph Topology:                                    │   │
+        │  │  OMS ───────┐                                       │   │
+        │  │  Inventory ─┼─→ RuleEngine ──→ PO                   │   │
+        │  │  Supplier ──┤                                       │   │
+        │  │  UOM ───────┘                                       │   │
+        │  └─────────────────────────────────────────────────────┘   │
+        └────────┬───────────────────────────────────────────────────┘
                  │
    ┌─────────────┼──────────────────┬────────────────┬──────────────┐
    │ (Parallel)  │  (Parallel)      │   (Parallel)   │  (Parallel)  │
    ▼             ▼                  ▼                ▼              │
-┌──────────┐  ┌────────────┐  ┌─────────────┐  ┌───────────┐      │
-│OMS :50051│  │Inventory   │  │Supplier     │  │UOM :50054 │      │
-│          │  │:50052      │  │:50053       │  │           │      │
-│• History │  │• Levels    │  │• Pricing    │  │• Convert  │      │
-│• Demand  │  │• Available │  │• Lead Time  │  │• Factors  │      │
-└────┬─────┘  └─────┬──────┘  └──────┬──────┘  └─────┬─────┘      │
-     │              │                 │               │            │
-     └──────────────┴─────────────────┴───────────────┘            │
-                          │                                        │
-                          │ Data stored in Graph Context           │
-                          ▼                                        │
-                   ┌─────────────────┐                             │
-                   │ Rule Engine     │ (Port 50055 - gRPC)         │
-                   │     :50055      │                             │
-                   │                 │                             │
-                   │ • GRL Rules     │ • Evaluates 15 rules        │
-                   │ • Calculations  │ • Returns decision flags    │
-                   │ • Decision Flags│ • NO side effects          │
-                   └────────┬────────┘                             │
-                            │                                      │
-                            │ Flags stored in Graph Context        │
-                            ▼                                      │
-                   ┌─────────────────┐                             │
-                   │ PO Service      │ (Port 50056 - gRPC)         │
-                   │    :50056       │◄────────────────────────────┘
+┌──────────┐  ┌────────────┐  ┌─────────────┐  ┌───────────┐        │
+│OMS :50051│  │Inventory   │  │Supplier     │  │UOM :50054 │        │
+│          │  │:50052      │  │:50053       │  │           │        │
+│• History │  │• Levels    │  │• Pricing    │  │• Convert  │        │
+│• Demand  │  │• Available │  │• Lead Time  │  │• Factors  │        │
+└────┬─────┘  └─────┬──────┘  └──────┬──────┘  └─────┬─────┘        │
+     │              │                │               │              │
+     └──────────────┴────────────────┴───────────────┘              │
+                          │                                         │
+                          │ Data stored in Graph Context            │
+                          ▼                                         │
+                   ┌─────────────────┐                              │
+                   │ Rule Engine     │ (Port 50055 - gRPC)          │
+                   │     :50055      │                              │
+                   │                 │                              │
+                   │ • GRL Rules     │ • Evaluates 15 rules         │
+                   │ • Calculations  │ • Returns decision flags     │
+                   │ • Decision Flags│ • NO side effects            │
+                   └────────┬────────┘                              │
+                            │                                       │
+                            │ Flags stored in Graph Context         │
+                            ▼                                       │
+                   ┌─────────────────┐                              │
+                   │ PO Service      │ (Port 50056 - gRPC)          │
+                   │    :50056       │◄─────────────────────────────┘
                    │                 │
                    │ • Create PO     │ • Reads flags from context
                    │ • Send to       │ • Executes based on rules

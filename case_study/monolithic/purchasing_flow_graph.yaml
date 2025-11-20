@@ -1,0 +1,51 @@
+# Graph configuration for purchasing flow (Monolithic version)
+# This defines the nodes and their dependencies
+
+nodes:
+  oms_history:
+    type: DBNode
+    description: "Fetch order management system history data"
+  
+  inventory_levels:
+    type: DBNode
+    description: "Fetch current inventory levels"
+  
+  supplier_info:
+    type: DBNode
+    description: "Fetch supplier information and pricing"
+  
+  uom_conversion:
+    type: DBNode
+    description: "Fetch unit of measurement conversions"
+  
+  rule_engine:
+    type: RuleNode
+    description: "Evaluate business rules using GRL engine"
+    dependencies:
+      - oms_history
+      - inventory_levels
+      - supplier_info
+      - uom_conversion
+  
+  create_po:
+    type: RuleNode
+    description: "Create purchase order if needed"
+    dependencies:
+      - rule_engine
+
+# Edges define the workflow dependencies
+edges:
+  - from: oms_history
+    to: rule_engine
+  
+  - from: inventory_levels
+    to: rule_engine
+  
+  - from: supplier_info
+    to: rule_engine
+  
+  - from: uom_conversion
+    to: rule_engine
+  
+  - from: rule_engine
+    to: create_po

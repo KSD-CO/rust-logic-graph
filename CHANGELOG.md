@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.5] - 2025-11-20
+
+### Added
+- **YAML Configuration Support** - Declarative graph definitions
+  - `GraphConfig` module for parsing YAML configurations (`serde_yaml`)
+  - Load graph structure from external YAML files
+  - Support for both JSON and YAML formats
+  - Dynamic node registration from configuration files
+- **Enhanced Graph Executor API**
+  - `execute()` method - uses default configuration
+  - `execute_with_config(config_path)` method - loads custom YAML config
+  - Automatic node creation from YAML definitions
+- **Multiple Workflow Support**
+  - Easy creation of workflow variants (standard, simplified, urgent, approval)
+  - Config-driven workflow selection
+  - A/B testing support with different configs
+- **Case Study Updates**
+  - Monolithic version with YAML configuration
+  - Microservices orchestrator with YAML configuration
+  - Example configs: `purchasing_flow_graph.yaml`, `simplified_flow_graph.yaml`, `urgent_flow_graph.yaml`
+- **Comprehensive Documentation**
+  - [YAML Configuration Summary](case_study/YAML_CONFIGURATION_SUMMARY.md)
+  - [Graph Config README](case_study/microservices/services/orchestrator-service/GRAPH_CONFIG_README.md)
+  - [Comparison: Before/After](case_study/monolithic/COMPARISON_BEFORE_AFTER.md)
+  - Usage examples and best practices
+
+### Changed
+- Graph executors now support both hardcoded and YAML-based configurations
+- Improved separation of concerns (configuration vs. implementation)
+- Reduced boilerplate code by ~70% in graph executors
+
+### Dependencies
+- Added `serde_yaml = "0.9"` for YAML parsing
+
+### Benefits
+- 📉 **70% less code** - Graph definitions move from code to YAML
+- 🚀 **No recompile** - Change workflows without rebuilding
+- 🔄 **Multiple workflows** - Easy variant creation
+- 📖 **Better readability** - Clear, declarative structure
+- 🧪 **Easier testing** - Test with different configurations
+
+### Example
+```yaml
+# purchasing_flow_graph.yaml
+nodes:
+  oms_grpc:
+    type: DBNode
+    description: "Fetch OMS data"
+  rule_engine_grpc:
+    type: RuleNode
+    dependencies: [oms_grpc]
+
+edges:
+  - from: oms_grpc
+    to: rule_engine_grpc
+```
+
+```rust
+// Use default config
+executor.execute("PROD-001").await?;
+
+// Use custom config
+executor.execute_with_config("PROD-001", "urgent_flow.yaml").await?;
+```
+
 ## [0.7.0] - 2025-11-16
 
 ### Added

@@ -11,6 +11,7 @@ use std::env;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 
+mod graph_config;
 mod graph_executor;
 use graph_executor::OrchestratorGraphExecutor;
 

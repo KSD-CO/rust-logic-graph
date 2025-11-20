@@ -6,9 +6,9 @@ Project roadmap and task tracking for future development.
 
 ## 📊 Current Status
 
-**Version**: 0.8.0 (Beta)
-**Status**: ✅ Web Graph Editor complete
-**Last Updated**: 2025-11-16
+**Version**: 0.8.5 (Beta)
+**Status**: ✅ YAML Configuration complete
+**Last Updated**: 2025-11-20
 
 ### Completed ✅
 
@@ -354,6 +354,62 @@ Project roadmap and task tracking for future development.
 - [x] Integration workflow with CLI
 - [x] Troubleshooting guide
 - [x] Build successful (Next.js production build)
+
+---
+
+### v0.8.5 - YAML Configuration ✅ COMPLETED (2025-11-20)
+
+**Priority**: High
+**Goal**: Declarative graph definitions with external config files
+
+#### Configuration Features
+- [x] **YAML Support**
+  - [x] GraphConfig module for parsing YAML
+  - [x] Load graph structure from external files
+  - [x] Support for both JSON and YAML formats
+  - [x] Dynamic node registration from config
+
+- [x] **Enhanced API**
+  - [x] `execute()` - use default configuration
+  - [x] `execute_with_config(path)` - load custom config
+  - [x] Backward compatible with hardcoded graphs
+
+- [x] **Multiple Workflows**
+  - [x] Standard flow configuration
+  - [x] Simplified flow (skip optional steps)
+  - [x] Urgent flow (fast-track)
+  - [x] Easy variant creation
+
+#### Implementation
+- [x] **Monolithic Version**
+  - [x] graph_config.rs module
+  - [x] purchasing_flow_graph.yaml
+  - [x] simplified_flow_graph.yaml
+  - [x] Updated graph_executor.rs
+  - [x] Documentation
+
+- [x] **Microservices Version**
+  - [x] graph_config.rs module
+  - [x] purchasing_flow_graph.yaml
+  - [x] urgent_flow_graph.yaml
+  - [x] Updated orchestrator service
+  - [x] Documentation
+
+#### Documentation
+- [x] YAML_CONFIGURATION_SUMMARY.md
+- [x] GRAPH_CONFIG_README.md (both versions)
+- [x] COMPARISON_BEFORE_AFTER.md
+- [x] YAML_QUICK_REFERENCE.md
+- [x] v0.8.5_RELEASE_NOTES.md
+- [x] Updated main README.md
+- [x] Updated CHANGELOG.md
+
+#### Benefits Achieved
+- [x] 70% code reduction in graph executors
+- [x] No recompilation for workflow changes
+- [x] Easy A/B testing and variants
+- [x] Better separation of concerns
+- [x] Config-driven testing
 
 ---
 
