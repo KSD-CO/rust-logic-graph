@@ -60,7 +60,7 @@ fn benchmark_mock_purchasing_flow(c: &mut Criterion) {
                 rule: None,
             });
 
-            let graph_def = GraphDef { nodes, edges };
+            let graph_def = GraphDef::from_node_types(nodes, edges);
 
             // Build executor and register nodes
             let mut exec = Executor::new();
@@ -272,7 +272,7 @@ fn benchmark_graph_construction(c: &mut Criterion) {
                 rule: None,
             });
 
-            let graph_def = GraphDef { nodes, edges };
+            let graph_def = GraphDef::from_node_types(nodes, edges);
             black_box(Graph::new(graph_def))
         });
     });

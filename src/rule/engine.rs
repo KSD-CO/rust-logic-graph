@@ -91,19 +91,39 @@ impl RuleEngine {
     /// engine.add_grl_rule(grl).unwrap();
     /// ```
     pub fn add_grl_rule(&mut self, grl_content: &str) -> Result<(), RuleError> {
+        let start = std::time::Instant::now();
+        debug!("⏱️  [GRL Parse] Starting GRLParser::parse_rules()...");
+        
+        let parse_start = std::time::Instant::now();
         let rules = GRLParser::parse_rules(grl_content)
             .map_err(|e| RuleError::Eval(format!("Failed to parse GRL: {}", e)))?;
-
+        let parse_elapsed = parse_start.elapsed();
+        
         let rule_count = rules.len();
+        debug!("   ✅ GRLParser::parse_rules() took {:.3}s for {} rules", 
+            parse_elapsed.as_secs_f64(), rule_count);
 
-        for rule in rules {
+        debug!("⏱️  [GRL Add] Adding {} rules to knowledge_base...", rule_count);
+        let add_start = std::time::Instant::now();
+        
+        for (idx, rule) in rules.into_iter().enumerate() {
+            let rule_start = std::time::Instant::now();
             self.engine
                 .knowledge_base()
                 .add_rule(rule)
                 .map_err(|e| RuleError::Eval(format!("Failed to add rule: {}", e)))?;
+            let rule_elapsed = rule_start.elapsed();
+            
+            if rule_elapsed.as_millis() > 10 {
+                debug!("      Rule #{} took {:.3}ms", idx + 1, rule_elapsed.as_secs_f64() * 1000.0);
+            }
         }
+        
+        let add_elapsed = add_start.elapsed();
+        debug!("   ✅ add_rule() loop took {:.3}s", add_elapsed.as_secs_f64());
 
-        debug!("Loaded {} GRL rules", rule_count);
+        let total_elapsed = start.elapsed();
+        debug!("✅ [GRL Total] Loaded {} GRL rules in {:.3}s", rule_count, total_elapsed.as_secs_f64());
 
         Ok(())
     }

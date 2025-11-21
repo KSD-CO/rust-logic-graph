@@ -7,6 +7,7 @@
 <div align="center">
 
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue.svg)](https://www.postgresql.org)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0+-blue.svg)](https://www.mysql.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-326CE5.svg)](https://kubernetes.io)
@@ -36,12 +37,14 @@ This case study demonstrates how to build a **real-world distributed purchasing 
 
 ### 🏛️ Dual Architecture Support
 
-**1. Monolithic (Clean Architecture)**
-- Single binary with modular design
+**1. Monolithic (Multi-Database YAML-Driven)**
+- Single binary with distributed data
+- 4 separate PostgreSQL databases
+- YAML-driven database routing per node
 - Fast development iteration
-- Simple deployment
+- Simple deployment (single process)
 - Perfect for learning and prototyping
-- Clean separation of concerns
+- **Data isolation like microservices**
 
 **2. Microservices (Kubernetes-Ready)**
 - 7 independent services
@@ -51,8 +54,10 @@ This case study demonstrates how to build a **real-world distributed purchasing 
 - **Rete algorithm** for rule engine
 
 ### Production Patterns
-✅ **Multi-database architecture** - 4 separate MySQL databases (OMS, Inventory, Supplier, UOM)
-✅ **Async/await processing** - Parallel queries with connection pooling
+✅ **Multi-database architecture** - 4 separate PostgreSQL databases (OMS, Inventory, Supplier, UOM)
+✅ **Distributed data with single process** - Monolithic benefits + microservices data isolation
+✅ **YAML-driven database routing** - Each node specifies target database in config
+✅ **Async/await processing** - Parallel queries with connection pooling per database
 ✅ **Rete rule engine** - Incremental pattern matching for business rules
 ✅ **Dual Protocol** - gRPC for inter-service + REST for external APIs
 ✅ **Clean Architecture** - Separation of concerns in monolithic version
@@ -66,27 +71,50 @@ This case study demonstrates how to build a **real-world distributed purchasing 
 
 Choose the architecture that fits your needs:
 
-### Option 1: Monolithic (Clean Architecture) 🚀
+### Option 1: Monolithic (Multi-Database YAML-Driven) 🚀
 
 Perfect for: Development, Testing, Learning, Single Server Deployment
 
-```bash
-# Navigate to case study
-cd case_study
+**Architecture:**
+```
+purchasing_flow_graph.yaml (Source of Truth)
+  ↓ each node specifies database
+  ↓ SQL queries + business rules
+GraphExecutor (Multi-Pool Manager)
+  ├─ pools["oms_db"] → PostgreSQL
+  ├─ pools["inventory_db"] → PostgreSQL
+  ├─ pools["supplier_db"] → PostgreSQL
+  └─ pools["uom_db"] → PostgreSQL
+  ↓ creates dynamic nodes
+DynamicDBNode + DynamicRuleNode
+  ↓ routes to correct database
+4 Separate PostgreSQL Databases
+```
 
-# Setup databases (one-time)
-./scripts/setup_databases.sh
+**Key Features:**
+- 🎯 **100% YAML-driven** - All SQL queries + database routing in config
+- 🔥 **Multi-database support** - Each node queries its own database
+- ⚡ **Dynamic routing** - Nodes automatically use correct database pool
+- 📋 **Distributed data** - Simulates microservices data isolation
+- 🗄️ **PostgreSQL** - Production-grade database with ACID compliance
+
+```bash
+# Setup 4 separate databases (one-time)
+./scripts/setup_multi_databases.sh
 
 # Run monolithic version
-./scripts/run_monolithic.sh
+cd monolithic
+cargo run
 ```
 
 **Benefits:**
-- ✅ Single binary
-- ✅ < 1 second startup
-- ✅ Easy debugging
-- ✅ Clean Architecture pattern
-- ✅ No container overhead
+- ✅ Single binary, single process
+- ✅ < 2 seconds startup
+- ✅ Easy debugging with full stack traces
+- ✅ Config-driven architecture (no code changes for queries)
+- ✅ Multi-database architecture (simulates microservices isolation)
+- ✅ No network overhead
+- ✅ PostgreSQL ACID transactions
 
 ### Option 2: Microservices (Production) 🎯
 
@@ -124,11 +152,17 @@ docker-compose -f microservices/docker-compose.yml up -d
 # 1. Navigate to case study directory
 cd case_study
 
-# 2. Setup databases (one-time)
-./scripts/setup_databases.sh
+# 2. Setup 4 separate databases (one-time)
+./scripts/setup_multi_databases.sh
 
 # 3. Run the monolithic version
-./scripts/run_monolithic.sh
+cd monolithic
+cargo run
+
+# 4. Test the API (in another terminal)
+curl -X POST http://localhost:8080/purchasing/flow \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": "PROD-001"}'
 ```
 
 ### Microservices (10 Minutes)
@@ -165,15 +199,18 @@ case_study/
 ├── GRPC.md                           # gRPC implementation guide 🔥
 ├── MICROSERVICES_DEPLOYMENT.md       # Kubernetes deployment guide
 │
-├── monolithic/                       # 🏛️ Monolithic Architecture
+├── monolithic/                       # 🏛️ Monolithic Architecture (Multi-DB YAML-Driven)
 │   ├── Cargo.toml                    # Monolithic build config
-│   ├── src/                          # Clean Architecture source code
-│   │   ├── main.rs                   # Entry point
-│   │   ├── config.rs                 # Configuration
+│   ├── purchasing_flow_graph.yaml   # ⭐ Graph definition with SQL + DB routing
+│   ├── .env                          # Database configuration
+│   ├── src/                          # Source code
+│   │   ├── main.rs                   # Entry point with multi-pool setup
+│   │   ├── config.rs                 # Multi-database configuration
 │   │   ├── models.rs                 # Data models
-│   │   ├── handlers/                 # Request handlers
-│   │   ├── services/                 # Business logic services
-│   │   └── utils/                    # Utilities (DB, metrics, timer)
+│   │   ├── graph_config.rs           # YAML parser (with database field)
+│   │   ├── graph_executor.rs         # Multi-pool executor engine
+│   │   ├── db_executor.rs            # Database executor implementations
+│   │   └── utils/                    # Utilities (PostgreSQL pools, metrics)
 │   └── shared/models/                # Shared data structures
 │
 ├── microservices/                    # 🎯 Microservices Architecture
@@ -201,8 +238,9 @@ case_study/
 │
 ├── rules/                            # Rule definitions (JSON format)
 ├── scripts/                          # Helper scripts
-│   ├── setup_databases.sh            # Database setup
-│   ├── run_monolithic.sh             # Run monolithic ⭐
+│   ├── setup_databases.sh            # Legacy: Single database setup
+│   ├── setup_multi_databases.sh      # ⭐ NEW: Multi-database setup (4 DBs)
+│   ├── run_monolithic.sh             # Run monolithic
 │   ├── build-all.sh                  # Build all Docker images
 │   ├── deploy-k8s.sh                 # Deploy to Kubernetes
 │   └── test-api.sh                   # Test microservices API
@@ -220,7 +258,8 @@ case_study/
 | Document | Purpose | Audience | Time |
 |----------|---------|----------|------|
 | **[README.md](README.md)** | Project overview & quick start | Everyone | 10 min ⭐ START HERE |
-| **[GRPC.md](GRPC.md)** | gRPC implementation guide | Developers | 15 min 🔥 NEW |
+| **[MULTI_DATABASE_ARCHITECTURE.md](MULTI_DATABASE_ARCHITECTURE.md)** | Multi-database pattern + Multi-server setup | Developers/DevOps | 20 min 🔥 |
+| **[GRPC.md](GRPC.md)** | gRPC implementation guide | Developers | 15 min |
 | **[MICROSERVICES_DEPLOYMENT.md](MICROSERVICES_DEPLOYMENT.md)** | Kubernetes deployment | DevOps | 30 min |
 
 ### Microservices Documentation
@@ -243,8 +282,15 @@ case_study/
 
 **"I want to learn the system"**
 1. Read [README.md](README.md) - Overview
-2. Read [GRPC.md](GRPC.md) - gRPC architecture
-3. Run monolithic: `./scripts/run_monolithic.sh`
+2. Read [MULTI_DATABASE_ARCHITECTURE.md](MULTI_DATABASE_ARCHITECTURE.md) - Multi-DB pattern ⭐
+3. Read [GRPC.md](GRPC.md) - gRPC architecture
+4. Run monolithic: `cd monolithic && cargo run`
+
+**"I want to connect to multiple database servers"**
+1. Read [MULTI_DATABASE_ARCHITECTURE.md](MULTI_DATABASE_ARCHITECTURE.md) - Multi-server setup ⭐
+2. Add `connection` field to YAML config
+3. Run app: `cd monolithic && cargo run`
+4. Test with Docker: Multiple PostgreSQL containers on different ports
 
 **"I want to deploy to production"**
 1. Read [README.md](README.md) - Choose architecture (Monolithic vs Microservices)
@@ -288,20 +334,75 @@ This case study is perfect for:
 
 ---
 
-## 🛠️ Quick Commands
+## � Architecture Comparison
+
+### Monolithic vs Microservices
+
+| Aspect | Monolithic (YAML-Driven) | Microservices (gRPC) |
+|--------|-------------------------|---------------------|
+| **Deployment** | Single binary | 7 independent services |
+| **Configuration** | YAML file (purchasing_flow_graph.yaml) | YAML files + gRPC proto |
+| **SQL Queries** | ✅ In YAML config | ❌ In service code |
+| **Communication** | Direct function calls | gRPC protocol |
+| **Nodes** | DBNode + RuleNode | GrpcNode + RuleNode |
+| **Startup Time** | < 1 second | ~10 seconds (all services) |
+| **Scaling** | Vertical only | Horizontal per service |
+| **Best For** | Development, Testing, Single server | Production, Cloud, K8s |
+
+### Code Architecture
+
+**Monolithic (Config-Driven):**
+```yaml
+# purchasing_flow_graph.yaml - Single source of truth
+nodes:
+  oms_history:
+    type: DBNode
+    query: "SELECT product_id, avg_daily_demand FROM oms_history WHERE product_id = $1"
+  
+  rule_engine:
+    type: RuleNode
+    condition: "inventory < demand * lead_time"
+```
+
+**Microservices (Service-Driven):**
+```yaml
+# purchasing_flow_graph.yaml - Service orchestration
+nodes:
+  oms_grpc:
+    type: GrpcNode
+    query: "http://localhost:50051#GetOrderHistory"
+  
+  rule_engine_grpc:
+    type: RuleNode
+    # Rules evaluated in separate service
+```
+
+---
+
+## ️ Quick Commands
 
 ### Monolithic
 
 ```bash
+# Setup 4 separate databases
+./scripts/setup_multi_databases.sh
+
 # Run monolithic version
-./scripts/run_monolithic.sh
-
-# Build
 cd monolithic
-cargo build --features mysql
+cargo run
 
-# Run tests
-cargo test --features mysql
+# Test the API
+curl -X POST http://localhost:8080/purchasing/flow \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": "PROD-001"}'
+
+# Build for production
+cd monolithic
+cargo build --release
+
+# Verify databases
+psql -h localhost -p 5432 -U postgres -d oms_db -c "SELECT * FROM oms_history;"
+psql -h localhost -p 5432 -U postgres -d inventory_db -c "SELECT * FROM inventory;"
 ```
 
 ### Microservices
@@ -326,13 +427,34 @@ kubectl get pods -n purchasing-flow
 
 ## 🗄️ Database Configuration
 
+### Multi-Database Architecture (Monolithic)
 
-### Databases
+**4 Separate PostgreSQL Databases:**
 
-1. **oms_db** - Order Management System
-2. **inventory_db** - Inventory Management
-3. **supplier_db** - Supplier Management
-4. **uom_db** - Unit of Measure
+| Database | Table | Purpose | Sample Data |
+|----------|-------|---------|-------------|
+| `oms_db` | `oms_history` | Order history & demand trends | PROD-001: 150/day (increasing) |
+| `inventory_db` | `inventory` | Current stock levels | PROD-001: 500 units available |
+| `supplier_db` | `suppliers` | Supplier info & pricing | PROD-001: $15.50, MOQ 100, 7 days |
+| `uom_db` | `uom_conversions` | Unit conversions | PROD-001: 12 pieces = 1 box |
+
+**Connection Pooling:**
+```rust
+// Each database has its own connection pool
+PurchasingGraphExecutor {
+    pools: HashMap<String, DatabasePool>
+    ├─ "oms_db" → PgPool (oms_db)
+    ├─ "inventory_db" → PgPool (inventory_db)  
+    ├─ "supplier_db" → PgPool (supplier_db)
+    └─ "uom_db" → PgPool (uom_db)
+}
+```
+
+**Benefits:**
+- ✅ **Data isolation** - Each domain has separate database (like microservices)
+- ✅ **Independent scaling** - Can optimize each DB separately
+- ✅ **Clear boundaries** - Forces proper separation of concerns
+- ✅ **Migration path** - Easy to split into microservices later
 
 ---
 
@@ -348,16 +470,40 @@ MIT License - See project root for details
 # Navigate to case study
 cd case_study
 
-# Setup databases
-./scripts/setup_databases.sh
+# Setup 4 separate databases (PostgreSQL)
+./scripts/setup_multi_databases.sh
 
-# Run monolithic version
-./scripts/run_monolithic.sh
+# Run monolithic version (multi-database)
+cd monolithic
+cargo run
 
-# Or run microservices
+# Test the purchasing flow
+curl -X POST http://localhost:8080/purchasing/flow \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": "PROD-001"}'
+
+# Expected response:
+# {
+#   "status": "success",
+#   "message": "Purchase order created successfully",
+#   "purchase_order": {
+#     "product_id": "PROD-001",
+#     "order_qty": 550.0,
+#     "supplier_id": "SUPP-PROD-001",
+#     "total_cost": 8525.0
+#   }
+# }
+
+# Or run microservices (7 services with MySQL)
+cd ../
 ./scripts/build-all.sh
 cd microservices && docker-compose up -d
 ```
+
+**Next Steps:**
+- Read [GRPC.md](GRPC.md) for microservices architecture
+- Check [monolithic/purchasing_flow_graph.yaml](monolithic/purchasing_flow_graph.yaml) to see YAML config
+- Explore [docs/](docs/) for detailed documentation
 
 **Happy Learning! 🚀**
 

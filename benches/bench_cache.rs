@@ -17,10 +17,10 @@ fn bench_executor(c: &mut Criterion) {
     let mut rt = tokio::runtime::Runtime::new().unwrap();
 
     // Simple graph definition with one RuleNode (simulate expensive node in example)
-    let graph_def = GraphDef {
-        nodes: vec![("compute".to_string(), NodeType::RuleNode)].into_iter().collect(),
-        edges: vec![],
-    };
+    let graph_def = GraphDef::from_node_types(
+        vec![("compute".to_string(), NodeType::RuleNode)].into_iter().collect(),
+        vec![],
+    );
 
     // Executor without cache
     let mut exec_no_cache = Executor::new();

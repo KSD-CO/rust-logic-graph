@@ -102,12 +102,12 @@ async fn demo_basic_caching() -> anyhow::Result<()> {
     executor.register_node(Box::new(ExpensiveComputeNode::new("compute", 1000)));
 
     // Create simple graph
-    let graph_def = GraphDef {
-        nodes: vec![("compute".to_string(), NodeType::RuleNode)]
+    let graph_def = GraphDef::from_node_types(
+        vec![("compute".to_string(), NodeType::RuleNode)]
             .into_iter()
             .collect(),
-        edges: vec![],
-    };
+        vec![],
+    );
 
     // First execution - cache miss
     info!("First execution (cache miss):");
@@ -166,12 +166,12 @@ async fn demo_ttl_expiration() -> anyhow::Result<()> {
     let mut executor = Executor::with_cache(cache.clone());
     executor.register_node(Box::new(ExpensiveComputeNode::new("compute", 500)));
 
-    let graph_def = GraphDef {
-        nodes: vec![("compute".to_string(), NodeType::RuleNode)]
+    let graph_def = GraphDef::from_node_types(
+        vec![("compute".to_string(), NodeType::RuleNode)]
             .into_iter()
             .collect(),
-        edges: vec![],
-    };
+        vec![],
+    );
 
     // First execution
     info!("First execution:");
@@ -219,12 +219,12 @@ async fn demo_eviction_policies() -> anyhow::Result<()> {
         let mut executor = Executor::with_cache(cache.clone());
         executor.register_node(Box::new(ExpensiveComputeNode::new("compute", 100)));
 
-        let graph_def = GraphDef {
-            nodes: vec![("compute".to_string(), NodeType::RuleNode)]
+        let graph_def = GraphDef::from_node_types(
+            vec![("compute".to_string(), NodeType::RuleNode)]
                 .into_iter()
                 .collect(),
-            edges: vec![],
-        };
+            vec![],
+        );
 
         // Add 4 entries (should evict 1)
         for i in 1..=4 {
@@ -258,12 +258,12 @@ async fn demo_memory_limits() -> anyhow::Result<()> {
     let mut executor = Executor::with_cache(cache.clone());
     executor.register_node(Box::new(ExpensiveComputeNode::new("compute", 50)));
 
-    let graph_def = GraphDef {
-        nodes: vec![("compute".to_string(), NodeType::RuleNode)]
+    let graph_def = GraphDef::from_node_types(
+        vec![("compute".to_string(), NodeType::RuleNode)]
             .into_iter()
             .collect(),
-        edges: vec![],
-    };
+        vec![],
+    );
 
     // Add entries until memory limit is reached
     for i in 1..=20 {
@@ -294,12 +294,12 @@ async fn demo_cache_invalidation() -> anyhow::Result<()> {
     let mut executor = Executor::with_cache(cache.clone());
     executor.register_node(Box::new(ExpensiveComputeNode::new("compute", 200)));
 
-    let graph_def = GraphDef {
-        nodes: vec![("compute".to_string(), NodeType::RuleNode)]
+    let graph_def = GraphDef::from_node_types(
+        vec![("compute".to_string(), NodeType::RuleNode)]
             .into_iter()
             .collect(),
-        edges: vec![],
-    };
+        vec![],
+    );
 
     // Execute multiple times with different inputs
     for i in 1..=5 {

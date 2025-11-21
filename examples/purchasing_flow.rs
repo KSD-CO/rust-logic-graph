@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
     edges.push(rust_logic_graph::core::Edge { from: "calc_order_qty".to_string(), to: "create_po".to_string(), rule: None });
     edges.push(rust_logic_graph::core::Edge { from: "create_po".to_string(), to: "send_po".to_string(), rule: None });
 
-    let graph_def = GraphDef { nodes, edges };
+    let graph_def = GraphDef::from_node_types(nodes, edges);
 
     // Build executor and register nodes
     let mut exec = Executor::new();

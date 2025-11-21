@@ -361,37 +361,35 @@ mod tests {
         //   B   C   <- Can run in parallel
         //    \ /
         //     D
-        let mut def = GraphDef {
-            nodes: HashMap::new(),
-            edges: Vec::new(),
-        };
+        let mut nodes = HashMap::new();
+        nodes.insert("A".to_string(), NodeType::RuleNode);
+        nodes.insert("B".to_string(), NodeType::RuleNode);
+        nodes.insert("C".to_string(), NodeType::RuleNode);
+        nodes.insert("D".to_string(), NodeType::RuleNode);
 
-        def.nodes.insert("A".to_string(), NodeType::RuleNode);
-        def.nodes.insert("B".to_string(), NodeType::RuleNode);
-        def.nodes.insert("C".to_string(), NodeType::RuleNode);
-        def.nodes.insert("D".to_string(), NodeType::RuleNode);
-
-        def.edges.push(crate::core::Edge {
+        let mut edges = Vec::new();
+        edges.push(crate::core::Edge {
             from: "A".to_string(),
             to: "B".to_string(),
             rule: None,
         });
-        def.edges.push(crate::core::Edge {
+        edges.push(crate::core::Edge {
             from: "A".to_string(),
             to: "C".to_string(),
             rule: None,
         });
-        def.edges.push(crate::core::Edge {
+        edges.push(crate::core::Edge {
             from: "B".to_string(),
             to: "D".to_string(),
             rule: None,
         });
-        def.edges.push(crate::core::Edge {
+        edges.push(crate::core::Edge {
             from: "C".to_string(),
             to: "D".to_string(),
             rule: None,
         });
 
+        let def = GraphDef::from_node_types(nodes, edges);
         let executor = ParallelExecutor::default();
         let layers = executor.identify_layers(&def).unwrap();
 
@@ -404,33 +402,31 @@ mod tests {
 
     #[tokio::test]
     async fn test_parallelism_stats() {
-        let mut def = GraphDef {
-            nodes: HashMap::new(),
-            edges: Vec::new(),
-        };
-
+        let mut nodes = HashMap::new();
         // Linear chain: A -> B -> C -> D (no parallelism)
-        def.nodes.insert("A".to_string(), NodeType::RuleNode);
-        def.nodes.insert("B".to_string(), NodeType::RuleNode);
-        def.nodes.insert("C".to_string(), NodeType::RuleNode);
-        def.nodes.insert("D".to_string(), NodeType::RuleNode);
+        nodes.insert("A".to_string(), NodeType::RuleNode);
+        nodes.insert("B".to_string(), NodeType::RuleNode);
+        nodes.insert("C".to_string(), NodeType::RuleNode);
+        nodes.insert("D".to_string(), NodeType::RuleNode);
 
-        def.edges.push(crate::core::Edge {
+        let mut edges = Vec::new();
+        edges.push(crate::core::Edge {
             from: "A".to_string(),
             to: "B".to_string(),
             rule: None,
         });
-        def.edges.push(crate::core::Edge {
+        edges.push(crate::core::Edge {
             from: "B".to_string(),
             to: "C".to_string(),
             rule: None,
         });
-        def.edges.push(crate::core::Edge {
+        edges.push(crate::core::Edge {
             from: "C".to_string(),
             to: "D".to_string(),
             rule: None,
         });
 
+        let def = GraphDef::from_node_types(nodes, edges);
         let executor = ParallelExecutor::default();
         let stats = executor.get_parallelism_stats(&def).unwrap();
 
@@ -442,17 +438,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_parallel_graph_stats() {
-        let mut def = GraphDef {
-            nodes: HashMap::new(),
-            edges: Vec::new(),
-        };
-
+        let mut nodes = HashMap::new();
         // Fully parallel: 4 independent nodes
-        def.nodes.insert("A".to_string(), NodeType::RuleNode);
-        def.nodes.insert("B".to_string(), NodeType::RuleNode);
-        def.nodes.insert("C".to_string(), NodeType::RuleNode);
-        def.nodes.insert("D".to_string(), NodeType::RuleNode);
+        nodes.insert("A".to_string(), NodeType::RuleNode);
+        nodes.insert("B".to_string(), NodeType::RuleNode);
+        nodes.insert("C".to_string(), NodeType::RuleNode);
+        nodes.insert("D".to_string(), NodeType::RuleNode);
 
+        let def = GraphDef::from_node_types(nodes, vec![]);
         let executor = ParallelExecutor::default();
         let stats = executor.get_parallelism_stats(&def).unwrap();
 

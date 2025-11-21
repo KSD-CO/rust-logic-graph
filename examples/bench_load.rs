@@ -8,10 +8,10 @@ async fn main() -> anyhow::Result<()> {
     println!("Starting load-test example: launching many concurrent graph executions");
 
     // Build a simple graph with a DBNode (simulated 100ms delay in DBNode.run)
-    let graph_def = GraphDef {
-        nodes: vec![("dbnode".to_string(), NodeType::DBNode)].into_iter().collect(),
-        edges: vec![],
-    };
+    let graph_def = GraphDef::from_node_types(
+        vec![("dbnode".to_string(), NodeType::DBNode)].into_iter().collect(),
+        vec![],
+    );
 
     // We'll create a fresh executor per task to avoid needing Executor::clone
 

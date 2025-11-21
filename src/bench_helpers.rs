@@ -34,8 +34,7 @@ impl Node for ExpensiveComputeNode {
         tokio::time::sleep(Duration::from_millis(self.work_ms)).await;
         // Put a value into context and also return it
         let v = json!({ "node": self.id.clone(), "work_ms": self.work_ms });
-        ctx.set(&format!("{}_result", self.id), v.clone())
-            .map_err(|e| RuleError::Eval(format!("bench ctx set failed: {}", e)))?;
+        ctx.set(&format!("{}_result", self.id), v.clone());
         Ok(v)
     }
 }

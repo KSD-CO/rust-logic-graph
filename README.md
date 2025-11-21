@@ -11,7 +11,7 @@ A high-performance **reasoning graph framework** for Rust with **GRL (Grule Rule
 
 ## ✨ Key Features
 
-- 🔥 **GRL Support** - [rust-rule-engine v0.14.0](https://crates.io/crates/rust-rule-engine) with RETE-UL algorithm (2-24x faster)
+- 🔥 **GRL Support** - [rust-rule-engine v0.17](https://crates.io/crates/rust-rule-engine)
 - 🔄 **Topological Execution** - Automatic DAG-based node ordering
 - ⚡ **Async Runtime** - Built on Tokio for high concurrency
 - ⚡ **Parallel Execution** - Automatic parallel execution of independent nodes (v0.5.0)
@@ -35,31 +35,13 @@ A high-performance **reasoning graph framework** for Rust with **GRL (Grule Rule
 
 ```toml
 [dependencies]
-rust-logic-graph = "0.8.5"
+rust-logic-graph = "0.8.8"
 
 # With specific integrations
-rust-logic-graph = { version = "0.8.5", features = ["postgres", "openai"] }
+rust-logic-graph = { version = "0.8.8", features = ["postgres", "openai"] }
 
 # With all integrations
-rust-logic-graph = { version = "0.8.5", features = ["all-integrations"] }
-```
-
-### Simple Example
-
-```rust
-use rust_logic_graph::{RuleEngine, GrlRule};
-
-let grl = r#"
-rule "Discount" {
-    when
-        cart_total > 100 && is_member == true
-    then
-        discount = 0.15;
-}
-"#;
-
-let mut engine = RuleEngine::new();
-engine.add_grl_rule(grl)?;
+rust-logic-graph = { version = "0.8.8", features = ["all-integrations"] }
 ```
 
 ## 🏢 Real-World Case Study: Purchasing Flow System
@@ -74,20 +56,81 @@ See a complete production implementation in **[case_study/](case_study/)** - A f
 
 ### 🎯 Two Architecture Implementations
 
-**1. Microservices (v4.0)** - 7 services with gRPC
-- Orchestrator (port 8080) - Workflow coordination
-- OMS Service (port 50051) - Order management data
-- Inventory Service (port 50052) - Stock levels
-- Supplier Service (port 50053) - Supplier information
-- UOM Service (port 50054) - Unit conversions
-- Rule Engine (port 50055) - GRL business rules
-- PO Service (port 50056) - Purchase order management
+The purchasing flow system demonstrates the same business logic implemented in **two different architectures** - showcasing rust-logic-graph's flexibility for different deployment scenarios.
 
-**2. Monolithic** - Single HTTP service
-- Same business logic as microservices
-- Single process on port 8080
-- Shared GRL rules file
-- Direct function calls instead of gRPC
+#### **Architecture Comparison: Pros, Cons & Use Cases**
+
+| Aspect | 🏢 **Monolithic** | 🌐 **Microservices** |
+|--------|------------------|---------------------|
+| **✅ Advantages** | • **Fast development** - Single codebase, quick iterations<br>• **Low latency** - In-process calls (~10ms)<br>• **Simple deployment** - Single binary<br>• **Easy debugging** - Single process, simple logs<br>• **Low cost** - ~50MB RAM, 1 CPU<br>• **YAML flexibility** - Change workflows without rebuild | • **Horizontal scaling** - Scale services independently<br>• **Team autonomy** - Separate service ownership<br>• **Fault isolation** - Service failure ≠ system failure<br>• **Tech flexibility** - Different languages per service<br>• **Independent deploys** - Update without full restart<br>• **Production proven** - Battle-tested at scale |
+| **❌ Disadvantages** | • **Vertical scaling only** - Limited by single machine<br>• **Single point of failure** - Process crash = full outage<br>• **Tight coupling** - All code in one repo<br>• **Resource competition** - Services share CPU/RAM<br>• **Deployment risk** - One deploy affects everything | • **Network overhead** - gRPC calls (~56ms, 5.6x slower)<br>• **Complex setup** - Docker, K8s, service mesh<br>• **High resource usage** - ~500MB RAM, 7 containers<br>• **Debugging complexity** - Distributed tracing needed<br>• **Development friction** - Slower build/test cycles<br>• **Infrastructure cost** - More servers required |
+| **🎯 Best Use Cases** | ✅ **Startups** - MVP, validate quickly<br>✅ **Small teams** (1-5 devs)<br>✅ **Low-medium traffic** (<1K req/min)<br>✅ **Cost-sensitive** projects<br>✅ **Frequent changes** - Business logic evolves<br>✅ **Simple ops** - Limited DevOps resources | ✅ **High scale** (>10K req/min)<br>✅ **Large teams** (15+ devs, multiple teams)<br>✅ **Critical uptime** - 99.99% SLA<br>✅ **Independent services** - Different release cycles<br>✅ **Polyglot needs** - Mix languages/frameworks<br>✅ **Regulatory** - Service isolation required |
+| **⚠️ Anti-patterns** | ❌ Don't use if:<br>• Need >10K requests/min<br>• Team >15 developers<br>• Services need independent scaling<br>• Require 99.99% uptime | ❌ Don't use if:<br>• Team <5 developers<br>• Traffic <1K requests/min<br>• Premature optimization<br>• No DevOps expertise |
+| **🏗️ Architecture** | Single HTTP service (Port 8080)<br>4 PostgreSQL DBs (multi-database)<br>YAML-driven graph execution | 7 services (gRPC + HTTP)<br>4 PostgreSQL DBs (service-owned)<br>Hardcoded gRPC graph topology |
+| **📊 Performance** | ~10ms latency (in-process)<br>~50MB RAM, 1 CPU core | ~56ms latency (network calls)<br>~500MB RAM, 7 containers |
+
+#### **When to Use Each Architecture**
+
+**✅ Use Monolithic When:**
+- 🚀 **Early stage startup** - Fast iteration, quick deployments
+- 💰 **Limited resources** - Small team, limited infrastructure budget
+- 📊 **Low-medium traffic** - <1000 requests/minute
+- 🎯 **MVP/Prototype** - Need to validate business logic quickly
+- 🛠️ **Simple operations** - Single deployment, easy monitoring
+- 👥 **Small team** - 1-5 developers, full-stack ownership
+- 🔧 **Frequent changes** - Business logic changes often, need flexibility
+- 💵 **Cost-sensitive** - Minimize cloud costs, fewer resources
+
+**Monolithic Example (Port 8080):**
+```bash
+cd case_study/monolithic
+cargo run --release
+curl -X POST http://localhost:8080/purchasing/flow \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": "PROD-001"}'
+```
+
+**✅ Use Microservices When:**
+- 📈 **High scale** - >10,000 requests/minute, need horizontal scaling
+- 👥 **Large team** - Multiple teams, service ownership per team
+- 🔧 **Independent deployments** - Deploy services independently
+- 🛡️ **Fault isolation** - Service failure shouldn't crash entire system
+- 🌍 **Polyglot needs** - Different services in different languages
+- 🔄 **Different SLAs** - Critical services need higher availability
+- 📊 **Complex monitoring** - Distributed tracing, service mesh
+- 💰 **Budget for infrastructure** - Can afford Kubernetes, service mesh
+
+**Microservices Example (7 Services):**
+```bash
+cd case_study/microservices
+docker compose up -d
+curl -X POST http://localhost:8080/api/purchasing/flow \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": "PROD-001"}'
+```
+
+#### **Migration Path: Start Monolithic → Scale to Microservices**
+
+1. **Phase 1: Start Monolithic**
+   - Build and validate business logic
+   - Use YAML config for flexibility
+   - Deploy single binary
+
+2. **Phase 2: Extract Critical Services**
+   - Identify bottlenecks (e.g., Rule Engine)
+   - Extract to separate service
+   - Keep rest monolithic
+
+3. **Phase 3: Full Microservices**
+   - Split all services when scale demands
+   - Add service mesh, observability
+   - Use Kubernetes for orchestration
+
+**Both implementations use:**
+- ✅ Same GRL business rules (15 rules in `purchasing_rules.grl`)
+- ✅ Same graph topology (OMS → Inventory → Supplier → UOM → RuleEngine → PO)
+- ✅ rust-logic-graph's Graph/Executor pattern
+- ✅ Clean architecture principles
 
 ### 🔥 GRL Business Rules (15 Rules)
 
@@ -114,18 +157,75 @@ rule "OrderMOQWhenShortageIsLess" salience 110 no-loop {
 
 ### YAML Configuration (NEW in v0.8.5)
 
-Both Monolithic and Microservices implementations now support **YAML-based graph configuration**:
+Both Monolithic and Microservices implementations support **YAML-based graph configuration**, but with different approaches:
 
+**Monolithic YAML Example** (`purchasing_flow_graph.yaml`):
 ```yaml
-# purchasing_flow_graph.yaml
+nodes:
+  oms_history:
+    type: DBNode
+    database: "oms_db"  # Multi-database routing
+    query: "SELECT product_id, avg_daily_demand::float8, trend FROM oms_history WHERE product_id = $1"
+  
+  inventory_levels:
+    type: DBNode
+    database: "inventory_db"
+    query: "SELECT product_id, available_qty::float8, reserved_qty::float8 FROM inventory WHERE product_id = $1"
+  
+  rule_engine:
+    type: RuleNode
+    description: "Evaluate business rules with dynamic field mapping"
+    dependencies:
+      - oms_history
+      - inventory_levels
+      - supplier_info
+      - uom_conversion
+    field_mappings:  # Dynamic field extraction (NEW)
+      avg_daily_demand: "oms_history.avg_daily_demand"
+      available_qty: "inventory_levels.available_qty"
+      lead_time: "supplier_info.lead_time"
+      moq: "supplier_info.moq"
+
+  create_po:
+    type: RuleNode
+    dependencies:
+      - rule_engine
+    field_mappings:
+      should_order: "rule_engine.should_order"
+      recommended_qty: "rule_engine.recommended_qty"
+      product_id: "supplier_info.product_id"
+
+edges:
+  - from: oms_history
+    to: rule_engine
+  - from: inventory_levels
+    to: rule_engine
+  - from: rule_engine
+    to: create_po
+```
+
+**Microservices YAML Example** (`purchasing_flow_graph.yaml`):
+```yaml
 nodes:
   oms_grpc:
-    type: DBNode
-    description: "Fetch order management data"
+    type: GrpcNode
+    query: "http://localhost:50051#GetOrderHistory"
+    description: "Fetch order management data via gRPC"
   
   inventory_grpc:
-    type: DBNode
-    description: "Fetch inventory levels"
+    type: GrpcNode
+    query: "http://localhost:50052#GetInventoryLevels"
+    description: "Fetch inventory levels via gRPC"
+  
+  supplier_grpc:
+    type: GrpcNode
+    query: "http://localhost:50053#GetSupplierInfo"
+    description: "Fetch supplier information via gRPC"
+  
+  uom_grpc:
+    type: GrpcNode
+    query: "http://localhost:50054#ConvertUnits"
+    description: "Fetch UOM conversions via gRPC"
   
   rule_engine_grpc:
     type: RuleNode
@@ -133,28 +233,125 @@ nodes:
     dependencies:
       - oms_grpc
       - inventory_grpc
+      - supplier_grpc
+      - uom_grpc
+  
+  po_grpc:
+    type: RuleNode
+    description: "Create purchase order"
+    dependencies:
+      - rule_engine_grpc
 
 edges:
   - from: oms_grpc
     to: rule_engine_grpc
   - from: inventory_grpc
     to: rule_engine_grpc
+  - from: supplier_grpc
+    to: rule_engine_grpc
+  - from: uom_grpc
+    to: rule_engine_grpc
+  - from: rule_engine_grpc
+    to: po_grpc
 ```
 
+**Key Differences:**
+
+| Feature | Monolithic YAML | Microservices YAML |
+|---------|----------------|-------------------|
+| **Node Type** | `DBNode` (direct SQL) | `GrpcNode` (service calls) |
+| **Query** | SQL queries | gRPC endpoint URLs |
+| **Database Routing** | `database: "oms_db"` | No database (delegates to services) |
+| **Field Mappings** | ✅ Dynamic via YAML | ❌ Hardcoded in Node implementations |
+| **Flexibility** | 100% config-driven | Hybrid (topology in YAML, logic in code) |
+
 **Benefits:**
-- ✅ **70% less code** - Graph definition moves from code to YAML
+- ✅ **70% less code** - Graph definition moves from Rust to YAML
 - ✅ **No recompile** - Change workflows without rebuilding
-- ✅ **Multiple workflows** - Easy to create variants (urgent, standard, approval)
+- ✅ **Dynamic field mapping** (Monolithic only) - Zero hardcoded field names
+- ✅ **Multi-database routing** (Monolithic only) - Each node specifies its database
+- ✅ **Service URLs** (Microservices only) - Configure gRPC endpoints
 - ✅ **Better readability** - Clear, declarative graph structure
 - ✅ **Easy testing** - Test with different configurations
 
-**Usage:**
-```rust
-// Default config
-executor.execute("PROD-001").await?;
+**Key Architecture Differences:**
 
-// Custom workflow
-executor.execute_with_config("PROD-001", "urgent_flow.yaml").await?;
+| Aspect | Monolithic | Microservices |
+|--------|-----------|---------------|
+| **Service Count** | 1 service | 7 services (Orchestrator, OMS, Inventory, Supplier, UOM, RuleEngine, PO) |
+| **Ports** | Single port 8080 | Orchestrator: 8080, Services: 50051-50056 (gRPC) |
+| **Database Access** | Direct SQL queries to 4 DBs | gRPC calls to service APIs |
+| **Field Mapping** | YAML `field_mappings` config | Hardcoded in gRPC node implementations |
+| **Rule Engine** | In-process RuleEngine call | gRPC to rule-engine-service :50055 |
+| **Communication** | Function calls (0 network) | gRPC (network overhead) |
+| **Graph Executor** | `PurchasingGraphExecutor` | `OrchestratorExecutor` with gRPC nodes |
+| **Node Types** | `DynamicDBNode`, `DynamicRuleNode` | `OmsGrpcNode`, `InventoryGrpcNode`, etc. |
+| **Configuration** | 100% YAML-driven | Partially hardcoded gRPC contracts |
+| **Flexibility** | Change workflow via YAML only | Need code changes for new services |
+| **Dependencies** | rust-logic-graph + sqlx | rust-logic-graph + tonic + prost |
+| **Deployment** | `cargo run` or single binary | `docker compose up` (11 containers) |
+| **Development** | Hot reload, fast compile | Rebuild multiple containers |
+| **Production Ready** | ✅ Yes (single binary) | ✅ Yes (Docker/K8s) |
+
+**Example Response Time Comparison:**
+
+```
+Monolithic (in-process):
+┌─────────────────────────────────────┐
+│ HTTP Request → Graph Executor       │ ~2ms
+│ ├─ DB Query (oms_db)                │ ~1ms
+│ ├─ DB Query (inventory_db)          │ ~1ms
+│ ├─ DB Query (supplier_db)           │ ~1ms
+│ ├─ DB Query (uom_db)                │ ~1ms
+│ ├─ Rule Engine (in-process)         │ ~2ms
+│ └─ Create PO (in-process)           │ ~2ms
+│ Total: ~10ms                         │
+└─────────────────────────────────────┘
+
+Microservices (network calls):
+┌─────────────────────────────────────┐
+│ HTTP Request → Orchestrator         │ ~2ms
+│ ├─ gRPC OMS Service (50051)         │ ~8ms (network + DB)
+│ ├─ gRPC Inventory (50052)           │ ~8ms (network + DB)
+│ ├─ gRPC Supplier (50053)            │ ~8ms (network + DB)
+│ ├─ gRPC UOM (50054)                 │ ~8ms (network + DB)
+│ ├─ gRPC Rule Engine (50055)         │ ~12ms (network + rules)
+│ └─ gRPC PO Service (50056)          │ ~10ms (network + create)
+│ Total: ~56ms (5.6x slower)          │
+└─────────────────────────────────────┘
+```
+
+**Trade-offs Summary:**
+
+| Consideration | Monolithic Wins | Microservices Wins |
+|---------------|----------------|-------------------|
+| **Performance** | ✅ 5-10x faster | ❌ Network overhead |
+| **Simplicity** | ✅ Single process | ❌ Complex setup |
+| **Resource Usage** | ✅ ~50MB RAM | ❌ ~500MB RAM |
+| **Development Speed** | ✅ Faster iteration | ❌ Slower builds |
+| **Scalability** | ❌ Vertical only | ✅ Horizontal scale |
+| **Team Autonomy** | ❌ Shared codebase | ✅ Independent teams |
+| **Fault Isolation** | ❌ Single point of failure | ✅ Service isolation |
+| **Deployment** | ✅ Single binary | ❌ Multi-container |
+| **Monitoring** | ✅ Simple logs | ❌ Distributed tracing |
+| **Cost** | ✅ Lower infra cost | ❌ Higher infra cost |
+
+**Real-World Recommendation:**
+
+```
+Traffic Level          | Recommended Architecture
+-----------------------|-------------------------
+< 100 req/min          | Monolithic (overkill to use microservices)
+100-1,000 req/min      | Monolithic (scales easily vertically)
+1,000-10,000 req/min   | Monolithic or Hybrid (extract bottlenecks)
+> 10,000 req/min       | Microservices (horizontal scaling needed)
+
+Team Size              | Recommended Architecture
+-----------------------|-------------------------
+1-5 developers         | Monolithic (single codebase)
+5-15 developers        | Monolithic or Hybrid
+15-50 developers       | Microservices (team per service)
+> 50 developers        | Microservices (clear boundaries)
 ```
 
 **Documentation**: See [YAML_CONFIGURATION_SUMMARY.md](case_study/YAML_CONFIGURATION_SUMMARY.md)
@@ -193,27 +390,40 @@ UOM Node ────┘
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         CLIENT (HTTP REST)                          │
 └────────────────────────────────┬────────────────────────────────────┘
-                                 │ POST /purchasing/flow
+                                 │ POST /api/purchasing/flow
                                  ▼
         ┌────────────────────────────────────────────────────────────┐
-        │            Orchestrator Service (Port 8080)                │
-        │  ┌─────────────────────────────────────────────────────┐   │
-        │  │          rust-logic-graph Graph Executor            │   │
-        │  │                                                     │   │
-        │  │  Creates Graph with 6 gRPC Nodes:                   │   │
-        │  │  • OmsGrpcNode      → gRPC to OMS :50051            │   │
-        │  │  • InventoryGrpcNode → gRPC to Inventory :50052     │   │
-        │  │  • SupplierGrpcNode → gRPC to Supplier :50053       │   │
-        │  │  • UomGrpcNode      → gRPC to UOM :50054            │   │
-        │  │  • RuleEngineGrpcNode → gRPC to Rules :50055        │   │
-        │  │  • PoGrpcNode       → gRPC to PO :50056             │   │
-        │  │                                                     │   │
-        │  │  Graph Topology:                                    │   │
-        │  │  OMS ───────┐                                       │   │
-        │  │  Inventory ─┼─→ RuleEngine ──→ PO                   │   │
-        │  │  Supplier ──┤                                       │   │
-        │  │  UOM ───────┘                                       │   │
-        │  └─────────────────────────────────────────────────────┘   │
+        │      Orchestrator Service (Port 8080) - main.rs            │
+        │                                                            │
+        │  HTTP Endpoint → OrchestratorGraphExecutor                 │
+        │                                                            │
+        │  ┌──────────────────────────────────────────────────────┐ │
+        │  │    rust-logic-graph Graph Executor                   │ │
+        │  │    (graph_executor.rs)                               │ │
+        │  │                                                      │ │
+        │  │  Creates Graph with 6 Custom gRPC Nodes:             │ │
+        │  │  ┌────────────────────────────────────────────────┐  │ │
+        │  │  │ OmsGrpcNode                                    │  │ │
+        │  │  │ • impl Node trait from rust-logic-graph        │  │ │
+        │  │  │ • async fn run() → gRPC call to :50051         │  │ │
+        │  │  │ • Returns JSON to Context                      │  │ │
+        │  │  └────────────────────────────────────────────────┘  │ │
+        │  │  ┌────────────────────────────────────────────────┐  │ │
+        │  │  │ InventoryGrpcNode → gRPC :50052                │  │ │
+        │  │  │ SupplierGrpcNode → gRPC :50053                 │  │ │
+        │  │  │ UomGrpcNode → gRPC :50054                      │  │ │
+        │  │  │ RuleEngineGrpcNode → gRPC :50055               │  │ │
+        │  │  │ PoGrpcNode → gRPC :50056                       │  │ │
+        │  │  └────────────────────────────────────────────────┘  │ │
+        │  │                                                      │ │
+        │  │  Graph Topology (hardcoded in graph_executor.rs):    │ │
+        │  │  OMS ───────┐                                        │ │
+        │  │  Inventory ─┼─→ RuleEngine ──→ PO                    │ │
+        │  │  Supplier ──┤                                        │ │
+        │  │  UOM ───────┘                                        │ │
+        │  │                                                      │ │
+        │  │  Executor runs in topological order                  │ │
+        │  └──────────────────────────────────────────────────────┘ │
         └────────┬───────────────────────────────────────────────────┘
                  │
    ┌─────────────┼──────────────────┬────────────────┬──────────────┐
@@ -221,9 +431,11 @@ UOM Node ────┘
    ▼             ▼                  ▼                ▼              │
 ┌──────────┐  ┌────────────┐  ┌─────────────┐  ┌───────────┐        │
 │OMS :50051│  │Inventory   │  │Supplier     │  │UOM :50054 │        │
-│          │  │:50052      │  │:50053       │  │           │        │
+│  (gRPC)  │  │:50052      │  │:50053       │  │  (gRPC)   │        │
+│          │  │ (gRPC)     │  │ (gRPC)      │  │           │        │
 │• History │  │• Levels    │  │• Pricing    │  │• Convert  │        │
 │• Demand  │  │• Available │  │• Lead Time  │  │• Factors  │        │
+│          │  │            │  │• MOQ        │  │           │        │
 └────┬─────┘  └─────┬──────┘  └──────┬──────┘  └─────┬─────┘        │
      │              │                │               │              │
      └──────────────┴────────────────┴───────────────┘              │
@@ -233,10 +445,12 @@ UOM Node ────┘
                    ┌─────────────────┐                              │
                    │ Rule Engine     │ (Port 50055 - gRPC)          │
                    │     :50055      │                              │
+                   │   (gRPC)        │                              │
                    │                 │                              │
-                   │ • GRL Rules     │ • Evaluates 15 rules         │
-                   │ • Calculations  │ • Returns decision flags     │
-                   │ • Decision Flags│ • NO side effects            │
+                   │ • Loads GRL     │ • Evaluates 15 rules         │
+                   │   rules from    │ • Returns decision flags     │
+                   │   .grl file     │ • NO side effects            │
+                   │ • Pure function │ • Calculations + flags       │
                    └────────┬────────┘                              │
                             │                                       │
                             │ Flags stored in Graph Context         │
@@ -244,20 +458,26 @@ UOM Node ────┘
                    ┌─────────────────┐                              │
                    │ PO Service      │ (Port 50056 - gRPC)          │
                    │    :50056       │◄─────────────────────────────┘
+                   │   (gRPC)        │
                    │                 │
                    │ • Create PO     │ • Reads flags from context
                    │ • Send to       │ • Executes based on rules
                    │   Supplier      │ • Email/API delivery
                    └─────────────────┘
 ```
-**Note**: The Rule Engine service returns decision flags and calculations to the Graph Context. The PoGrpcNode then reads these flags from the context to determine whether to create/send the PO.
+**Note**: The Orchestrator uses **rust-logic-graph's Graph/Executor pattern** - each gRPC service call is wrapped in a custom `Node` implementation. The Rule Engine returns decision flags to the Graph Context, and the PoGrpcNode reads these flags to determine whether to create/send the PO.
 
 ### Where rust-logic-graph is Used
 
 **Monolithic App** (`case_study/monolithic/`):
 - Uses `Graph`, `Executor`, and custom `Node` implementations
-- 6 DB nodes query local MySQL databases directly
-- `RuleEngineNode` calls in-process `RuleEngine`
+- **Multi-database architecture**: 4 separate PostgreSQL databases (oms_db, inventory_db, supplier_db, uom_db)
+- **Dynamic field mapping**: YAML-configured field extraction with zero hardcoded field names
+- **Config-driven nodes**: `DynamicDBNode` and `DynamicRuleNode` read behavior from YAML
+- Database routing via `database` field in YAML (e.g., `database: "oms_db"`)
+- Field mappings via `field_mappings` in YAML (e.g., `avg_daily_demand: "oms_history.avg_daily_demand"`)
+- `RuleEngineService` accepts `HashMap<String, Value>` for complete flexibility
+- Graph structure defined in `purchasing_flow_graph.yaml`
 - Single process, no network calls
 
 **Orchestrator Microservice** (`case_study/microservices/services/orchestrator-service/`):
@@ -275,6 +495,195 @@ UOM Node ────┘
 - Standard gRPC services with database access
 - Do NOT use rust-logic-graph directly
 - Called by Orchestrator's Graph Executor
+
+**Architecture Highlights:**
+
+**Monolithic Clean Architecture:**
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   HTTP REST API (Port 8080)                             │
+│                 POST /purchasing/flow {product_id}                      │
+└──────────────────────────────────┬──────────────────────────────────────┘
+                                   │
+                                   ▼
+        ┌───────────────────────────────────────────────────────────────┐
+        │        PurchasingGraphExecutor (executors/graph_executor.rs)  │
+        │                      (Clean Architecture)                      │
+        │  ┌─────────────────────────────────────────────────────────┐  │
+        │  │      rust-logic-graph Graph/Executor Engine              │  │
+        │  │                                                          │  │
+        │  │  execute_with_config(product_id, "purchasing_flow.yaml") │  │
+        │  │                                                          │  │
+        │  │  1. GraphConfig::from_yaml_file("purchasing_flow.yaml")  │  │
+        │  │  2. Parse nodes + edges + field_mappings                 │  │
+        │  │  3. For each node in YAML:                               │  │
+        │  │     • Create DynamicDBNode (with database routing)       │  │
+        │  │     • Create DynamicRuleNode (with field_mappings)       │  │
+        │  │  4. Register all nodes to Executor                       │  │
+        │  │  5. Execute graph in topological order                   │  │
+        │  │                                                          │  │
+        │  │  Graph Topology (from YAML):                             │  │
+        │  │  oms_history ────────┐                                   │  │
+        │  │  inventory_levels ───┼──→ rule_engine ──→ create_po      │  │
+        │  │  supplier_info ──────┤                                   │  │
+        │  │  uom_conversion ─────┘                                   │  │
+        │  └─────────────────────────────────────────────────────────┘  │
+        └──────────────┬────────────────────────────────────────────────┘
+                       │
+    ┌──────────────────┼──────────────────┬──────────────────┬──────────┐
+    │ (Parallel DBs)   │  (Parallel DBs)  │  (Parallel DBs)  │ (Parallel)
+    ▼                  ▼                  ▼                  ▼          │
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  oms_db      │  │ inventory_db │  │ supplier_db  │  │   uom_db     │ │
+│ PostgreSQL   │  │ PostgreSQL   │  │ PostgreSQL   │  │ PostgreSQL   │ │
+│  :5433       │  │  :5434       │  │  :5435       │  │  :5436       │ │
+│              │  │              │  │              │  │              │ │
+│ • history    │  │ • levels     │  │ • info       │  │ • conversion │ │
+│ • demand     │  │ • available  │  │ • pricing    │  │ • factors    │ │
+│ • trends     │  │ • reserved   │  │ • lead_time  │  │              │ │
+└──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘ │
+       │                 │                 │                 │         │
+       │ DynamicDBNode   │ DynamicDBNode   │ DynamicDBNode   │ Dynamic │
+       │ database:"oms"  │ database:"inv"  │ database:"sup"  │ DB Node │
+       └─────────────────┴─────────────────┴─────────────────┴─────────┘
+                                    │
+                         Data stored in Graph Context
+                         with path notation (e.g., "oms_history.avg_daily_demand")
+                                    │
+                                    ▼
+                  ┌──────────────────────────────────────────┐
+                  │        DynamicRuleNode (rule_engine)     │
+                  │                                          │
+                  │  YAML field_mappings config:             │
+                  │  ┌────────────────────────────────────┐  │
+                  │  │ avg_daily_demand:                  │  │
+                  │  │   "oms_history.avg_daily_demand"   │  │
+                  │  │ available_qty:                     │  │
+                  │  │   "inventory_levels.available_qty" │  │
+                  │  │ lead_time:                         │  │
+                  │  │   "supplier_info.lead_time"        │  │
+                  │  │ ... (9 total mappings)             │  │
+                  │  └────────────────────────────────────┘  │
+                  │                                          │
+                  │  extract_rule_inputs() loop:             │
+                  │  • Reads field_mappings from YAML        │
+                  │  • Uses get_value_by_path() for parsing  │
+                  │  • Returns HashMap<String, Value>        │
+                  │  • ZERO hardcoded field names!           │
+                  └──────────────┬───────────────────────────┘
+                                 │
+                                 ▼
+                  ┌──────────────────────────────────────────┐
+                  │      RuleEngineService (In-Process)      │
+                  │                                          │
+                  │  evaluate(HashMap<String, Value>)        │
+                  │                                          │
+                  │  • Loads purchasing_rules.grl            │
+                  │  • 15 business rules (GRL)               │
+                  │  • Accepts dynamic HashMap input         │
+                  │  • No struct, no hardcoded fields        │
+                  │  • Pure functional evaluation            │
+                  │                                          │
+                  │  Rules calculate:                        │
+                  │  ✓ shortage = required_qty - available   │
+                  │  ✓ order_qty (respects MOQ)              │
+                  │  ✓ total_amount with discounts           │
+                  │  ✓ requires_approval flag                │
+                  │  ✓ should_create_po flag                 │
+                  └──────────────┬───────────────────────────┘
+                                 │
+                      Decision flags returned to Context
+                                 │
+                                 ▼
+                  ┌──────────────────────────────────────────┐
+                  │    DynamicRuleNode (create_po)           │
+                  │                                          │
+                  │  YAML field_mappings config:             │
+                  │  ┌────────────────────────────────────┐  │
+                  │  │ should_order:                      │  │
+                  │  │   "rule_engine.should_order"       │  │
+                  │  │ recommended_qty:                   │  │
+                  │  │   "rule_engine.recommended_qty"    │  │
+                  │  │ product_id:                        │  │
+                  │  │   "supplier_info.product_id"       │  │
+                  │  │ ... (6 total mappings)             │  │
+                  │  └────────────────────────────────────┘  │
+                  │                                          │
+                  │  • Reads rule_engine output from context │
+                  │  • Dynamic field extraction via YAML     │
+                  │  • Creates PO if should_order == true    │
+                  │  • Returns PO JSON or null               │
+                  └──────────────────────────────────────────┘
+```
+
+**Key Design Principles:**
+
+1. **Multi-Database Routing** - Each node specifies its database in YAML:
+   ```yaml
+   oms_history:
+     database: "oms_db"  # Routes to oms_db pool
+   ```
+
+2. **Dynamic Field Mapping** - Zero hardcoded fields in Rust code:
+   ```yaml
+   field_mappings:
+     avg_daily_demand: "oms_history.avg_daily_demand"
+   ```
+   ```rust
+   // Code is 100% generic
+   for (key, path) in &self.field_mappings {
+       inputs.insert(key.clone(), get_value_by_path(ctx, path));
+   }
+   ```
+
+3. **Config-Driven Execution** - Graph structure in YAML, not Rust:
+   ```rust
+   executor.execute_with_config("PROD-001", "purchasing_flow_graph.yaml")?;
+   ```
+
+4. **HashMap-Based RuleEngine** - Accepts any fields:
+   ```rust
+   pub fn evaluate(&mut self, inputs: HashMap<String, Value>) -> Result<Output>
+   ```
+
+**Microservices Communication Flow**
+
+1. **Multi-Database Routing** (`graph_executor.rs`):
+```rust
+// YAML config specifies database per node
+oms_history:
+  database: "oms_db"
+  query: "SELECT ..."
+
+// Executor routes to correct pool
+let pool = self.get_pool(node_config.database.as_deref());
+```
+
+2. **Dynamic Field Mapping** (`graph_executor.rs`):
+```rust
+// YAML config defines field mappings
+field_mappings:
+  avg_daily_demand: "oms_history.avg_daily_demand"
+  available_qty: "inventory_levels.available_qty"
+
+// Code extracts dynamically (zero hardcoding)
+fn extract_inputs(&self, ctx: &Context) -> HashMap<String, Value> {
+    for (key, path) in &self.field_mappings {
+        if let Some(value) = self.get_value_by_path(ctx, path) {
+            inputs.insert(key.clone(), value);
+        }
+    }
+}
+```
+
+3. **Config-Driven RuleEngine** (`rule_service.rs`):
+```rust
+// Accepts HashMap instead of struct - 100% flexible
+pub fn evaluate(&mut self, inputs: HashMap<String, Value>) -> Result<Output> {
+    // Uses any fields present in HashMap
+    // No hardcoded field requirements
+}
+```
 
 ### Web Graph Editor (NEW in v0.8.0)
 
@@ -431,7 +840,7 @@ cargo build --release --bin rlg
 
 ## 📦 Project Status
 
-**Version**: 0.8.5 (Latest)
+**Version**: 0.8.8 (Latest)
 **Status**: Production-ready with YAML configuration, web graph editor, and real-world case study
 
 ### What's Working
@@ -543,11 +952,20 @@ Contributions welcome! Please:
   - Simplified flow (skip optional steps)
   - Urgent flow (fast-track)
   - Easy to create custom workflows
+- 🏗️ **Monolithic Clean Architecture** (NEW)
+  - Multi-database architecture with 4 PostgreSQL databases
+  - Dynamic field mapping via YAML configuration
+  - Zero hardcoded field names in code
+  - Database routing per node via config
+  - `field_mappings` for flexible data extraction
+  - `RuleEngineService` accepts `HashMap<String, Value>`
+  - Config-driven `DynamicDBNode` and `DynamicRuleNode`
 - 📚 **Comprehensive Documentation**
   - YAML configuration guide with examples
   - Before/After comparison showing improvements
   - Multiple workflow examples
   - Integration guides for both architectures
+  - Clean architecture patterns documentation
 
 **Improvements:**
 - Monolithic and Microservices both support YAML configs
@@ -555,29 +973,24 @@ Contributions welcome! Please:
 - Better separation of concerns (config vs. code)
 - Easier testing with multiple configurations
 - No recompilation needed for workflow changes
+- Complete flexibility in field naming and mapping
 
 **Examples:**
 ```yaml
-# purchasing_flow_graph.yaml
+# Monolithic with multi-database
 nodes:
-  oms_grpc:
-    type: DBNode
-    description: "Fetch OMS data"
-  rule_engine_grpc:
-    type: RuleNode
-    dependencies: [oms_grpc]
-
-edges:
-  - from: oms_grpc
-    to: rule_engine_grpc
+  oms_history:
+    database: "oms_db"
+    query: "SELECT ..."
+  rule_engine:
+    field_mappings:
+      avg_daily_demand: "oms_history.avg_daily_demand"
 ```
 
 ```rust
-// Use default config
-executor.execute("PROD-001").await?;
-
-// Use custom config
-executor.execute_with_config("PROD-001", "urgent_flow.yaml").await?;
+// Dynamic field extraction (no hardcoding)
+let inputs = self.extract_rule_inputs(ctx);
+rule_service.evaluate(inputs)?;  // HashMap<String, Value>
 ```
 
 **Compatibility:**

@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
                     edges.push(rust_logic_graph::core::Edge { from: format!("n{}", i), to: format!("n{}", i+1), rule: None });
                 }
             }
-            GraphDef { nodes, edges }
+            GraphDef::from_node_types(nodes, edges)
         };
 
         let mut exec = Executor::new();

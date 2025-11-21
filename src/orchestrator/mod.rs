@@ -15,7 +15,7 @@ impl Orchestrator {
     }
 
     /// Execute the graph using the internal executor
-    pub async fn execute(&self, graph: &mut Graph) -> Result<()> {
+    pub async fn execute(&mut self, graph: &mut Graph) -> Result<()> {
         info!("Orchestrator: Starting orchestration...");
         self.executor.execute(graph).await?;
         info!("Orchestrator: Orchestration completed");
@@ -26,7 +26,7 @@ impl Orchestrator {
     pub async fn execute_graph(graph: &mut Graph) -> Result<()> {
         info!("Orchestrator: Building executor from graph definition");
         let executor = Executor::from_graph_def(&graph.def)?;
-        let orchestrator = Self::new(executor);
+        let mut orchestrator = Self::new(executor);
         orchestrator.execute(graph).await
     }
 }

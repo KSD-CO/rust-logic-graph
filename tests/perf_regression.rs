@@ -7,10 +7,10 @@ use serde_json::json;
 async fn perf_regression_check() {
     // This is a long-running performance regression test. Run with:
     // cargo test -- --ignored --nocapture
-    let graph_def = GraphDef {
-        nodes: vec![("compute".to_string(), NodeType::RuleNode)].into_iter().collect(),
-        edges: vec![],
-    };
+    let graph_def = GraphDef::from_node_types(
+        vec![("compute".to_string(), NodeType::RuleNode)].into_iter().collect(),
+        vec![],
+    );
 
     let mut executor = Executor::new();
     executor.register_node(Box::new(ExpensiveComputeNode::new("compute", 20)));

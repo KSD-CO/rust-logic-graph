@@ -12,8 +12,8 @@ pub mod bench_helpers;
 pub mod memory;
 
 // Re-export main types
-pub use core::{Graph, GraphDef, Edge, Context, Executor};
-pub use node::{Node, NodeType, RuleNode, DBNode, AINode};
+pub use core::{Graph, GraphDef, Edge, Context, Executor, NodeConfig, ExecutionMetrics, NodeExecutionStats};
+pub use node::{Node, NodeType, RuleNode, DBNode, AINode, GrpcNode, DatabaseExecutor, MockDatabaseExecutor};
 pub use rule::{Rule, RuleResult, RuleError, RuleEngine};
 pub use orchestrator::Orchestrator;
 pub use io::GraphIO;

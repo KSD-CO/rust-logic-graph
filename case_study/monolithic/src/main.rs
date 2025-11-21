@@ -1,10 +1,10 @@
-mod models;
+// Organized modules
 mod config;
+mod models;
+mod nodes;
+mod executors;
 mod services;
-mod handlers;
 mod utils;
-mod graph_config;
-mod graph_executor;
 
 use anyhow::Result;
 use axum::{
@@ -14,15 +14,15 @@ use axum::{
     Json, Router,
 };
 use config::AppConfig;
-use graph_executor::PurchasingGraphExecutor;
-use services::{InventoryService, OmsService, RuleEngineService, SupplierService, UomService};
+use executors::PurchasingGraphExecutor;
+use nodes::DatabasePool;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
-use utils::create_pool;
 
 #[derive(Clone)]
 struct AppState {
-    executor: Arc<PurchasingGraphExecutor>,
+    executor: Arc<Mutex<PurchasingGraphExecutor>>,
 }
 
 #[derive(serde::Deserialize)]
@@ -62,53 +62,35 @@ async fn main() -> Result<()> {
     // Load configuration
     let config = AppConfig::default();
     tracing::info!("✅ Configuration loaded");
-    tracing::info!("   DB Host: {}", config.db.host);
-    tracing::info!("   DB User: {}", config.db.user);
-    tracing::info!("   DB Port: {}", config.db.port);
+    tracing::info!("   OMS: {}:{}/{}", config.oms_db.host, config.oms_db.port, config.oms_db.database);
+    tracing::info!("   Inventory: {}:{}/{}", config.inventory_db.host, config.inventory_db.port, config.inventory_db.database);
+    tracing::info!("   Supplier: {}:{}/{}", config.supplier_db.host, config.supplier_db.port, config.supplier_db.database);
+    tracing::info!("   UOM: {}:{}/{}", config.uom_db.host, config.uom_db.port, config.uom_db.database);
 
     // Create database connection pools
     tracing::info!("🔌 Connecting to databases...");
-    let oms_pool = create_pool(&config.db.connection_string(&config.oms_db_name)).await?;
-    let inventory_pool = create_pool(&config.db.connection_string(&config.inventory_db_name)).await?;
-    let supplier_pool = create_pool(&config.db.connection_string(&config.supplier_db_name)).await?;
-    let uom_pool = create_pool(&config.db.connection_string(&config.uom_db_name)).await?;
-    tracing::info!("✅ All database pools created");
+    
+    // Create pools for all databases (each may be on different server)
+    let oms_pool = utils::database::create_postgres_pool(&config.oms_db.connection_string()).await?;
+    tracing::info!("✅ OMS database pool created: {}", config.oms_db.database);
+    
+    let inventory_pool = utils::database::create_postgres_pool(&config.inventory_db.connection_string()).await?;
+    tracing::info!("✅ Inventory database pool created: {}", config.inventory_db.database);
+    
+    let supplier_pool = utils::database::create_postgres_pool(&config.supplier_db.connection_string()).await?;
+    tracing::info!("✅ Supplier database pool created: {}", config.supplier_db.database);
+    
+    let uom_pool = utils::database::create_postgres_pool(&config.uom_db.connection_string()).await?;
+    tracing::info!("✅ UOM database pool created: {}", config.uom_db.database);
 
-    // Initialize services
-    let oms_service = OmsService::new(oms_pool);
-    let inventory_service = InventoryService::new(inventory_pool);
-    let supplier_service = SupplierService::new(supplier_pool);
-    let uom_service = UomService::new(uom_pool);
+    // Create graph executor with multiple pools
+    let mut executor = PurchasingGraphExecutor::from_postgres(oms_pool.clone());
+    executor.add_pool("oms_db".to_string(), DatabasePool::from_postgres(oms_pool));
+    executor.add_pool("inventory_db".to_string(), DatabasePool::from_postgres(inventory_pool));
+    executor.add_pool("supplier_db".to_string(), DatabasePool::from_postgres(supplier_pool));
+    executor.add_pool("uom_db".to_string(), DatabasePool::from_postgres(uom_pool));
     
-    // Try multiple paths for GRL rules file
-    let grl_paths = [
-        "../microservices/services/rule-engine-service/rules/purchasing_rules.grl",  // From monolithic/
-        "case_study/microservices/services/rule-engine-service/rules/purchasing_rules.grl",  // From workspace root
-        "microservices/services/rule-engine-service/rules/purchasing_rules.grl",  // From case_study/
-    ];
-    
-    let mut grl_path = None;
-    for path in &grl_paths {
-        if std::path::Path::new(path).exists() {
-            grl_path = Some(*path);
-            break;
-        }
-    }
-    
-    let grl_file = grl_path.ok_or_else(|| {
-        anyhow::anyhow!("Could not find GRL rules file. Tried: {:?}", grl_paths)
-    })?;
-    
-    let rule_engine = RuleEngineService::new(grl_file)?;
-
-    // Create graph executor (replaces PurchasingFlowHandler)
-    let executor = Arc::new(PurchasingGraphExecutor::new(
-        oms_service,
-        inventory_service,
-        supplier_service,
-        uom_service,
-        rule_engine,
-    ));
+    let executor = Arc::new(Mutex::new(executor));
 
     let state = AppState { executor };
 
@@ -138,7 +120,7 @@ async fn handle_purchasing_flow(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     tracing::info!("📦 Processing purchasing flow for product: {}", req.product_id);
 
-    match state.executor.execute(&req.product_id).await {
+    match state.executor.lock().await.execute(&req.product_id).await {
         Ok(Some(po)) => {
             tracing::info!("✅ Purchase order created for product: {}", po.product_id);
             Ok(Json(serde_json::json!({

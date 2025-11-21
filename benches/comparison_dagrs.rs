@@ -22,7 +22,7 @@ mod rlg {
             }
         }
 
-        let graph_def = GraphDef { nodes, edges };
+        let graph_def = GraphDef::from_node_types(nodes, edges);
         let mut executor = Executor::new();
 
         for i in 0..size {
@@ -43,10 +43,10 @@ mod rlg {
             nodes.insert(format!("node{}", i), NodeType::RuleNode);
         }
 
-        let graph_def = GraphDef {
+        let graph_def = GraphDef::from_node_types(
             nodes,
-            edges: vec![] // All nodes execute in parallel
-        };
+            vec![] // All nodes execute in parallel
+        );
 
         let mut executor = Executor::new();
         for i in 0..size {

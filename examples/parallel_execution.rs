@@ -84,206 +84,198 @@ async fn main() -> anyhow::Result<()> {
 
 /// Create a diamond-shaped graph
 fn create_diamond_graph() -> GraphDef {
-    let mut def = GraphDef {
-        nodes: HashMap::new(),
-        edges: Vec::new(),
-    };
+    let mut nodes = HashMap::new();
+    nodes.insert("A".to_string(), NodeType::RuleNode);
+    nodes.insert("B".to_string(), NodeType::RuleNode);
+    nodes.insert("C".to_string(), NodeType::RuleNode);
+    nodes.insert("D".to_string(), NodeType::RuleNode);
 
-    def.nodes.insert("A".to_string(), NodeType::RuleNode);
-    def.nodes.insert("B".to_string(), NodeType::RuleNode);
-    def.nodes.insert("C".to_string(), NodeType::RuleNode);
-    def.nodes.insert("D".to_string(), NodeType::RuleNode);
-
-    def.edges.push(rust_logic_graph::Edge {
+    let mut edges = Vec::new();
+    edges.push(rust_logic_graph::Edge {
         from: "A".to_string(),
         to: "B".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "A".to_string(),
         to: "C".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "B".to_string(),
         to: "D".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "C".to_string(),
         to: "D".to_string(),
         rule: None,
     });
 
-    def
+    GraphDef::from_node_types(nodes, edges)
 }
 
 /// Create a wide graph with maximum parallelism in the middle
 fn create_wide_graph() -> GraphDef {
-    let mut def = GraphDef {
-        nodes: HashMap::new(),
-        edges: Vec::new(),
-    };
+    let mut nodes = HashMap::new();
+    nodes.insert("A".to_string(), NodeType::RuleNode);
+    nodes.insert("B".to_string(), NodeType::RuleNode);
+    nodes.insert("C".to_string(), NodeType::RuleNode);
+    nodes.insert("D".to_string(), NodeType::RuleNode);
+    nodes.insert("E".to_string(), NodeType::RuleNode);
+    nodes.insert("F".to_string(), NodeType::RuleNode);
 
-    def.nodes.insert("A".to_string(), NodeType::RuleNode);
-    def.nodes.insert("B".to_string(), NodeType::RuleNode);
-    def.nodes.insert("C".to_string(), NodeType::RuleNode);
-    def.nodes.insert("D".to_string(), NodeType::RuleNode);
-    def.nodes.insert("E".to_string(), NodeType::RuleNode);
-    def.nodes.insert("F".to_string(), NodeType::RuleNode);
+    let mut edges: Vec<rust_logic_graph::Edge> = Vec::new();
 
+    let mut edges = Vec::new();
     // A -> B, C, D, E
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "A".to_string(),
         to: "B".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "A".to_string(),
         to: "C".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "A".to_string(),
         to: "D".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "A".to_string(),
         to: "E".to_string(),
         rule: None,
     });
 
     // B, C, D, E -> F
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "B".to_string(),
         to: "F".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "C".to_string(),
         to: "F".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "D".to_string(),
         to: "F".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "E".to_string(),
         to: "F".to_string(),
         rule: None,
     });
 
-    def
+    GraphDef::from_node_types(nodes, edges)
 }
 
 /// Create a linear graph with no parallelism
 fn create_linear_graph() -> GraphDef {
-    let mut def = GraphDef {
-        nodes: HashMap::new(),
-        edges: Vec::new(),
-    };
-
-    let nodes = vec!["A", "B", "C", "D", "E"];
-    for node in &nodes {
-        def.nodes.insert(node.to_string(), NodeType::RuleNode);
+    let node_names = vec!["A", "B", "C", "D", "E"];
+    
+    let mut nodes = HashMap::new();
+    for node in &node_names {
+        nodes.insert(node.to_string(), NodeType::RuleNode);
     }
 
-    for i in 0..nodes.len() - 1 {
-        def.edges.push(rust_logic_graph::Edge {
-            from: nodes[i].to_string(),
-            to: nodes[i + 1].to_string(),
+    let mut edges = Vec::new();
+    for i in 0..node_names.len() - 1 {
+        edges.push(rust_logic_graph::Edge {
+            from: node_names[i].to_string(),
+            to: node_names[i + 1].to_string(),
             rule: None,
         });
     }
 
-    def
+    GraphDef::from_node_types(nodes, edges)
 }
 
 /// Create a complex graph with mixed parallelism
 fn create_complex_graph() -> GraphDef {
-    let mut def = GraphDef {
-        nodes: HashMap::new(),
-        edges: Vec::new(),
-    };
-
-    let nodes = vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
-    for node in &nodes {
-        def.nodes.insert(node.to_string(), NodeType::RuleNode);
+    let node_names = vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+    
+    let mut nodes = HashMap::new();
+    for node in &node_names {
+        nodes.insert(node.to_string(), NodeType::RuleNode);
     }
 
+    let mut edges = Vec::new();
     // Layer 1: A
     // Layer 2: B, C
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "A".to_string(),
         to: "B".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "A".to_string(),
         to: "C".to_string(),
         rule: None,
     });
 
     // Layer 3: D, E, F, G
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "B".to_string(),
         to: "D".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "B".to_string(),
         to: "E".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "C".to_string(),
         to: "F".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "C".to_string(),
         to: "G".to_string(),
         rule: None,
     });
 
     // Layer 4: H, I
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "D".to_string(),
         to: "H".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "E".to_string(),
         to: "H".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "F".to_string(),
         to: "I".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "G".to_string(),
         to: "I".to_string(),
         rule: None,
     });
 
     // Layer 5: J
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "H".to_string(),
         to: "J".to_string(),
         rule: None,
     });
-    def.edges.push(rust_logic_graph::Edge {
+    edges.push(rust_logic_graph::Edge {
         from: "I".to_string(),
         to: "J".to_string(),
         rule: None,
     });
 
-    def
+    GraphDef::from_node_types(nodes, edges)
 }
 
 /// Analyze parallelism and execute the graph

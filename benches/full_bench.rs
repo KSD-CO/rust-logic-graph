@@ -22,7 +22,7 @@ fn make_graph_def(size: usize, node_type: NodeType) -> GraphDef {
         }
     }
 
-    GraphDef { nodes, edges }
+    GraphDef::from_node_types(nodes, edges)
 }
 
 // Bench runner for a given graph and executor

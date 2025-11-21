@@ -15,7 +15,7 @@ fn test_valid_graph_structure() {
         }
     ];
 
-    let graph_def = GraphDef { nodes, edges };
+    let graph_def = GraphDef::from_node_types(nodes, edges);
 
     assert_eq!(graph_def.nodes.len(), 2);
     assert_eq!(graph_def.edges.len(), 1);
@@ -23,10 +23,7 @@ fn test_valid_graph_structure() {
 
 #[test]
 fn test_empty_graph() {
-    let graph_def = GraphDef {
-        nodes: HashMap::new(),
-        edges: Vec::new(),
-    };
+    let graph_def = GraphDef::from_node_types(HashMap::new(), Vec::new());
 
     assert_eq!(graph_def.nodes.len(), 0);
     assert_eq!(graph_def.edges.len(), 0);
@@ -57,7 +54,7 @@ fn test_graph_with_cycle() {
         },
     ];
 
-    let graph_def = GraphDef { nodes, edges };
+    let graph_def = GraphDef::from_node_types(nodes, edges);
 
     // Graph should be created successfully even with cycles
     // CLI validation will detect the cycle
@@ -72,7 +69,7 @@ fn test_graph_serialization() {
 
     let edges = vec![];
 
-    let graph_def = GraphDef { nodes, edges };
+    let graph_def = GraphDef::from_node_types(nodes, edges);
 
     // Test JSON serialization
     let json = serde_json::to_string(&graph_def).unwrap();
@@ -114,7 +111,7 @@ mod integration_tests {
             }
         ];
 
-        let graph_def = GraphDef { nodes, edges };
+        let graph_def = GraphDef::from_node_types(nodes, edges);
         let _file_path = create_test_graph_file(&temp_dir, "test_graph.json", &graph_def);
 
         // File should be created and readable

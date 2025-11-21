@@ -1,9 +1,9 @@
 
 [package]
 name = "rust-logic-graph"
-version = "0.8.5"
+version = "0.8.8"
 edition = "2021"
-authors = ["James Vu <you@example.com>"]
+authors = ["James Vu <ttvuhm@gmail.com>"]
 description = "A modular reasoning graph framework for distributed logic orchestration"
 license = "MIT"
 

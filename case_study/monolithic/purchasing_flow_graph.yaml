@@ -4,34 +4,72 @@
 nodes:
   oms_history:
     type: DBNode
+    database: "oms_db"
+    query: "SELECT product_id, avg_daily_demand::float8 as avg_daily_demand, trend FROM oms_history WHERE product_id = $1"
     description: "Fetch order management system history data"
   
   inventory_levels:
     type: DBNode
+    database: "inventory_db"
+    query: "SELECT product_id, available_qty::float8 as available_qty, reserved_qty::float8 as reserved_qty, warehouse_location FROM inventory WHERE product_id = $1"
     description: "Fetch current inventory levels"
   
   supplier_info:
     type: DBNode
+    database: "supplier_db"
+    query: "SELECT product_id, supplier_name, unit_price::float8 as unit_price, moq::float8 as moq, lead_time FROM suppliers WHERE product_id = $1"
     description: "Fetch supplier information and pricing"
   
   uom_conversion:
     type: DBNode
+    database: "uom_db"
+    query: "SELECT product_id, from_uom, to_uom, conversion_factor::float8 as conversion_factor FROM uom_conversions WHERE product_id = $1"
     description: "Fetch unit of measurement conversions"
   
   rule_engine:
     type: RuleNode
-    description: "Evaluate business rules using GRL engine"
+    # Business logic: available_qty < avg_daily_demand * lead_time
+    # Implementation: src/graph_executor.rs::DynamicRuleNode
+    description: "Evaluate business rules for purchasing decisions"
     dependencies:
       - oms_history
       - inventory_levels
       - supplier_info
       - uom_conversion
+    inputs:
+      oms_data: "oms_history"
+      inventory_data: "inventory_levels"
+      supplier_data: "supplier_info"
+      uom_data: "uom_conversion"
+    field_mappings:
+      avg_daily_demand: "oms_history.avg_daily_demand"
+      available_qty: "inventory_levels.available_qty"
+      reserved_qty: "inventory_levels.reserved_qty"
+      safety_stock: "inventory_levels.safety_stock"
+      reorder_point: "inventory_levels.reorder_point"
+      lead_time: "supplier_info.lead_time"
+      moq: "supplier_info.moq"
+      unit_price: "supplier_info.unit_price"
+      is_active: "supplier_info.is_active"
   
   create_po:
     type: RuleNode
+    # Business logic: Create PO if rule_result.should_order == true
+    # Implementation: src/graph_executor.rs::DynamicRuleNode
     description: "Create purchase order if needed"
     dependencies:
       - rule_engine
+    inputs:
+      rule_result: "rule_engine"
+      supplier_data: "supplier_info"
+      uom_data: "uom_conversion"
+    field_mappings:
+      should_order: "rule_engine.should_order"
+      recommended_qty: "rule_engine.recommended_qty"
+      product_id: "supplier_info.product_id"
+      unit_price: "supplier_info.unit_price"
+      lead_time: "supplier_info.lead_time"
+      from_uom: "uom_conversion.from_uom"
 
 # Edges define the workflow dependencies
 edges:
