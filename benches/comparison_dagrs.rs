@@ -31,7 +31,7 @@ mod rlg {
 
         for _ in 0..iterations {
             let mut graph = Graph::new(graph_def.clone());
-            graph.context.set("input", json!(42)).unwrap();
+            graph.context.set("input", json!(42));
             executor.execute(&mut graph).await.unwrap();
         }
     }
@@ -55,7 +55,7 @@ mod rlg {
 
         for _ in 0..iterations {
             let mut graph = Graph::new(graph_def.clone());
-            graph.context.set("input", json!(42)).unwrap();
+            graph.context.set("input", json!(42));
             executor.execute(&mut graph).await.unwrap();
         }
     }

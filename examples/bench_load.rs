@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
             let mut exec = Executor::new();
             exec.register_node(Box::new(DBNode::new("dbnode", "SELECT 1")));
             let mut graph = Graph::new(def);
-            graph.context.set("request_id", json!(i)).unwrap();
+            graph.context.set("request_id", json!(i));
             if let Err(e) = exec.execute(&mut graph).await {
                 eprintln!("Execution failed: {:?}", e);
             }

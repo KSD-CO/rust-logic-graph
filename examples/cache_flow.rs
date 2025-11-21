@@ -112,7 +112,7 @@ async fn demo_basic_caching() -> anyhow::Result<()> {
     // First execution - cache miss
     info!("First execution (cache miss):");
     let mut graph1 = Graph::new(graph_def.clone());
-    graph1.context.set("input", json!(5))?;
+    graph1.context.set("input", json!(5));
 
     let start = std::time::Instant::now();
     executor.execute(&mut graph1).await?;
@@ -124,7 +124,7 @@ async fn demo_basic_caching() -> anyhow::Result<()> {
     // Second execution - cache hit
     info!("\nSecond execution (cache hit):");
     let mut graph2 = Graph::new(graph_def.clone());
-    graph2.context.set("input", json!(5))?; // Same input
+    graph2.context.set("input", json!(5)); // Same input
 
     let start = std::time::Instant::now();
     executor.execute(&mut graph2).await?;
@@ -137,7 +137,7 @@ async fn demo_basic_caching() -> anyhow::Result<()> {
     // Third execution with different input - cache miss
     info!("\nThird execution with different input (cache miss):");
     let mut graph3 = Graph::new(graph_def);
-    graph3.context.set("input", json!(10))?; // Different input
+    graph3.context.set("input", json!(10)); // Different input
 
     let start = std::time::Instant::now();
     executor.execute(&mut graph3).await?;
@@ -176,14 +176,14 @@ async fn demo_ttl_expiration() -> anyhow::Result<()> {
     // First execution
     info!("First execution:");
     let mut graph1 = Graph::new(graph_def.clone());
-    graph1.context.set("input", json!(7))?;
+    graph1.context.set("input", json!(7));
     executor.execute(&mut graph1).await?;
     println!("Cache stats after first execution: {:?}", cache.stats());
 
     // Immediate second execution - should hit cache
     info!("\nImmediate second execution (within TTL):");
     let mut graph2 = Graph::new(graph_def.clone());
-    graph2.context.set("input", json!(7))?;
+    graph2.context.set("input", json!(7));
     executor.execute(&mut graph2).await?;
     println!("Cache stats: {:?}", cache.stats());
 
@@ -194,7 +194,7 @@ async fn demo_ttl_expiration() -> anyhow::Result<()> {
     // Third execution after TTL - should miss cache
     info!("\nThird execution (after TTL expiration):");
     let mut graph3 = Graph::new(graph_def);
-    graph3.context.set("input", json!(7))?;
+    graph3.context.set("input", json!(7));
     executor.execute(&mut graph3).await?;
     println!("Cache stats after expiration: {:?}", cache.stats());
 
@@ -229,7 +229,7 @@ async fn demo_eviction_policies() -> anyhow::Result<()> {
         // Add 4 entries (should evict 1)
         for i in 1..=4 {
             let mut graph = Graph::new(graph_def.clone());
-            graph.context.set("input", json!(i))?;
+            graph.context.set("input", json!(i));
             executor.execute(&mut graph).await?;
             println!("Added entry {}, cache size: {}", i, cache.len());
         }
@@ -268,8 +268,8 @@ async fn demo_memory_limits() -> anyhow::Result<()> {
     // Add entries until memory limit is reached
     for i in 1..=20 {
         let mut graph = Graph::new(graph_def.clone());
-        graph.context.set("input", json!(i))?;
-        graph.context.set("large_data", json!(vec![i; 100]))?; // Add some bulk
+        graph.context.set("input", json!(i));
+        graph.context.set("large_data", json!(vec![i; 100])); // Add some bulk
         executor.execute(&mut graph).await?;
 
         let stats = cache.stats();
@@ -304,7 +304,7 @@ async fn demo_cache_invalidation() -> anyhow::Result<()> {
     // Execute multiple times with different inputs
     for i in 1..=5 {
         let mut graph = Graph::new(graph_def.clone());
-        graph.context.set("input", json!(i))?;
+        graph.context.set("input", json!(i));
         executor.execute(&mut graph).await?;
     }
 
@@ -320,7 +320,7 @@ async fn demo_cache_invalidation() -> anyhow::Result<()> {
     // Re-execute - should be cache miss
     info!("\nRe-executing after invalidation:");
     let mut graph = Graph::new(graph_def);
-    graph.context.set("input", json!(1))?;
+    graph.context.set("input", json!(1));
     executor.execute(&mut graph).await?;
     println!("Final cache stats: {:?}", cache.stats());
 

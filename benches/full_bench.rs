@@ -29,7 +29,7 @@ fn make_graph_def(size: usize, node_type: NodeType) -> GraphDef {
 async fn run_n_times(executor: &Executor, graph_def: &GraphDef, n: usize) {
     for i in 0..n {
         let mut graph = Graph::new(graph_def.clone());
-        graph.context.set("input", json!(i % 10)).unwrap();
+        graph.context.set("input", json!(i % 10));
         executor.execute(&mut graph).await.unwrap();
     }
 }

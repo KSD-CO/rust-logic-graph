@@ -88,7 +88,7 @@ async fn main() -> anyhow::Result<()> {
         println!("✓ Risk Assessment: {}", risk);
     }
 
-    if let Some(fraud) = graph.context.data.get("fraud_detection_result") {
+    if let Some(_fraud) = graph.context.data.get("fraud_detection_result") {
         println!("✓ Fraud Detection Completed");
     }
 

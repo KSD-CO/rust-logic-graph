@@ -305,7 +305,7 @@ Monolithic (in-process):
 │ ├─ DB Query (uom_db)                │ ~1ms
 │ ├─ Rule Engine (in-process)         │ ~2ms
 │ └─ Create PO (in-process)           │ ~2ms
-│ Total: ~10ms                         │
+│ Total: ~10ms                        │
 └─────────────────────────────────────┘
 
 Microservices (network calls):
@@ -397,33 +397,33 @@ UOM Node ────┘
         │                                                            │
         │  HTTP Endpoint → OrchestratorGraphExecutor                 │
         │                                                            │
-        │  ┌──────────────────────────────────────────────────────┐ │
-        │  │    rust-logic-graph Graph Executor                   │ │
-        │  │    (graph_executor.rs)                               │ │
-        │  │                                                      │ │
-        │  │  Creates Graph with 6 Custom gRPC Nodes:             │ │
-        │  │  ┌────────────────────────────────────────────────┐  │ │
-        │  │  │ OmsGrpcNode                                    │  │ │
-        │  │  │ • impl Node trait from rust-logic-graph        │  │ │
-        │  │  │ • async fn run() → gRPC call to :50051         │  │ │
-        │  │  │ • Returns JSON to Context                      │  │ │
-        │  │  └────────────────────────────────────────────────┘  │ │
-        │  │  ┌────────────────────────────────────────────────┐  │ │
-        │  │  │ InventoryGrpcNode → gRPC :50052                │  │ │
-        │  │  │ SupplierGrpcNode → gRPC :50053                 │  │ │
-        │  │  │ UomGrpcNode → gRPC :50054                      │  │ │
-        │  │  │ RuleEngineGrpcNode → gRPC :50055               │  │ │
-        │  │  │ PoGrpcNode → gRPC :50056                       │  │ │
-        │  │  └────────────────────────────────────────────────┘  │ │
-        │  │                                                      │ │
-        │  │  Graph Topology (hardcoded in graph_executor.rs):    │ │
-        │  │  OMS ───────┐                                        │ │
-        │  │  Inventory ─┼─→ RuleEngine ──→ PO                    │ │
-        │  │  Supplier ──┤                                        │ │
-        │  │  UOM ───────┘                                        │ │
-        │  │                                                      │ │
-        │  │  Executor runs in topological order                  │ │
-        │  └──────────────────────────────────────────────────────┘ │
+        │  ┌──────────────────────────────────────────────────────┐  │
+        │  │    rust-logic-graph Graph Executor                   │  │
+        │  │    (graph_executor.rs)                               │  │
+        │  │                                                      │  │
+        │  │  Creates Graph with 6 Custom gRPC Nodes:             │  │
+        │  │  ┌────────────────────────────────────────────────┐  │  │
+        │  │  │ OmsGrpcNode                                    │  │  │
+        │  │  │ • impl Node trait from rust-logic-graph        │  │  │
+        │  │  │ • async fn run() → gRPC call to :50051         │  │  │
+        │  │  │ • Returns JSON to Context                      │  │  │
+        │  │  └────────────────────────────────────────────────┘  │  │
+        │  │  ┌────────────────────────────────────────────────┐  │  │
+        │  │  │ InventoryGrpcNode → gRPC :50052                │  │  │
+        │  │  │ SupplierGrpcNode → gRPC :50053                 │  │  │
+        │  │  │ UomGrpcNode → gRPC :50054                      │  │  │
+        │  │  │ RuleEngineGrpcNode → gRPC :50055               │  │  │
+        │  │  │ PoGrpcNode → gRPC :50056                       │  │  │
+        │  │  └────────────────────────────────────────────────┘  │  │
+        │  │                                                      │  │
+        │  │  Graph Topology (hardcoded in graph_executor.rs):    │  │
+        │  │  OMS ───────┐                                        │  │
+        │  │  Inventory ─┼─→ RuleEngine ──→ PO                    │  │
+        │  │  Supplier ──┤                                        │  │
+        │  │  UOM ───────┘                                        │  │
+        │  │                                                      │  │
+        │  │  Executor runs in topological order                  │  │
+        │  └──────────────────────────────────────────────────────┘  │
         └────────┬───────────────────────────────────────────────────┘
                  │
    ┌─────────────┼──────────────────┬────────────────┬──────────────┐
@@ -530,22 +530,22 @@ UOM Node ────┘
         │  └─────────────────────────────────────────────────────────┘  │
         └──────────────┬────────────────────────────────────────────────┘
                        │
-    ┌──────────────────┼──────────────────┬──────────────────┬──────────┐
-    │ (Parallel DBs)   │  (Parallel DBs)  │  (Parallel DBs)  │ (Parallel)
-    ▼                  ▼                  ▼                  ▼          │
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  oms_db      │  │ inventory_db │  │ supplier_db  │  │   uom_db     │ │
-│ PostgreSQL   │  │ PostgreSQL   │  │ PostgreSQL   │  │ PostgreSQL   │ │
-│  :5433       │  │  :5434       │  │  :5435       │  │  :5436       │ │
-│              │  │              │  │              │  │              │ │
-│ • history    │  │ • levels     │  │ • info       │  │ • conversion │ │
-│ • demand     │  │ • available  │  │ • pricing    │  │ • factors    │ │
-│ • trends     │  │ • reserved   │  │ • lead_time  │  │              │ │
-└──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘ │
-       │                 │                 │                 │         │
-       │ DynamicDBNode   │ DynamicDBNode   │ DynamicDBNode   │ Dynamic │
-       │ database:"oms"  │ database:"inv"  │ database:"sup"  │ DB Node │
-       └─────────────────┴─────────────────┴─────────────────┴─────────┘
+    ┌──────────────────┼──────────────────┬──────────────────┬───────────┐
+    │ (Parallel DBs)   │  (Parallel DBs)  │  (Parallel DBs)  │ (Parallel)│
+    ▼                  ▼                  ▼                  ▼           │
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
+│  oms_db      │  │ inventory_db │  │ supplier_db  │  │   uom_db     │   │
+│ PostgreSQL   │  │ PostgreSQL   │  │ PostgreSQL   │  │ PostgreSQL   │   │
+│  :5433       │  │  :5434       │  │  :5435       │  │  :5436       │   │
+│              │  │              │  │              │  │              │   │
+│ • history    │  │ • levels     │  │ • info       │  │ • conversion │   │
+│ • demand     │  │ • available  │  │ • pricing    │  │ • factors    │   │
+│ • trends     │  │ • reserved   │  │ • lead_time  │  │              │   │
+└──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘   │
+       │                 │                 │                 │           │
+       │ DynamicDBNode   │ DynamicDBNode   │ DynamicDBNode   │ Dynamic   │
+       │ database:"oms"  │ database:"inv"  │ database:"sup"  │ DB Node   │
+       └─────────────────┴─────────────────┴─────────────────┴───────────┘
                                     │
                          Data stored in Graph Context
                          with path notation (e.g., "oms_history.avg_daily_demand")

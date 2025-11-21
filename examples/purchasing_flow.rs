@@ -112,7 +112,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Execute the graph once
     let mut graph = Graph::new(graph_def);
-    graph.context.set("input", json!({"run_id": 1}))?;
+    graph.context.set("input", json!({"run_id": 1}));
     exec.execute(&mut graph).await?;
 
     println!("Final context: {:?}", graph.context.data);

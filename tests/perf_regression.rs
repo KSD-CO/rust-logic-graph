@@ -19,7 +19,7 @@ async fn perf_regression_check() {
     let mut total = 0f64;
     for i in 0..runs {
         let mut graph = Graph::new(graph_def.clone());
-        graph.context.set("input", json!(i % 10)).unwrap();
+        graph.context.set("input", json!(i % 10));
         let start = std::time::Instant::now();
         executor.execute(&mut graph).await.unwrap();
         let dur = start.elapsed().as_secs_f64();

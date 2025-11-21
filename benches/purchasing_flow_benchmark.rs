@@ -175,7 +175,7 @@ fn benchmark_mock_purchasing_flow(c: &mut Criterion) {
 
             // Execute
             let mut graph = Graph::new(graph_def);
-            graph.context.set("input", json!({"run_id": 1})).unwrap();
+            graph.context.set("input", json!({"run_id": 1}));
             exec.execute(&mut graph).await.unwrap();
 
             black_box(graph.context.data.get("po_sent").cloned())

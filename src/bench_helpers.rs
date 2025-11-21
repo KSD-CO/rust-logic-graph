@@ -4,7 +4,7 @@ use serde_json::json;
 
 use crate::node::{Node, NodeType};
 use crate::core::Context;
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::RuleResult;
 
 /// A simple node that simulates an expensive computation by sleeping.
 pub struct ExpensiveComputeNode {

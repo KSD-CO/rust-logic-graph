@@ -9,7 +9,7 @@ use std::time::Duration;
 
 async fn run_graph_once(executor: &Executor, graph_def: &GraphDef, input: i64) {
     let mut graph = Graph::new(graph_def.clone());
-    graph.context.set("input", json!(input)).unwrap();
+    graph.context.set("input", json!(input));
     executor.execute(&mut graph).await.unwrap();
 }
 

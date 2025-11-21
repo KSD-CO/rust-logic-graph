@@ -45,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
         let mut total = 0f64;
         for i in 0..runs {
             let mut graph = Graph::new(graph_def.clone());
-            graph.context.set("input", json!(i % 5))?;
+            graph.context.set("input", json!(i % 5));
             let start = std::time::Instant::now();
             exec.execute(&mut graph).await?;
             total += start.elapsed().as_secs_f64();
