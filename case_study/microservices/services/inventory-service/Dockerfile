@@ -1,12 +1,16 @@
-FROM rustlang/rust:nightly as builder
+FROM rustlang/rust:nightly-slim AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-COPY case_study/shared/models ./case_study/shared/models
-COPY case_study/services/inventory-service ./case_study/services/inventory-service
+# Copy workspace structure
+COPY shared/models /build/shared/models
+COPY proto /build/proto
 
-WORKDIR /app/case_study/services/inventory-service
+# Copy service
+COPY services/inventory-service /build/services/inventory-service
 
+# Build from service directory
+WORKDIR /build/services/inventory-service
 RUN cargo build --release
 
 FROM debian:bookworm-slim
@@ -16,8 +20,8 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/case_study/services/inventory-service/target/release/inventory-service /usr/local/bin/
+COPY --from=builder /build/services/inventory-service/target/release/inventory-service /usr/local/bin/
 
-EXPOSE 8082
+EXPOSE 8082 50052
 
 CMD ["inventory-service"]

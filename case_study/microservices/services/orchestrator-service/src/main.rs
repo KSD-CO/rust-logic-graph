@@ -9,6 +9,7 @@ use purchasing_models::*;
 use reqwest::Client;
 use std::env;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tower_http::trace::TraceLayer;
 
 mod graph_config;
@@ -38,7 +39,7 @@ pub mod po {
 #[derive(Clone)]
 struct AppState {
     http_client: Client,
-    executor: Arc<OrchestratorGraphExecutor>,
+    executor: Arc<Mutex<OrchestratorGraphExecutor>>,
 }
 
 #[tokio::main]
@@ -65,14 +66,14 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("  [gRPC] PO: {}", po_grpc_url);
 
     // Create graph executor
-    let executor = Arc::new(OrchestratorGraphExecutor::new(
+    let executor = Arc::new(Mutex::new(OrchestratorGraphExecutor::new(
         oms_grpc_url,
         inventory_grpc_url,
         supplier_grpc_url,
         uom_grpc_url,
         rule_engine_grpc_url,
         po_grpc_url,
-    ));
+    )));
 
     let state = AppState {
         http_client,
@@ -110,7 +111,7 @@ async fn execute_purchasing_flow(
 ) -> Result<Json<PurchasingFlowResponse>, StatusCode> {
     tracing::info!("🎯 Starting purchasing flow via Graph Executor for product: {}", req.product_id);
 
-    match state.executor.execute(&req.product_id).await {
+    match state.executor.lock().await.execute(&req.product_id).await {
         Ok(response) => {
             tracing::info!("✅ Purchasing flow completed successfully");
             Ok(Json(response))

@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 purchasing-models = { path = "../../shared/models" }
-rust-logic-graph = { path = "../../../../" }
+rust-logic-graph = "0.8.5"
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }

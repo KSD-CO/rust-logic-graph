@@ -1,12 +1,16 @@
-FROM rustlang/rust:nightly as builder
+FROM rustlang/rust:nightly-slim AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-COPY case_study/shared/models ./case_study/shared/models
-COPY case_study/services/po-service ./case_study/services/po-service
+# Copy workspace structure
+COPY shared/models /build/shared/models
+COPY proto /build/proto
 
-WORKDIR /app/case_study/services/po-service
+# Copy service
+COPY services/po-service /build/services/po-service
 
+# Build from service directory
+WORKDIR /build/services/po-service
 RUN cargo build --release
 
 FROM debian:bookworm-slim
@@ -16,8 +20,8 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/case_study/services/po-service/target/release/po-service /usr/local/bin/
+COPY --from=builder /build/services/po-service/target/release/po-service /usr/local/bin/
 
-EXPOSE 8086
+EXPOSE 8086 50056
 
 CMD ["po-service"]

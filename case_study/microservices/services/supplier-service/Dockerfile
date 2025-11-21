@@ -1,12 +1,16 @@
-FROM rustlang/rust:nightly as builder
+FROM rustlang/rust:nightly-slim AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-COPY case_study/shared/models ./case_study/shared/models
-COPY case_study/services/supplier-service ./case_study/services/supplier-service
+# Copy workspace structure
+COPY shared/models /build/shared/models
+COPY proto /build/proto
 
-WORKDIR /app/case_study/services/supplier-service
+# Copy service
+COPY services/supplier-service /build/services/supplier-service
 
+# Build from service directory
+WORKDIR /build/services/supplier-service
 RUN cargo build --release
 
 FROM debian:bookworm-slim
@@ -16,8 +20,8 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/case_study/services/supplier-service/target/release/supplier-service /usr/local/bin/
+COPY --from=builder /build/services/supplier-service/target/release/supplier-service /usr/local/bin/
 
-EXPOSE 8083
+EXPOSE 8083 50053
 
 CMD ["supplier-service"]

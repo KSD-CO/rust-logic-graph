@@ -1,15 +1,16 @@
-FROM rustlang/rust:nightly as builder
+FROM rustlang/rust:nightly-slim AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-# Copy shared models
-COPY case_study/shared/models ./case_study/shared/models
+# Copy workspace structure
+COPY shared/models /build/shared/models
+COPY proto /build/proto
 
 # Copy service
-COPY case_study/services/oms-service ./case_study/services/oms-service
+COPY services/oms-service /build/services/oms-service
 
-WORKDIR /app/case_study/services/oms-service
-
+# Build from service directory
+WORKDIR /build/services/oms-service
 RUN cargo build --release
 
 FROM debian:bookworm-slim
@@ -19,8 +20,8 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/case_study/services/oms-service/target/release/oms-service /usr/local/bin/
+COPY --from=builder /build/services/oms-service/target/release/oms-service /usr/local/bin/
 
-EXPOSE 8081
+EXPOSE 8081 50051
 
 CMD ["oms-service"]

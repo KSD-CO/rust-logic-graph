@@ -1,20 +1,16 @@
-FROM rustlang/rust:nightly as builder
+FROM rustlang/rust:nightly-slim AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-# Copy rust-logic-graph library (root project)
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
-COPY benches ./benches
-COPY examples ./examples
+# Copy workspace structure
+COPY shared/models /build/shared/models
+COPY proto /build/proto
 
-# Copy case study files
-COPY case_study/shared/models ./case_study/shared/models
-COPY case_study/services/rule-engine-service ./case_study/services/rule-engine-service
-COPY case_study/rules ./case_study/rules
+# Copy service
+COPY services/rule-engine-service /build/services/rule-engine-service
 
-WORKDIR /app/case_study/services/rule-engine-service
-
+# Build from service directory
+WORKDIR /build/services/rule-engine-service
 RUN cargo build --release
 
 FROM debian:bookworm-slim
@@ -24,9 +20,8 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/case_study/services/rule-engine-service/target/release/rule-engine-service /usr/local/bin/
-COPY --from=builder /app/case_study/rules /app/rules
+COPY --from=builder /build/services/rule-engine-service/target/release/rule-engine-service /usr/local/bin/
 
-EXPOSE 8085
+EXPOSE 8085 50055
 
 CMD ["rule-engine-service"]

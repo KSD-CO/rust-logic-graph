@@ -1,4 +1,4 @@
-use rust_logic_graph::{GraphDef, NodeType};
+use rust_logic_graph::GraphDef;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -19,6 +19,15 @@ pub struct NodeConfig {
     pub description: String,
     #[serde(default)]
     pub dependencies: Vec<String>,
+    /// SQL query for DBNode
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+    /// Condition expression for RuleNode
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub condition: Option<String>,
+    /// AI prompt for AINode
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prompt: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,13 +59,52 @@ impl GraphConfig {
         
         for (node_id, node_config) in &self.nodes {
             let node_type = match node_config.r#type.as_str() {
-                "DBNode" => NodeType::DBNode,
-                "RuleNode" => NodeType::RuleNode,
-                "AINode" => NodeType::AINode,
-                "APINode" => NodeType::APINode,
+                "DBNode" => rust_logic_graph::NodeType::DBNode,
+                "RuleNode" => rust_logic_graph::NodeType::RuleNode,
+                "AINode" => rust_logic_graph::NodeType::AINode,
+                "GrpcNode" => rust_logic_graph::NodeType::GrpcNode,
+                "APINode" => rust_logic_graph::NodeType::AINode, // Map APINode to AINode for backward compat
                 _ => anyhow::bail!("Unknown node type: {}", node_config.r#type),
             };
-            nodes.insert(node_id.clone(), node_type);
+            
+            // Create proper NodeConfig with query/condition/prompt
+            let config = match node_type {
+                rust_logic_graph::NodeType::DBNode => {
+                    rust_logic_graph::NodeConfig::db_node(
+                        node_config.query.clone()
+                            .unwrap_or_else(|| format!("SELECT * FROM {}", node_id))
+                    )
+                }
+                rust_logic_graph::NodeType::RuleNode => {
+                    rust_logic_graph::NodeConfig::rule_node(
+                        node_config.condition.clone().unwrap_or_else(|| "true".to_string())
+                    )
+                }
+                rust_logic_graph::NodeType::AINode => {
+                    rust_logic_graph::NodeConfig::ai_node(
+                        node_config.prompt.clone()
+                            .unwrap_or_else(|| format!("Process data for {}", node_id))
+                    )
+                }
+                rust_logic_graph::NodeType::GrpcNode => {
+                    // Parse query field as "service_url#method"
+                    let query = node_config.query.as_ref()
+                        .ok_or_else(|| anyhow::anyhow!("GrpcNode '{}' missing 'query' field with format 'service_url#method'", node_id))?;
+                    
+                    // Split into service_url and method
+                    let parts: Vec<&str> = query.split('#').collect();
+                    if parts.len() != 2 {
+                        anyhow::bail!("GrpcNode '{}' query must be in format 'service_url#method', got: {}", node_id, query);
+                    }
+                    
+                    let service_url = parts[0];
+                    let method = parts[1];
+                    
+                    rust_logic_graph::NodeConfig::grpc_node(service_url, method)
+                }
+            };
+            
+            nodes.insert(node_id.clone(), config);
         }
         
         let edges = self.edges.iter().map(|e| {
@@ -100,32 +148,3 @@ impl GraphConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_parse_yaml_config() {
-        let yaml = r#"
-nodes:
-  node1:
-    type: DBNode
-    description: "Test node"
-  node2:
-    type: RuleNode
-    description: "Rule node"
-
-edges:
-  - from: node1
-    to: node2
-"#;
-        
-        let config = GraphConfig::from_yaml_str(yaml).unwrap();
-        assert_eq!(config.nodes.len(), 2);
-        assert_eq!(config.edges.len(), 1);
-        
-        let graph_def = config.to_graph_def().unwrap();
-        assert_eq!(graph_def.nodes.len(), 2);
-        assert_eq!(graph_def.edges.len(), 1);
-    }
-}

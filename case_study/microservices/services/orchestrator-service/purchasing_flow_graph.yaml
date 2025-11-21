@@ -3,20 +3,24 @@
 
 nodes:
   oms_grpc:
-    type: DBNode
-    description: "Fetch order management system history data"
+    type: GrpcNode
+    query: "http://localhost:50051#GetOrderHistory"
+    description: "Fetch order management system history data via gRPC"
   
   inventory_grpc:
-    type: DBNode
-    description: "Fetch current inventory levels"
+    type: GrpcNode
+    query: "http://localhost:50052#GetInventoryLevels"
+    description: "Fetch current inventory levels via gRPC"
   
   supplier_grpc:
-    type: DBNode
-    description: "Fetch supplier information and pricing"
+    type: GrpcNode
+    query: "http://localhost:50053#GetSupplierInfo"
+    description: "Fetch supplier information and pricing via gRPC"
   
   uom_grpc:
-    type: DBNode
-    description: "Fetch unit of measurement conversions"
+    type: GrpcNode
+    query: "http://localhost:50054#ConvertUnits"
+    description: "Fetch unit of measurement conversions via gRPC"
   
   rule_engine_grpc:
     type: RuleNode

@@ -1,4 +1,4 @@
-use rust_logic_graph::{Graph, GraphDef, Executor, NodeType, Context};
+use rust_logic_graph::{Graph, Executor, NodeType, Context};
 use rust_logic_graph::node::Node;
 use rust_logic_graph::rule::RuleResult;
 use serde_json::{json, Value};
@@ -29,7 +29,7 @@ impl OmsGrpcNode {
 #[async_trait]
 impl Node for OmsGrpcNode {
     fn id(&self) -> &str { "oms_grpc" }
-    fn node_type(&self) -> NodeType { NodeType::DBNode }
+    fn node_type(&self) -> NodeType { NodeType::GrpcNode }
     
     async fn run(&self, ctx: &mut Context) -> RuleResult {
         tracing::info!("📊 OMS gRPC Node: Fetching history for {}", self.product_id);
@@ -72,7 +72,7 @@ impl InventoryGrpcNode {
 #[async_trait]
 impl Node for InventoryGrpcNode {
     fn id(&self) -> &str { "inventory_grpc" }
-    fn node_type(&self) -> NodeType { NodeType::DBNode }
+    fn node_type(&self) -> NodeType { NodeType::GrpcNode }
     
     async fn run(&self, ctx: &mut Context) -> RuleResult {
         tracing::info!("📦 Inventory gRPC Node: Fetching levels for {}", self.product_id);
@@ -117,7 +117,7 @@ impl SupplierGrpcNode {
 #[async_trait]
 impl Node for SupplierGrpcNode {
     fn id(&self) -> &str { "supplier_grpc" }
-    fn node_type(&self) -> NodeType { NodeType::DBNode }
+    fn node_type(&self) -> NodeType { NodeType::GrpcNode }
     
     async fn run(&self, ctx: &mut Context) -> RuleResult {
         tracing::info!("🏭 Supplier gRPC Node: Fetching info for {}", self.product_id);
@@ -163,7 +163,7 @@ impl UomGrpcNode {
 #[async_trait]
 impl Node for UomGrpcNode {
     fn id(&self) -> &str { "uom_grpc" }
-    fn node_type(&self) -> NodeType { NodeType::DBNode }
+    fn node_type(&self) -> NodeType { NodeType::GrpcNode }
     
     async fn run(&self, ctx: &mut Context) -> RuleResult {
         tracing::info!("📏 UOM gRPC Node: Fetching conversion for {}", self.product_id);
@@ -388,12 +388,12 @@ impl OrchestratorGraphExecutor {
         }
     }
     
-    pub async fn execute(&self, product_id: &str) -> anyhow::Result<PurchasingFlowResponse> {
+    pub async fn execute(&mut self, product_id: &str) -> anyhow::Result<PurchasingFlowResponse> {
         self.execute_with_config(product_id, "purchasing_flow_graph.yaml").await
     }
     
     /// Execute with custom graph configuration file
-    pub async fn execute_with_config(&self, product_id: &str, config_path: &str) -> anyhow::Result<PurchasingFlowResponse> {
+    pub async fn execute_with_config(&mut self, product_id: &str, config_path: &str) -> anyhow::Result<PurchasingFlowResponse> {
         tracing::info!("🎯 Orchestrator Graph Executor: Starting purchasing flow for {}", product_id);
         tracing::info!("📋 Loading graph config from: {}", config_path);
         
@@ -410,7 +410,7 @@ impl OrchestratorGraphExecutor {
         let mut executor = Executor::new();
         
         // Register nodes based on configuration
-        for (node_id, _node_type) in &graph_def.nodes {
+        for (node_id, _node_config) in &graph_def.nodes {
             let node: Box<dyn Node> = match node_id.as_str() {
                 "oms_grpc" => Box::new(OmsGrpcNode::new(
                     self.oms_grpc_url.clone(),
@@ -446,7 +446,7 @@ impl OrchestratorGraphExecutor {
         
         // Execute graph
         let mut graph = Graph::new(graph_def);
-        graph.context.set("product_id", json!(product_id))?;
+        graph.context.set("product_id", json!(product_id));
         
         executor.execute(&mut graph).await?;
         
