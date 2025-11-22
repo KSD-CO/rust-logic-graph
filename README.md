@@ -19,8 +19,9 @@ A high-performance **reasoning graph framework** for Rust with **GRL (Grule Rule
 - 🧠 **Memory Optimization** - Context pooling and allocation tracking (v0.7.0)
 - 🛠️ **CLI Developer Tools** - Graph validation, dry-run, profiling, and visualization (v0.5.0)
 - 🎨 **Web Graph Editor** - Next.js visual editor with drag-and-drop interface (v0.8.0)
-- � **YAML Configuration** - Declarative graph definitions with external config files (v0.8.5)
-- �📊 **Multiple Node Types** - RuleNode, DBNode, AINode
+- 📋 **YAML Configuration** - Declarative graph definitions with external config files (v0.8.5)
+- 🎯 **Advanced Control Flow** - Subgraphs, conditionals, loops, error handling (v0.9.0) 🆕
+- 📊 **Multiple Node Types** - RuleNode, DBNode, AINode, ConditionalNode, LoopNode, TryCatchNode, RetryNode, CircuitBreakerNode
 - 📝 **JSON/YAML Configuration** - Simple workflow definitions
 - 🎯 **98% Drools Compatible** - Easy migration from Java
 - 🌊 **Streaming Processing** - Stream-based execution with backpressure (v0.3.0)
@@ -35,13 +36,13 @@ A high-performance **reasoning graph framework** for Rust with **GRL (Grule Rule
 
 ```toml
 [dependencies]
-rust-logic-graph = "0.8.8"
+rust-logic-graph = "0.9.0"
 
 # With specific integrations
-rust-logic-graph = { version = "0.8.8", features = ["postgres", "openai"] }
+rust-logic-graph = { version = "0.9.0", features = ["postgres", "openai"] }
 
 # With all integrations
-rust-logic-graph = { version = "0.8.8", features = ["all-integrations"] }
+rust-logic-graph = { version = "0.9.0", features = ["all-integrations"] }
 ```
 
 ## 🏢 Real-World Case Study: Purchasing Flow System
@@ -725,6 +726,134 @@ cargo run --example grl_rules
 cargo run --example grl_graph_flow
 ```
 
+### Advanced Control Flow Usage (v0.9.0) 🆕
+
+#### Conditional Branching
+
+Route execution based on conditions:
+
+```rust
+use rust_logic_graph::{Graph, NodeConfig, Edge, Context};
+
+let mut graph = Graph::new();
+
+// Add nodes
+graph.add_node("check_inventory", NodeConfig::default());
+graph.add_node("process_order", NodeConfig::default());
+graph.add_node("notify_supplier", NodeConfig::default());
+
+// Add conditional routing
+graph.add_node("route_decision", NodeConfig {
+    node_type: NodeType::Conditional {
+        condition: "available_qty > 100".to_string(),
+        true_branch: "process_order".to_string(),
+        false_branch: "notify_supplier".to_string(),
+    },
+    ..Default::default()
+});
+
+graph.add_edge(Edge::new("check_inventory", "route_decision"));
+graph.add_edge(Edge::new("route_decision", "process_order"));
+graph.add_edge(Edge::new("route_decision", "notify_supplier"));
+
+// Execute
+let result = graph.execute().await?;
+```
+
+#### Loops
+
+Iterate over collections or use while loops:
+
+```rust
+// Foreach loop over products
+graph.add_node("process_products", NodeConfig {
+    node_type: NodeType::Loop {
+        loop_type: LoopType::Foreach {
+            items_key: "products".to_string(),
+            item_var: "current_product".to_string(),
+            body_node: "process_single_product".to_string(),
+        },
+        max_iterations: Some(100),
+    },
+    ..Default::default()
+});
+
+// While loop with condition
+graph.add_node("retry_until_success", NodeConfig {
+    node_type: NodeType::Loop {
+        loop_type: LoopType::While {
+            condition: "status != 'success'".to_string(),
+            body_node: "attempt_operation".to_string(),
+        },
+        max_iterations: Some(10),
+    },
+    ..Default::default()
+});
+```
+
+#### Error Handling
+
+Try/catch patterns for resilient workflows:
+
+```rust
+graph.add_node("safe_operation", NodeConfig {
+    node_type: NodeType::TryCatch {
+        try_node: "risky_operation".to_string(),
+        catch_node: Some("handle_error".to_string()),
+        finally_node: Some("cleanup".to_string()),
+    },
+    ..Default::default()
+});
+```
+
+#### Retry Logic
+
+Exponential backoff for transient failures:
+
+```rust
+graph.add_node("api_call", NodeConfig {
+    node_type: NodeType::Retry {
+        target_node: "external_api".to_string(),
+        max_attempts: 3,
+        backoff_ms: 100,
+        exponential: true,
+    },
+    ..Default::default()
+});
+```
+
+#### Circuit Breaker
+
+Fault tolerance for unstable services:
+
+```rust
+graph.add_node("protected_service", NodeConfig {
+    node_type: NodeType::CircuitBreaker {
+        target_node: "unstable_service".to_string(),
+        failure_threshold: 5,
+        timeout_ms: 60000,
+    },
+    ..Default::default()
+});
+```
+
+#### Subgraphs
+
+Nested graph execution with input/output mapping:
+
+```rust
+graph.add_node("payment_flow", NodeConfig {
+    node_type: NodeType::Subgraph {
+        graph_def: payment_graph_def,
+        input_mapping: vec![("order_id", "id"), ("amount", "total")],
+        output_key: "payment_result".to_string(),
+    },
+    ..Default::default()
+});
+```
+
+**See [examples/](examples/) for complete working examples.**
+
 ---
 
 
@@ -893,6 +1022,8 @@ Contributions welcome! Please:
 
 ## 📖 Examples
 
+### Core Examples
+
 | Example | Description | Lines |
 |---------|-------------|-------|
 | `simple_flow.rs` | Basic 3-node pipeline | 36 |
@@ -903,6 +1034,38 @@ Contributions welcome! Please:
 | `openai_flow.rs` | OpenAI GPT integration | 150 |
 | `streaming_flow.rs` | Streaming with backpressure | 200 |
 | `parallel_execution.rs` | Parallel node execution | 250 |
+
+### Advanced Control Flow Examples (v0.9.0) 🆕
+
+| Example | Description | Features Demonstrated |
+|---------|-------------|----------------------|
+| `conditional_flow.rs` | If/else routing based on conditions | ConditionalNode, branch selection |
+| `loop_flow.rs` | Foreach and while loop patterns | LoopNode, iteration over arrays |
+| `retry_flow.rs` | Exponential backoff retry logic | RetryNode, configurable attempts |
+| `error_handling_flow.rs` | Try/catch/finally patterns | TryCatchNode, error recovery |
+| `circuit_breaker_flow.rs` | Circuit breaker fault tolerance | CircuitBreakerNode, failure thresholds |
+| `subgraph_flow.rs` | Nested graph execution | SubgraphNode, input/output mapping |
+
+**Run examples:**
+```bash
+# Conditional routing
+cargo run --example conditional_flow
+
+# Loop over products
+cargo run --example loop_flow
+
+# Retry with backoff
+cargo run --example retry_flow
+
+# Error handling
+cargo run --example error_handling_flow
+
+# Circuit breaker
+cargo run --example circuit_breaker_flow
+
+# Nested subgraphs
+cargo run --example subgraph_flow
+```
 
 ### CLI Tool Examples (v0.5.0)
 
@@ -933,6 +1096,56 @@ Contributions welcome! Please:
 ---
 
 ## 📝 Changelog
+
+### v0.8.9 (2025-11-22) - DBNode Parameters Feature
+
+**New Features:**
+- 🔧 **DBNode Context Parameters** - Dynamic query parameter extraction
+  - Extract SQL parameters from execution context
+  - `NodeConfig::db_node_with_params()` for parameterized queries
+  - Support for `$1`, `$2` (PostgreSQL) and `?` (MySQL) placeholders
+  - Automatic type conversion (String, Number, Boolean, Null)
+  - Graceful handling of missing parameters
+  - See [DB Parameters Guide](docs/DB_PARAMS.md)
+
+**API Additions:**
+```rust
+// Create DBNode with context parameter extraction
+NodeConfig::db_node_with_params(
+    "SELECT * FROM users WHERE id = $1",
+    vec!["user_id".to_string()]
+)
+
+// Set parameters in context
+graph.context.set("user_id", json!("USER-123"));
+```
+
+**Configuration Support:**
+```yaml
+nodes:
+  fetch_user:
+    node_type: DBNode
+    query: "SELECT * FROM users WHERE user_id = $1"
+    params:
+      - user_id  # Extract from context
+```
+
+**Testing:**
+- 7 new integration tests in `tests/db_params_tests.rs`
+- Single/multiple parameter extraction
+- Missing parameter handling
+- Type conversion tests
+- JSON/YAML serialization tests
+
+**Documentation:**
+- Complete guide in `docs/DB_PARAMS.md`
+- Example: `examples/db_params_flow.rs`
+- JSON example: `examples/db_params_graph.json`
+
+**Compatibility:**
+- Fully backward compatible
+- Existing DBNodes work without changes
+- Optional feature (params default to None)
 
 ### v0.8.5 (2025-11-20) - YAML Configuration Release
 

@@ -106,7 +106,13 @@ impl Executor {
                 crate::node::NodeType::DBNode => {
                     let query = config.query.clone()
                         .unwrap_or_else(|| format!("SELECT * FROM {}", node_id));
-                    Box::new(DBNode::new(node_id, query))
+                    
+                    // Create DBNode with params if specified
+                    if let Some(params) = config.params.clone() {
+                        Box::new(DBNode::with_params(node_id, query, params))
+                    } else {
+                        Box::new(DBNode::new(node_id, query))
+                    }
                 }
                 crate::node::NodeType::AINode => {
                     let prompt = config.prompt.clone()
@@ -121,6 +127,18 @@ impl Executor {
                     let service_url = parts.get(0).unwrap_or(&"http://localhost:50051").to_string();
                     let method = parts.get(1).unwrap_or(&"UnknownMethod").to_string();
                     Box::new(crate::node::GrpcNode::new(node_id, service_url, method))
+                }
+                // Advanced nodes - not yet fully supported in from_graph_def
+                // Use Node trait directly if needed
+                crate::node::NodeType::SubgraphNode |
+                crate::node::NodeType::ConditionalNode |
+                crate::node::NodeType::LoopNode |
+                crate::node::NodeType::TryCatchNode |
+                crate::node::NodeType::RetryNode |
+                crate::node::NodeType::CircuitBreakerNode => {
+                    // Placeholder: create a simple rule node
+                    // TODO: Implement proper constructors for advanced nodes
+                    Box::new(ConcreteRuleNode::new(node_id, "true"))
                 }
             };
 
@@ -200,6 +218,8 @@ impl Executor {
 
     /// Execute the graph in topological order
     pub async fn execute(&mut self, graph: &mut Graph) -> Result<()> {
+        eprintln!("\n⚡⚡⚡ CORE EXECUTOR.EXECUTE called ⚡⚡⚡");
+        eprintln!("Graph has {} nodes, {} edges", graph.def.nodes.len(), graph.def.edges.len());
         info!("Executor: Starting graph execution");
         let execution_start = Instant::now();
         
@@ -308,19 +328,31 @@ impl Executor {
 
             // Execute the node
             if should_execute {
+                eprintln!("🔵 About to execute node: {}", node_id);
                 if let Some(node) = self.nodes.get(&node_id) {
                     let node_start = Instant::now();
                     let mut cache_hit = false;
                     
-                    // Create cache key based on node ID and relevant context only
-                    // Only include context keys that this node might depend on
-                    let relevant_context: HashMap<String, serde_json::Value> = incoming_edges
+                    // Create cache key based on node ID and relevant context
+                    // Include both upstream node results AND initial parameters
+                    let mut relevant_context: HashMap<String, serde_json::Value> = incoming_edges
                         .iter()
                         .filter_map(|edge| {
                             graph.context.data.get(&format!("{}_result", edge.from))
                                 .map(|v| (edge.from.clone(), v.clone()))
                         })
                         .collect();
+                    
+                    // For nodes with no incoming edges (root nodes), include initial params in cache key
+                    // This ensures different initial parameters (e.g., product_id) create different cache entries
+                    if incoming_edges.is_empty() {
+                        // Include all non-result context keys as initial params
+                        for (key, value) in &graph.context.data {
+                            if !key.ends_with("_result") {
+                                relevant_context.insert(format!("_initial_{}", key), value.clone());
+                            }
+                        }
+                    }
                     
                     let context_value = serde_json::to_value(&relevant_context)?;
                     let cache_key = CacheKey::new(&node_id, &context_value);
@@ -352,7 +384,15 @@ impl Executor {
                         // Store result in cache if execution succeeded
                         if exec_result.is_ok() {
                             if let Some(cache) = &self.cache {
-                                let context_result = serde_json::to_value(&graph.context.data)?;
+                                // Only cache the node's output (keys ending with _result)
+                                // Don't cache input parameters to avoid overwriting them on cache hit
+                                let mut result_only: HashMap<String, serde_json::Value> = HashMap::new();
+                                for (key, value) in &graph.context.data {
+                                    if key.ends_with("_result") {
+                                        result_only.insert(key.clone(), value.clone());
+                                    }
+                                }
+                                let context_result = serde_json::to_value(&result_only)?;
                                 if let Err(e) = cache.put(cache_key, context_result, None) {
                                     warn!("Failed to cache result for node '{}': {}", node_id, e);
                                 }

@@ -1,9 +1,89 @@
 # Examples
 
 This folder contains runnable example flows that demonstrate how to use the
-rust-logic-graph library. The key example added is `purchasing_flow.rs`, which
-models a simple purchasing pipeline (data collection, rule engine, order
-calculation, PO creation and send).
+rust-logic-graph library.
+
+## 📋 Example Categories
+
+### Basic Examples
+- **`simple_flow.rs`** - Basic 3-node pipeline
+- **`advanced_flow.rs`** - Complex 6-node workflow
+- **`parallel_execution.rs`** - Parallel node execution
+
+### Integration Examples
+- **`postgres_flow.rs`** - PostgreSQL integration
+- **`openai_flow.rs`** - OpenAI GPT integration
+- **`streaming_flow.rs`** - Streaming with backpressure
+
+### GRL (Business Rules) Examples
+- **`grl_rules.rs`** - GRL rule examples
+- **`grl_graph_flow.rs`** - GRL + Graph integration
+- **`purchasing_flow.rs`** - Complete purchasing pipeline with rules
+
+### Advanced Control Flow Examples (v0.9.0) 🆕
+
+#### **`subgraph_flow.rs`** - Reusable Subgraphs
+Demonstrates how to create modular, reusable workflow components using YAML configuration.
+
+**YAML Files:**
+- `discount_subgraph.yaml` - Reusable discount calculation logic (3 nodes)
+- `order_with_subgraph.yaml` - Main workflow that calls the subgraph (5 nodes)
+
+**Key Concepts:**
+- Input/output mapping between parent and child contexts
+- Encapsulation of business logic
+- Reusability across multiple workflows
+
+```bash
+cargo run --example subgraph_flow
+
+# Inspect the YAML files
+cat examples/discount_subgraph.yaml
+cat examples/order_with_subgraph.yaml
+```
+
+**Benefits:**
+- ✅ No recompilation needed for workflow changes
+- ✅ Clear separation of concerns
+- ✅ Easy to version control and review
+- ✅ Reusable components
+
+#### **`conditional_flow.rs`** - If/Else Routing
+Route execution based on runtime conditions.
+
+```bash
+cargo run --example conditional_flow
+```
+
+#### **`loop_flow.rs`** - Foreach and While Loops
+Iterate over arrays or use while loops with safety limits.
+
+```bash
+cargo run --example loop_flow
+```
+
+#### **`retry_flow.rs`** - Exponential Backoff
+Retry failed operations with exponential backoff.
+
+```bash
+cargo run --example retry_flow
+```
+
+#### **`error_handling_flow.rs`** - Try/Catch/Finally
+Handle errors gracefully with try/catch patterns.
+
+```bash
+cargo run --example error_handling_flow
+```
+
+#### **`circuit_breaker_flow.rs`** - Circuit Breaker
+Protect services with circuit breaker pattern.
+
+```bash
+cargo run --example circuit_breaker_flow
+```
+
+## 🚀 Purchasing Flow Example
 
 Purchasing flow (high-level)
 - Data Collection: `oms_history`, `inventory_levels`, `supplier_info`, `uom_conversion` are modeled as DB nodes that return mock data and populate the graph context.

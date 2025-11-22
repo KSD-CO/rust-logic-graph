@@ -1,0 +1,36 @@
+# Discount calculation subgraph
+# This is a reusable component that can be called from main workflows
+
+nodes:
+  check_customer_tier:
+    node_type: RuleNode
+    description: "Check customer tier and eligibility for discounts"
+    dependencies: []
+  
+  calculate_discount:
+    node_type: RuleNode
+    description: "Calculate discount percentage based on tier"
+    dependencies:
+      - check_customer_tier
+  
+  apply_discount:
+    node_type: RuleNode
+    description: "Apply discount to base price"
+    dependencies:
+      - calculate_discount
+
+edges:
+  - from: check_customer_tier
+    to: calculate_discount
+  - from: calculate_discount
+    to: apply_discount
+
+# Input parameters expected from parent:
+# - base_price: number
+# - customer_tier: string (bronze/silver/gold/platinum)
+# - purchase_history_months: number
+
+# Output parameters returned to parent:
+# - final_price: number
+# - discount_amount: number
+# - discount_percentage: number

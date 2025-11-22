@@ -1,5 +1,5 @@
-mod graph;
-mod executor;
+pub mod graph;
+pub mod executor;
 
 pub use graph::{Graph, GraphDef, Edge, Context, NodeConfig};
 pub use executor::{Executor, ExecutionMetrics, NodeExecutionStats};

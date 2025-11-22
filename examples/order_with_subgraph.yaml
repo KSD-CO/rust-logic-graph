@@ -1,0 +1,55 @@
+# Main workflow that uses the discount subgraph
+
+nodes:
+  fetch_product:
+    node_type: DBNode
+    query: "SELECT * FROM products WHERE id = $1"
+    description: "Fetch product details from database"
+    dependencies: []
+  
+  fetch_customer:
+    node_type: DBNode
+    query: "SELECT * FROM customers WHERE id = $1"
+    description: "Fetch customer details and tier"
+    dependencies: []
+  
+  # Subgraph node - calls the discount calculation workflow
+  calculate_discount:
+    node_type: SubgraphNode
+    subgraph_file: "examples/discount_subgraph.yaml"
+    description: "Calculate discount using reusable subgraph"
+    dependencies:
+      - fetch_product
+      - fetch_customer
+    input_mapping:
+      # Map from parent context to subgraph context
+      product_price: base_price
+      customer_tier: customer_tier
+      months_active: purchase_history_months
+    output_mapping:
+      # Map from subgraph context back to parent
+      final_price: order_total
+      discount_amount: savings
+  
+  create_order:
+    node_type: DBNode
+    query: "INSERT INTO orders (customer_id, product_id, total) VALUES ($1, $2, $3)"
+    description: "Create order with discounted price"
+    dependencies:
+      - calculate_discount
+  
+  send_confirmation:
+    node_type: AINode
+    description: "Send order confirmation email"
+    dependencies:
+      - create_order
+
+edges:
+  - from: fetch_product
+    to: calculate_discount
+  - from: fetch_customer
+    to: calculate_discount
+  - from: calculate_discount
+    to: create_order
+  - from: create_order
+    to: send_confirmation

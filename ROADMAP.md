@@ -6,9 +6,9 @@ Project roadmap and task tracking for future development.
 
 ## 📊 Current Status
 
-**Version**: 0.8.5 (Beta)
-**Status**: ✅ YAML Configuration complete
-**Last Updated**: 2025-11-20
+**Version**: 0.9.0 (Beta)
+**Status**: ✅ Advanced Control Flow complete
+**Last Updated**: 2025-11-22
 
 ### Completed ✅
 
@@ -73,6 +73,26 @@ Project roadmap and task tracking for future development.
 - [x] Properties panel for editing
 - [x] Graph editor documentation
 - [x] Production build successful
+
+#### v0.8.5
+- [x] YAML-based graph configuration
+- [x] GraphConfig module for parsing YAML/JSON
+- [x] execute_with_config() API
+- [x] Multiple workflow variants (standard/simplified/urgent)
+- [x] Config-driven node registration
+- [x] Comprehensive YAML documentation
+
+#### v0.9.0
+- [x] Advanced Control Flow nodes
+- [x] SubgraphNode for nested graph execution
+- [x] ConditionalNode for if/else branching
+- [x] LoopNode for foreach and while loops
+- [x] TryCatchNode for error handling
+- [x] RetryNode with exponential backoff
+- [x] CircuitBreakerNode for fault tolerance
+- [x] 6 working examples demonstrating features
+- [x] Edge::new() and Default trait improvements
+- [x] Updated documentation
 
 ---
 
@@ -201,32 +221,66 @@ Project roadmap and task tracking for future development.
 
 ---
 
-### v0.5.0 - Advanced Features
+### v0.9.0 - Advanced Control Flow ✅ COMPLETED (2025-11-22)
 
-**Priority**: Medium
-**Goal**: Enterprise features
+**Priority**: High
+**Goal**: Advanced graph control flow patterns
 
 #### Advanced Graph Features
-- [ ] **Subgraphs**
-  - [ ] Nested graph execution
-  - [ ] Graph composition
-  - [ ] Reusable components
+- [x] **Subgraphs**
+  - [x] Nested graph execution
+  - [x] Input/output mapping
+  - [x] Reusable components
+  - [x] Example: `examples/subgraph_flow.rs`
 
-- [ ] **Conditional Branches**
-  - [ ] If/else in graphs
-  - [ ] Switch/case patterns
-  - [ ] Dynamic routing
+- [x] **Conditional Branches**
+  - [x] If/else in graphs
+  - [x] Dynamic routing based on conditions
+  - [x] True/false branch selection
+  - [x] Example: `examples/conditional_flow.rs`
 
-- [ ] **Loop Support**
-  - [ ] While loops in graphs
-  - [ ] Iteration over collections
-  - [ ] Loop control (break/continue)
+- [x] **Loop Support**
+  - [x] Foreach loops over arrays
+  - [x] While loops with conditions
+  - [x] Loop control (max_iterations)
+  - [x] Example: `examples/loop_flow.rs`
 
-- [ ] **Error Handling**
-  - [ ] Try/catch patterns
-  - [ ] Retry logic
-  - [ ] Fallback nodes
-  - [ ] Circuit breakers
+- [x] **Error Handling**
+  - [x] Try/catch patterns
+  - [x] Finally blocks for cleanup
+  - [x] Error context propagation
+  - [x] Example: `examples/error_handling_flow.rs`
+
+- [x] **Retry Logic**
+  - [x] Configurable max attempts
+  - [x] Exponential backoff
+  - [x] Linear backoff option
+  - [x] Example: `examples/retry_flow.rs`
+
+- [x] **Circuit Breakers**
+  - [x] Failure threshold tracking
+  - [x] Open/closed state management
+  - [x] Timeout-based recovery
+  - [x] Example: `examples/circuit_breaker_flow.rs`
+
+#### API Improvements
+- [x] Edge::new() constructor
+- [x] Default trait for NodeConfig
+- [x] Better ergonomics for node creation
+- [x] Type-safe node configuration
+
+#### Documentation
+- [x] Advanced Control Flow usage guide
+- [x] 6 comprehensive examples
+- [x] README updates with v0.9.0 features
+- [x] ROADMAP updates
+
+---
+
+### v0.10.0 - Monitoring & Observability
+
+**Priority**: Medium
+**Goal**: Production observability and monitoring
 
 #### Monitoring & Observability
 - [ ] **Metrics**
@@ -246,10 +300,10 @@ Project roadmap and task tracking for future development.
 
 ---
 
-### v0.6.0 - APIs & Interfaces
+### v0.11.0 - REST API
 
 **Priority**: Medium
-**Goal**: Make accessible via APIs
+**Goal**: Make accessible via REST APIs
 
 #### REST API
 - [ ] **HTTP Server**
@@ -413,7 +467,7 @@ Project roadmap and task tracking for future development.
 
 ---
 
-### v0.9.0 - GraphQL API
+### v0.12.0 - GraphQL API
 
 **Priority**: Low
 **Goal**: GraphQL interface for graph operations
@@ -499,9 +553,9 @@ Project roadmap and task tracking for future development.
 - Examples
 
 ### 🟢 Nice to Have (Could Have)
-- Web UI
+- Web UI (✅ Done - v0.8.0)
 - GraphQL API
-- Subgraphs
+- Advanced control flow (✅ Done - v0.9.0)
 - Plugins
 - ML features
 
@@ -548,22 +602,45 @@ Want to help? Pick a task!
 - [x] 100% Backpressure handling
 - [x] 100% Stream operators
 
-### v0.5.0 (Current)
-
+### v0.4.0
 - [x] 100% Parallel execution
 - [x] 100% Layer detection
 - [x] 100% Parallelism analysis
+
+### v0.5.0
+- [x] 100% CLI tools
 - [x] 100% Caching layer
 - [ ] 0% Benchmarking
 
+### v0.7.0
+- [x] 100% Context pooling
+- [x] 100% Memory metrics
+- [x] 100% Memory profiling
+
+### v0.8.0
+- [x] 100% Graph editor
+- [x] 100% ReactFlow integration
+- [x] 100% Node components
+
+### v0.8.5
+- [x] 100% YAML configuration
+- [x] 100% Config parsing
+- [x] 100% Documentation
+
+### v0.9.0 (Current)
+- [x] 100% Advanced control flow
+- [x] 100% 6 new node types
+- [x] 100% Examples
+- [x] 100% Documentation
+
 ### Overall Progress
 ```
-[█████████████████░░░] 90% Complete
+[███████████████████░] 95% Complete
 ```
 
-**Completed**: 4 major versions (v0.1.0, v0.2.0, v0.3.0, v0.5.0)
-**In Progress**: v0.5.0 (benchmarking remaining)
-**Remaining**: 3 versions to v1.0.0
+**Completed**: 8 major versions (v0.1.0 → v0.9.0)
+**In Progress**: Preparing for v0.10.0 (Monitoring)
+**Remaining**: 2-3 versions to v1.0.0
 
 ---
 
@@ -578,8 +655,14 @@ Want to help? Pick a task!
 | AI Integration | ✅ Done | Completed v0.2.0 - OpenAI, Claude, Ollama |
 | Streaming Processing | ✅ Done | Completed v0.3.0 - Backpressure, chunking, operators |
 | Parallel Execution | ✅ Done | Completed v0.4.0 - Layer detection, concurrent execution |
-| REST API | 📅 Planned | Target v0.6.0 - Actix-web |
-| Web UI | 📅 Planned | Target v0.7.0 - React + D3.js |
+| CLI Tools | ✅ Done | Completed v0.5.0 - Validation, profiling, visualization |
+| Memory Optimization | ✅ Done | Completed v0.7.0 - Context pooling, 2-3x improvement |
+| Graph Editor | ✅ Done | Completed v0.8.0 - Next.js + ReactFlow |
+| YAML Configuration | ✅ Done | Completed v0.8.5 - Config-driven workflows |
+| Advanced Control Flow | ✅ Done | Completed v0.9.0 - Conditionals, loops, error handling |
+| Monitoring | 📅 Planned | Target v0.10.0 - Metrics, tracing, logging |
+| REST API | 📅 Planned | Target v0.11.0 - HTTP endpoints |
+| GraphQL API | 📅 Planned | Target v0.12.0 - GraphQL interface |
 | v1.0 Release | 🎯 Goal | Production ready |
 
 ---
@@ -593,9 +676,9 @@ Want to help? Pick a task!
 - Optional feature flags for integrations
 
 ### Questions
-- Q: Support YAML for graphs?
-- Q: Which GraphQL library? (async-graphql vs juniper)
-- Q: Web framework? (Actix-web vs Axum)
+- Q: Support YAML for graphs? ✅ Answered: Yes, added in v0.8.5
+- Q: Which GraphQL library? (async-graphql vs juniper) - Planned for v0.12.0
+- Q: Web framework? (Actix-web vs Axum) - Planned for v0.11.0
 
 ---
 

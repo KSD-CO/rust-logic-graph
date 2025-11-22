@@ -11,8 +11,23 @@ pub struct Edge {
     pub rule: Option<String>,
 }
 
+impl Edge {
+    pub fn new(from: impl Into<String>, to: impl Into<String>) -> Self {
+        Self {
+            from: from.into(),
+            to: to.into(),
+            rule: None,
+        }
+    }
+
+    pub fn with_rule(mut self, rule: impl Into<String>) -> Self {
+        self.rule = Some(rule.into());
+        self
+    }
+}
+
 /// Configuration for a node in the graph
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct NodeConfig {
     pub node_type: NodeType,
     #[serde(default)]
@@ -21,6 +36,10 @@ pub struct NodeConfig {
     pub query: Option<String>,
     #[serde(default)]
     pub prompt: Option<String>,
+    /// Optional list of context keys to extract as query parameters
+    /// Example: ["product_id", "user_id"] will extract ctx.get("product_id") and ctx.get("user_id")
+    #[serde(default)]
+    pub params: Option<Vec<String>>,
 }
 
 impl NodeConfig {
@@ -30,6 +49,7 @@ impl NodeConfig {
             condition: Some(condition.into()),
             query: None,
             prompt: None,
+            params: None,
         }
     }
 
@@ -39,6 +59,18 @@ impl NodeConfig {
             condition: None,
             query: Some(query.into()),
             prompt: None,
+            params: None,
+        }
+    }
+    
+    /// Create a DBNode with query parameters from context
+    pub fn db_node_with_params(query: impl Into<String>, params: Vec<String>) -> Self {
+        Self {
+            node_type: NodeType::DBNode,
+            condition: None,
+            query: Some(query.into()),
+            prompt: None,
+            params: Some(params),
         }
     }
 
@@ -48,6 +80,7 @@ impl NodeConfig {
             condition: None,
             query: None,
             prompt: Some(prompt.into()),
+            params: None,
         }
     }
     
@@ -58,6 +91,7 @@ impl NodeConfig {
             query: Some(format!("{}#{}", service_url.into(), method.into())),
             condition: None,
             prompt: None,
+            params: None,
         }
     }
 }
@@ -85,6 +119,12 @@ impl GraphDef {
                         format!("http://localhost:50051"),
                         format!("{}_method", id)
                     ),
+                    NodeType::SubgraphNode => NodeConfig::rule_node("true"), // Placeholder
+                    NodeType::ConditionalNode => NodeConfig::rule_node("true"),
+                    NodeType::LoopNode => NodeConfig::rule_node("true"),
+                    NodeType::TryCatchNode => NodeConfig::rule_node("true"),
+                    NodeType::RetryNode => NodeConfig::rule_node("true"),
+                    NodeType::CircuitBreakerNode => NodeConfig::rule_node("true"),
                 };
                 (id, config)
             })

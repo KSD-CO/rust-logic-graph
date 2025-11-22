@@ -44,6 +44,18 @@ How to create custom nodes and extend the framework
 
 ## 🔧 Technical Documentation
 
+### [DB Parameters Guide](DB_PARAMS.md) 🆕
+Complete guide to DBNode parameter extraction feature
+- Extract SQL parameters from context
+- Dynamic query parameterization
+- PostgreSQL and MySQL support
+- JSON/YAML configuration
+- Best practices and examples
+
+**Start here if**: You want to use dynamic database queries
+
+---
+
 ### [Implementation Summary](IMPLEMENTATION_SUMMARY.md)
 Deep dive into the implementation
 - Module breakdown
@@ -98,7 +110,8 @@ Complete rust-rule-engine integration details
 | Extending | 20+ | 700+ | 8 |
 | Implementation | 15+ | 600+ | 12 |
 | GRL Integration | 10+ | 400+ | 8 |
-| **Total** | **110+** | **4200+** | **71** |
+| DB Parameters | 8+ | 300+ | 6 |
+| **Total** | **118+** | **4500+** | **77** |
 
 ---
 
@@ -203,6 +216,7 @@ All contributions welcome!
 | EXTENDING.md | 2025-11-02 | ✅ Complete |
 | IMPLEMENTATION_SUMMARY.md | 2025-11-02 | ✅ Complete |
 | GRL_INTEGRATION_SUMMARY.md | 2025-11-02 | ✅ Complete |
+| DB_PARAMS.md | 2025-11-22 | ✅ Complete |
 
 ---
 

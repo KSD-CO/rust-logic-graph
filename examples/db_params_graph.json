@@ -1,0 +1,39 @@
+{
+  "nodes": {
+    "fetch_user": {
+      "node_type": "DBNode",
+      "query": "SELECT * FROM users WHERE user_id = $1",
+      "params": ["user_id"]
+    },
+    "fetch_orders": {
+      "node_type": "DBNode",
+      "query": "SELECT * FROM orders WHERE user_id = $1 AND status = $2",
+      "params": ["user_id", "order_status"]
+    },
+    "calculate_total": {
+      "node_type": "RuleNode",
+      "condition": "true"
+    },
+    "send_notification": {
+      "node_type": "AINode",
+      "prompt": "Generate order confirmation email"
+    }
+  },
+  "edges": [
+    {
+      "from": "fetch_user",
+      "to": "fetch_orders",
+      "rule": null
+    },
+    {
+      "from": "fetch_orders",
+      "to": "calculate_total",
+      "rule": null
+    },
+    {
+      "from": "calculate_total",
+      "to": "send_notification",
+      "rule": null
+    }
+  ]
+}
