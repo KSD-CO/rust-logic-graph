@@ -16,6 +16,7 @@ use axum::{
 use config::AppConfig;
 use executors::PurchasingGraphExecutor;
 use nodes::DatabasePool;
+use rust_logic_graph::error::{RustLogicGraphError, ErrorCategory};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
@@ -139,10 +140,22 @@ async fn handle_purchasing_flow(
         }
         Err(e) => {
             tracing::error!("❌ Error processing purchasing flow: {}", e);
-            Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Error: {}", e),
-            ))
+            
+            // Try to parse as RustLogicGraphError for better HTTP status mapping
+            let error_str = e.to_string();
+            let status_code = if error_str.contains("E002") || error_str.contains("database_connection_error") {
+                StatusCode::SERVICE_UNAVAILABLE
+            } else if error_str.contains("E003") || error_str.contains("rule_evaluation_error") {
+                StatusCode::UNPROCESSABLE_ENTITY
+            } else if error_str.contains("E004") || error_str.contains("invalid_configuration") {
+                StatusCode::INTERNAL_SERVER_ERROR
+            } else if error_str.contains("E006") || error_str.contains("graph_validation_error") {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            
+            Err((status_code, error_str))
         }
     }
 }

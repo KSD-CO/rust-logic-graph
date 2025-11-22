@@ -1,6 +1,7 @@
 use rust_logic_graph::{NodeType, Context};
 use rust_logic_graph::node::Node;
 use rust_logic_graph::rule::{RuleResult, RuleError};
+use rust_logic_graph::error::{RustLogicGraphError, ErrorContext};
 use async_trait::async_trait;
 use std::collections::HashMap;
 
@@ -53,7 +54,18 @@ impl Node for DynamicRuleNode {
                 eprintln!("🔍 Calling create_purchase_order...");
                 create_purchase_order(ctx, &self.field_mappings)
             }
-            _ => Err(RuleError::Eval(format!("Unknown rule node: {}", self.id)))
+            _ => Err(RuleError::Eval(
+                RustLogicGraphError::rule_evaluation_error(
+                    format!("Unknown rule node: {}", self.id)
+                )
+                .with_context(
+                    ErrorContext::new()
+                        .with_node(&self.id)
+                        .with_graph("purchasing_flow")
+                        .add_metadata("available_nodes", "rule_engine, create_po")
+                )
+                .to_string()
+            ))
         };
         
         eprintln!("🧠🧠🧠 RuleNode[{}]: FINISHED run() with result: {:?} 🧠🧠🧠", self.id, result.is_ok());

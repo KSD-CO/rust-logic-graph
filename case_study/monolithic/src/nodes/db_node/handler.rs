@@ -1,6 +1,7 @@
 use rust_logic_graph::{NodeType, Context};
 use rust_logic_graph::node::Node;
 use rust_logic_graph::rule::RuleResult;
+use rust_logic_graph::error::{RustLogicGraphError, ErrorContext};
 use serde_json::Value;
 use async_trait::async_trait;
 
@@ -61,7 +62,22 @@ impl Node for DynamicDBNode {
                 let row = query_builder
                     .fetch_one(&**pool)
                     .await
-                    .map_err(|e| rust_logic_graph::rule::RuleError::Eval(format!("MySQL error in {}: {}", self.id, e)))?;
+                    .map_err(|e| {
+                        rust_logic_graph::rule::RuleError::Eval(
+                            RustLogicGraphError::database_connection_error(
+                                format!("MySQL query failed: {}", e)
+                            )
+                            .with_context(
+                                ErrorContext::new()
+                                    .with_node(&self.id)
+                                    .with_graph("purchasing_flow")
+                                    .with_step("database_query")
+                                    .add_metadata("database_type", "MySQL")
+                                    .add_metadata("query", &self.query)
+                            )
+                            .to_string()
+                        )
+                    })?;
                 
                 parse_mysql_row(&self.id, row)?
             }
@@ -82,7 +98,22 @@ impl Node for DynamicDBNode {
                 let row = query_builder
                     .fetch_one(&**pool)
                     .await
-                    .map_err(|e| rust_logic_graph::rule::RuleError::Eval(format!("Postgres error in {}: {}", self.id, e)))?;
+                    .map_err(|e| {
+                        rust_logic_graph::rule::RuleError::Eval(
+                            RustLogicGraphError::database_connection_error(
+                                format!("PostgreSQL query failed: {}", e)
+                            )
+                            .with_context(
+                                ErrorContext::new()
+                                    .with_node(&self.id)
+                                    .with_graph("purchasing_flow")
+                                    .with_step("database_query")
+                                    .add_metadata("database_type", "PostgreSQL")
+                                    .add_metadata("query", &pg_query)
+                            )
+                            .to_string()
+                        )
+                    })?;
                 
                 parse_postgres_row(&self.id, row)?
             }

@@ -1,4 +1,5 @@
 use rust_logic_graph::GraphDef;
+use rust_logic_graph::error::{RustLogicGraphError, ErrorContext};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -57,7 +58,16 @@ impl GraphConfig {
     /// Load graph configuration from a YAML file
     pub fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let content = fs::read_to_string(&path)
-            .with_context(|| format!("Failed to read YAML file: {:?}", path.as_ref()))?;
+            .with_context(|| 
+                RustLogicGraphError::configuration_error(
+                    format!("Failed to read YAML file: {:?}", path.as_ref())
+                )
+                .with_context(
+                    ErrorContext::new()
+                        .add_metadata("file_path", &path.as_ref().display().to_string())
+                )
+                .to_string()
+            )?;
         
         Self::from_yaml_str(&content)
     }
@@ -65,7 +75,16 @@ impl GraphConfig {
     /// Load graph configuration from a YAML string
     pub fn from_yaml_str(yaml: &str) -> Result<Self> {
         serde_yaml::from_str(yaml)
-            .with_context(|| "Failed to parse YAML configuration")
+            .with_context(|| 
+                RustLogicGraphError::configuration_error(
+                    "Failed to parse YAML configuration".to_string()
+                )
+                .with_context(
+                    ErrorContext::new()
+                        .add_metadata("yaml_length", &yaml.len().to_string())
+                )
+                .to_string()
+            )
     }
     
     /// Convert to GraphDef for rust-logic-graph
@@ -78,11 +97,22 @@ impl GraphConfig {
                 "RuleNode" => rust_logic_graph::NodeType::RuleNode,
                 "AINode" => rust_logic_graph::NodeType::AINode,
                 "GrpcNode" => rust_logic_graph::NodeType::GrpcNode,
-                _ => anyhow::bail!("Unknown node type: {}", node_config.r#type),
+                _ => anyhow::bail!(
+                    RustLogicGraphError::graph_validation_error(
+                        format!("Unknown node type: {}", node_config.r#type)
+                    )
+                    .with_context(
+                        ErrorContext::new()
+                            .with_node(node_id)
+                            .add_metadata("provided_type", &node_config.r#type)
+                            .add_metadata("valid_types", "DBNode, RuleNode, AINode, GrpcNode")
+                    )
+                    .to_string()
+                ),
             };
             
             // Create proper NodeConfig with query/condition/prompt
-            let mut config = match node_type {
+            let config = match node_type {
                 rust_logic_graph::NodeType::DBNode => {
                     let query = node_config.query.clone()
                         .unwrap_or_else(|| format!("SELECT * FROM {}", node_id));
@@ -109,6 +139,10 @@ impl GraphConfig {
                     let query = node_config.query.clone()
                         .unwrap_or_else(|| format!("http://localhost:50051#{}_method", node_id));
                     rust_logic_graph::NodeConfig::grpc_node(&query, &query)
+                }
+                _ => {
+                    // For unsupported node types (SubgraphNode, ConditionalNode, etc.)
+                    continue;
                 }
             };
             

@@ -1,5 +1,6 @@
 use rust_logic_graph::{Graph, Executor, NodeType};
 use rust_logic_graph::node::Node;
+use rust_logic_graph::error::{RustLogicGraphError, ErrorContext};
 use serde_json::json;
 use sqlx::{MySqlPool, PgPool};
 use std::collections::HashMap;
@@ -55,7 +56,17 @@ impl PurchasingGraphExecutor {
         
         // Load graph configuration from YAML
         let graph_config = GraphConfig::from_yaml_file(config_path)
-            .map_err(|e| anyhow::anyhow!("Failed to load graph config: {}", e))?;
+            .map_err(|e| anyhow::anyhow!(
+                RustLogicGraphError::configuration_error(
+                    format!("Failed to load graph config: {}", e)
+                )
+                .with_context(
+                    ErrorContext::new()
+                        .with_graph("purchasing_flow")
+                        .add_metadata("config_path", config_path)
+                )
+                .to_string()
+            ))?;
         
         // Convert to GraphDef
         let graph_def = graph_config.to_graph_def()?;
@@ -71,7 +82,18 @@ impl PurchasingGraphExecutor {
             let node: Box<dyn Node> = match node_config.node_type {
                 NodeType::DBNode => {
                     let query = node_config.query.clone()
-                        .ok_or_else(|| anyhow::anyhow!("DBNode '{}' missing query field", node_id))?;
+                        .ok_or_else(|| anyhow::anyhow!(
+                            RustLogicGraphError::graph_validation_error(
+                                format!("DBNode '{}' missing query field", node_id)
+                            )
+                            .with_context(
+                                ErrorContext::new()
+                                    .with_node(node_id)
+                                    .with_graph("purchasing_flow")
+                                    .add_metadata("node_type", "DBNode")
+                            )
+                            .to_string()
+                        ))?;
                     
                     let node_cfg = graph_config.nodes.get(node_id);
                     
@@ -82,7 +104,18 @@ impl PurchasingGraphExecutor {
                             conn_str.split('@').last().unwrap_or("***"));
                         
                         let pg_pool = utils::database::create_postgres_pool(conn_str).await
-                            .map_err(|e| anyhow::anyhow!("Failed to create pool for {}: {}", node_id, e))?;
+                            .map_err(|e| anyhow::anyhow!(
+                                RustLogicGraphError::database_connection_error(
+                                    format!("Failed to create pool for {}: {}", node_id, e)
+                                )
+                                .with_context(
+                                    ErrorContext::new()
+                                        .with_node(node_id)
+                                        .with_graph("purchasing_flow")
+                                        .add_metadata("connection_string", conn_str.split('@').last().unwrap_or("***"))
+                                )
+                                .to_string()
+                            ))?;
                         
                         DatabasePool::from_postgres(pg_pool)
                     } else {

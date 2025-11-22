@@ -1,6 +1,7 @@
 use serde_json::{json, Value};
 use rust_logic_graph::Context;
 use rust_logic_graph::rule::RuleError;
+use rust_logic_graph::error::{RustLogicGraphError, ErrorContext};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
@@ -23,7 +24,17 @@ fn get_rule_engine() -> Result<&'static Mutex<RuleEngineService>, RuleError> {
             .map(Mutex::new)
     })
     .as_ref()
-    .map_err(|e| RuleError::Eval(format!("Failed to initialize rule engine: {}", e)))
+    .map_err(|e| RuleError::Eval(
+        RustLogicGraphError::rule_evaluation_error(
+            format!("Failed to initialize rule engine: {}", e)
+        )
+        .with_context(
+            ErrorContext::new()
+                .with_service("RuleEngineService")
+                .add_metadata("initialization", "global_cache")
+        )
+        .to_string()
+    ))
 }
 
 /// Evaluate rule engine logic
@@ -48,13 +59,36 @@ pub fn evaluate_rule_engine(
     // TEMPORARY FIX: Create new RuleEngineService for each request to avoid cache issues
     eprintln!("⚠️  Creating NEW RuleEngineService (disabling cache)");
     let mut service = RuleEngineService::new()
-        .map_err(|e| RuleError::Eval(format!("Failed to create rule engine: {}", e)))?;
+        .map_err(|e| RuleError::Eval(
+            RustLogicGraphError::rule_evaluation_error(
+                format!("Failed to create rule engine: {}", e)
+            )
+            .with_context(
+                ErrorContext::new()
+                    .with_node(node_id)
+                    .with_service("RuleEngineService")
+                    .add_metadata("mode", "non_cached")
+            )
+            .to_string()
+        ))?;
     let cache_elapsed = cache_start.elapsed();
     tracing::info!("✅ [Cache Access] RuleEngineService::new() took {:.3}ms", cache_elapsed.as_secs_f64() * 1000.0);
     
     let eval_start = std::time::Instant::now();    
     let rule_output = service.evaluate(inputs)
-        .map_err(|e| RuleError::Eval(format!("Rule evaluation failed: {}", e)))?;
+        .map_err(|e| RuleError::Eval(
+            RustLogicGraphError::rule_evaluation_error(
+                format!("Rule evaluation failed: {}", e)
+            )
+            .with_context(
+                ErrorContext::new()
+                    .with_node(node_id)
+                    .with_graph("purchasing_flow")
+                    .with_step("rule_evaluation")
+                    .with_service("RuleEngineService")
+            )
+            .to_string()
+        ))?;
     let eval_elapsed = eval_start.elapsed();
     tracing::info!("⏱️  Rule service.evaluate(): {:.3}s", eval_elapsed.as_secs_f64());
     
