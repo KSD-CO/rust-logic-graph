@@ -412,8 +412,8 @@ UOM Node ────┘
         │  │  │ InventoryGrpcNode → gRPC :50052                │  │  │
         │  │  │ SupplierGrpcNode → gRPC :50053                 │  │  │
         │  │  │ UomGrpcNode → gRPC :50054                      │  │  │
-        │  │  │ RuleEngineGrpcNode → gRPC :50055               │  │  │
-        │  │  │ PoGrpcNode → gRPC :50056                       │  │  │
+        │  │  │ RuleEngineGrpcNode → gRPC :50056               │  │  │
+        │  │  │ PoGrpcNode → gRPC :50055                       │  │  │
         │  │  └────────────────────────────────────────────────┘  │  │
         │  │                                                      │  │
         │  │  Graph Topology (hardcoded in graph_executor.rs):    │  │
@@ -443,8 +443,8 @@ UOM Node ────┘
                           │ Data stored in Graph Context            │
                           ▼                                         │
                    ┌─────────────────┐                              │
-                   │ Rule Engine     │ (Port 50055 - gRPC)          │
-                   │     :50055      │                              │
+                   │ Rule Engine     │ (Port 50056 - gRPC)          │
+                   │     :50056      │                              │
                    │   (gRPC)        │                              │
                    │                 │                              │
                    │ • Loads GRL     │ • Evaluates 15 rules         │
@@ -456,8 +456,8 @@ UOM Node ────┘
                             │ Flags stored in Graph Context         │
                             ▼                                       │
                    ┌─────────────────┐                              │
-                   │ PO Service      │ (Port 50056 - gRPC)          │
-                   │    :50056       │◄─────────────────────────────┘
+                   │ PO Service      │ (Port 50055 - gRPC)          │
+                   │    :50055       │◄─────────────────────────────┘
                    │   (gRPC)        │
                    │                 │
                    │ • Create PO     │ • Reads flags from context

@@ -15,6 +15,9 @@ use grpc_handler::{inventory::inventory_service_server::InventoryServiceServer, 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Load environment variables from .env file
+    let _ = dotenvy::dotenv();
+    
     // Initialize tracing
     tracing_subscriber::registry()
         .with(fmt::layer())

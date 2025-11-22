@@ -31,10 +31,11 @@ impl PgInventoryRepository {
 impl InventoryRepository for PgInventoryRepository {
     async fn get_levels(&self, product_id: &str) -> Result<InventoryLevels, sqlx::Error> {
         let row = sqlx::query(
-            "SELECT product_id, warehouse_id,
+            "SELECT product_id, 
+                    COALESCE(warehouse_location, 'UNKNOWN') as warehouse_id,
                     CAST(available_qty AS INTEGER) as available_qty,
                     CAST(reserved_qty AS INTEGER) as reserved_qty
-             FROM inventory_levels
+             FROM inventory
              WHERE product_id = $1"
         )
         .bind(product_id)

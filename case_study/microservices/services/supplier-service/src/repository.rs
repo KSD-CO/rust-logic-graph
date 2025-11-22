@@ -32,12 +32,14 @@ impl PgSupplierRepository {
 impl SupplierRepository for PgSupplierRepository {
     async fn get_info(&self, product_id: &str) -> Result<SupplierInfo, sqlx::Error> {
         let row = sqlx::query(
-            "SELECT supplier_id, product_id,
+            "SELECT CONCAT('SUPP-', product_id) as supplier_id,
+                    product_id,
                     CAST(moq AS INTEGER) as moq,
-                    lead_time_days,
+                    lead_time as lead_time_days,
                     unit_price::DOUBLE PRECISION as unit_price
-             FROM supplier_info
-             WHERE product_id = $1 AND is_active = TRUE"
+             FROM suppliers
+             WHERE product_id = $1
+             LIMIT 1"
         )
         .bind(product_id)
         .fetch_one(&self.pool)

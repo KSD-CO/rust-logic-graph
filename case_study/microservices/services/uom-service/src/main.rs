@@ -15,6 +15,9 @@ use grpc_handler::{uom::uom_service_server::UomServiceServer, UomGrpcService};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Load environment variables from .env file
+    let _ = dotenvy::dotenv();
+    
     // Initialize tracing
     tracing_subscriber::registry()
         .with(fmt::layer())

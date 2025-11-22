@@ -3,6 +3,9 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVICES_DIR="$SCRIPT_DIR/../services"
+
 SERVICES=(
     "oms-service"
     "inventory-service"
@@ -18,7 +21,7 @@ echo ""
 
 for service in "${SERVICES[@]}"; do
     echo "📦 Checking $service..."
-    cd "services/$service"
+    cd "$SERVICES_DIR/$service"
     
     if cargo check --quiet 2>&1 | grep -q "error\|^error:"; then
         echo "❌ $service has compilation errors!"
@@ -28,9 +31,10 @@ for service in "${SERVICES[@]}"; do
         echo "✅ $service compiles successfully"
     fi
     
-    cd ../..
     echo ""
 done
+
+cd "$SCRIPT_DIR/.."
 
 echo "✅ All services compile successfully!"
 echo ""

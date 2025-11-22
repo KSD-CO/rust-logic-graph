@@ -15,6 +15,9 @@ use grpc_handler::{supplier::supplier_service_server::SupplierServiceServer, Sup
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Load environment variables from .env file
+    let _ = dotenvy::dotenv();
+    
     // Initialize tracing
     tracing_subscriber::registry()
         .with(fmt::layer())
