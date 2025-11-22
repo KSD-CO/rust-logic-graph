@@ -21,7 +21,7 @@ cargo install --path .
 Validate a graph definition file to check for common issues.
 
 ```bash
-rlg validate --file examples/sample_graph.json
+rlg validate --file examples/sample_graph.yaml
 ```
 
 **Options:**
@@ -53,7 +53,7 @@ Validating graph...
 Execute a graph in dry-run mode without performing actual operations.
 
 ```bash
-rlg dry-run --file examples/sample_graph.json --context examples/sample_context.json
+rlg dry-run --file examples/sample_graph.yaml --context examples/sample_context.yaml
 ```
 
 **Options:**
@@ -64,7 +64,7 @@ rlg dry-run --file examples/sample_graph.json --context examples/sample_context.
 **Example output:**
 ```
 Running graph in dry-run mode...
-  Loading context from: examples/sample_context.json
+  Loading context from: examples/sample_context.yaml
 
 Execution Plan:
   Total nodes: 5
@@ -85,7 +85,7 @@ Node execution order:
 Profile the execution performance of a graph.
 
 ```bash
-rlg profile --file examples/sample_graph.json --iterations 100
+rlg profile --file examples/sample_graph.yaml --iterations 100
 ```
 
 **Options:**
@@ -112,7 +112,7 @@ Performance Profile:
 Visualize a graph structure in ASCII format.
 
 ```bash
-rlg visualize --file examples/sample_graph.json
+rlg visualize --file examples/sample_graph.yaml
 ```
 
 **Options:**
@@ -154,7 +154,7 @@ Statistics:
 
 ### Simple Linear Graph
 
-Located at [examples/sample_graph.json](../examples/sample_graph.json)
+Located at [examples/sample_graph.yaml](../examples/sample_graph.yaml)
 
 ```json
 {
@@ -176,12 +176,12 @@ Located at [examples/sample_graph.json](../examples/sample_graph.json)
 
 ### Cyclic Graph (for testing)
 
-Located at [examples/cyclic_graph.json](../examples/cyclic_graph.json)
+Located at [examples/cyclic_graph.yaml](../examples/cyclic_graph.yaml)
 
 This graph contains a cycle and will trigger validation warnings:
 
 ```bash
-rlg validate --file examples/cyclic_graph.json
+rlg validate --file examples/cyclic_graph.yaml
 ```
 
 ## Context File Format

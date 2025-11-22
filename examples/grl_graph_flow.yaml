@@ -1,0 +1,29 @@
+# GRL (Graph Rule Language) integration example
+
+nodes:
+  input_validation: RuleNode
+  fetch_customer: DBNode
+  risk_assessment: RuleNode
+  fraud_detection: AINode
+  approval_decision: RuleNode
+  notification: AINode
+
+edges:
+  - from: input_validation
+    to: fetch_customer
+    rule: valid_input
+  - from: fetch_customer
+    to: risk_assessment
+    rule: customer_found
+  - from: risk_assessment
+    to: fraud_detection
+    rule: needs_fraud_check
+  - from: risk_assessment
+    to: approval_decision
+    rule: low_risk
+  - from: fraud_detection
+    to: approval_decision
+    rule: fraud_check_complete
+  - from: approval_decision
+    to: notification
+    rule: decision_made

@@ -362,27 +362,6 @@ curl -X POST http://localhost:8080/api/purchasing/flow -d '{"product_id": "PROD-
 
 Try the visual graph editor online - no installation required! Create workflows, define rules, and visualize your logic graphs with drag-and-drop.
 
-### CLI Tools (v0.5.0)
-
-```bash
-# Build the CLI tool
-cargo build --release --bin rlg
-
-# Validate a graph
-./target/release/rlg validate --file examples/sample_graph.json
-
-# Visualize graph structure
-./target/release/rlg visualize --file examples/sample_graph.json --details
-
-# Profile performance
-./target/release/rlg profile --file examples/sample_graph.json --iterations 100
-
-# Dry-run without execution
-./target/release/rlg dry-run --file examples/sample_graph.json --verbose
-```
-
-**[Full CLI Documentation →](docs/CLI_TOOL.md)**
-
 ### Run Examples
 
 ```bash
@@ -697,23 +676,24 @@ rule "AutoApproval" salience 50 {
 # Run all tests
 cargo test
 
-# Build CLI tool
+# Build CLI tool (YAML-only support)
 cargo build --release --bin rlg
 
 # Validate graph
-./target/release/rlg validate --file examples/sample_graph.json
+./target/release/rlg validate --file examples/sample_graph.yaml
 
 # Visualize graph structure
-./target/release/rlg visualize --file examples/sample_graph.json
+./target/release/rlg visualize --file examples/sample_graph.yaml --details
 
 # Profile performance
-./target/release/rlg profile --file examples/sample_graph.json --iterations 100
+./target/release/rlg profile --file examples/sample_graph.yaml --iterations 100
 
 # Dry-run execution
-./target/release/rlg dry-run --file examples/sample_graph.json --verbose
+./target/release/rlg dry-run --file examples/sample_graph.yaml --verbose
 ```
 
-**Test Results**: ✅ 32/32 tests passing
+**Test Results**: ✅ 72/72 tests passing  
+**CLI Format**: YAML only (`.yaml` or `.yml` files)
 
 **[Learn more about CLI tools →](docs/CLI_TOOL.md)**
 
@@ -898,9 +878,9 @@ if err.is_retryable() {
 
 | File | Description |
 |------|-------------|
-| `examples/sample_graph.json` | Linear workflow with 5 nodes |
-| `examples/cyclic_graph.json` | Graph with cycle for testing |
-| `examples/sample_context.json` | Sample input data |
+| `examples/sample_graph.yaml` | Linear workflow with 5 nodes |
+| `examples/cyclic_graph.yaml` | Graph with cycle for testing |
+| `examples/sample_context.yaml` | Sample input data |
 
 **See [CLI_TOOL.md](docs/CLI_TOOL.md) for usage examples**
 
@@ -1094,7 +1074,7 @@ nodes:
 **Documentation:**
 - Complete guide in `docs/DB_PARAMS.md`
 - Example: `examples/db_params_flow.rs`
-- JSON example: `examples/db_params_graph.json`
+- YAML example: `examples/db_params_graph.yaml`
 
 **Compatibility:**
 - Fully backward compatible

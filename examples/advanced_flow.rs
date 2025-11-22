@@ -12,8 +12,8 @@ async fn main() -> anyhow::Result<()> {
     println!("=== Rust Logic Graph - Advanced Flow Example ===");
     println!("Scenario: User Analytics Report Generation with Permission Checks\n");
 
-    // Load graph definition
-    let def = GraphIO::load_from_file("examples/advanced_flow.json")?;
+    // Load graph definition from YAML
+    let def = GraphIO::load_from_file("examples/advanced_flow.yaml")?;
 
     // Create custom executor with specific node configurations
     let mut executor = Executor::new();

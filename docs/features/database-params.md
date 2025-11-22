@@ -384,6 +384,6 @@ impl DBNode {
 ## See Also
 
 - [examples/db_params_flow.rs](../examples/db_params_flow.rs) - Complete working example
-- [examples/db_params_graph.json](../examples/db_params_graph.json) - JSON configuration example
+- [examples/db_params_graph.yaml](../examples/db_params_graph.yaml) - JSON configuration example
 - [tests/db_params_tests.rs](../tests/db_params_tests.rs) - Test suite
 - [case_study/monolithic/](../case_study/monolithic/) - Real-world usage in purchasing flow

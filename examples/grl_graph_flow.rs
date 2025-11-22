@@ -12,8 +12,8 @@ async fn main() -> anyhow::Result<()> {
     println!("=== Rust Logic Graph - GRL Integration Example ===");
     println!("Scenario: Loan Application with Advanced GRL Rules\n");
 
-    // Load graph definition
-    let def = GraphIO::load_from_file("examples/grl_graph_flow.json")?;
+    // Load graph definition from YAML
+    let def = GraphIO::load_from_file("examples/grl_graph_flow.yaml")?;
 
     // Create custom executor with GRL-powered nodes
     let mut executor = Executor::new();

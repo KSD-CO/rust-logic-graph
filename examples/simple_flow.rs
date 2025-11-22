@@ -11,8 +11,8 @@ async fn main() -> anyhow::Result<()> {
 
     println!("=== Rust Logic Graph - Simple Flow Example ===\n");
 
-    // Load graph definition from JSON
-    let def = GraphIO::load_from_file("examples/simple_flow.json")?;
+    // Load graph definition from YAML
+    let def = GraphIO::load_from_file("examples/simple_flow.yaml")?;
     println!("Loaded graph with {} nodes and {} edges\n",
         def.nodes.len(),
         def.edges.len()
