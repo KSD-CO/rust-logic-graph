@@ -76,10 +76,15 @@ impl RuleEngineService {
     }
 
     pub fn evaluate(&mut self, inputs: HashMap<String, Value>) -> Result<RuleEngineOutput, String> {
+        eprintln!("💰💰💰 RuleEngineService.evaluate() CALLED 💰💰💰");
+        eprintln!("Input keys: {:?}", inputs.keys().collect::<Vec<_>>());
+        
         // Calculate required_qty for GRL if needed
         let avg_daily_demand = inputs.get("avg_daily_demand").and_then(|v| v.as_f64()).unwrap_or(0.0);
         let lead_time = inputs.get("lead_time").and_then(|v| v.as_f64()).unwrap_or(0.0);
         let required_qty = avg_daily_demand * lead_time;
+        
+        eprintln!("Calculated: required_qty={}, avg_daily_demand={}, lead_time={}", required_qty, avg_daily_demand, lead_time);
         
         // Start with input context
         let mut context = inputs.clone();
@@ -119,10 +124,23 @@ impl RuleEngineService {
         tracing::info!("⏱️  [Evaluation] Starting GRL rule execution...");
         tracing::info!("   📊 Context size: {} fields", context.len());
         
+        eprintln!("🚀🚀🚀 ABOUT TO CALL engine.evaluate() 🚀🚀🚀");
+        eprintln!("Context values: available_qty={}, required_qty={}, shortage={}", 
+            context.get("available_qty").and_then(|v| v.as_f64()).unwrap_or(-1.0),
+            context.get("required_qty").and_then(|v| v.as_f64()).unwrap_or(-1.0),
+            context.get("shortage").and_then(|v| v.as_f64()).unwrap_or(-1.0)
+        );
+        
         let eval_start = std::time::Instant::now();
         let result_json = self.engine.evaluate(&context)
             .map_err(|e| format!("Rule evaluation failed: {}", e))?;
         let eval_elapsed = eval_start.elapsed();
+        
+        eprintln!("✅✅✅ engine.evaluate() RETURNED ✅✅✅");
+        eprintln!("Result: should_create_po={}, order_qty={}", 
+            result_json.get("should_create_po").and_then(|v| v.as_bool()).unwrap_or(false),
+            result_json.get("order_qty").and_then(|v| v.as_f64()).unwrap_or(-1.0)
+        );
         
         let rule_elapsed = rule_start.elapsed();
         tracing::info!("   ✅ engine.evaluate() took {:.3}s", eval_elapsed.as_secs_f64());

@@ -28,6 +28,9 @@ pub struct NodeConfig {
     /// Full connection string for DBNode (optional, overrides database field)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub connection: Option<String>,
+    /// Context keys to extract as query parameters for DBNode
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub params: Option<Vec<String>>,
     /// Condition expression for RuleNode
     #[serde(skip_serializing_if = "Option::is_none")]
     pub condition: Option<String>,
@@ -79,12 +82,17 @@ impl GraphConfig {
             };
             
             // Create proper NodeConfig with query/condition/prompt
-            let config = match node_type {
+            let mut config = match node_type {
                 rust_logic_graph::NodeType::DBNode => {
-                    rust_logic_graph::NodeConfig::db_node(
-                        node_config.query.clone()
-                            .unwrap_or_else(|| format!("SELECT * FROM {}", node_id))
-                    )
+                    let query = node_config.query.clone()
+                        .unwrap_or_else(|| format!("SELECT * FROM {}", node_id));
+                    
+                    // Use db_node_with_params if params are specified
+                    if let Some(params) = &node_config.params {
+                        rust_logic_graph::NodeConfig::db_node_with_params(query, params.clone())
+                    } else {
+                        rust_logic_graph::NodeConfig::db_node(query)
+                    }
                 }
                 rust_logic_graph::NodeType::RuleNode => {
                     rust_logic_graph::NodeConfig::rule_node(

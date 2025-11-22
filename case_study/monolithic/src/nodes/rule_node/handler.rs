@@ -40,17 +40,23 @@ impl Node for DynamicRuleNode {
     fn node_type(&self) -> NodeType { NodeType::RuleNode }
     
     async fn run(&self, ctx: &mut Context) -> RuleResult {
+        eprintln!("🧠🧠🧠 RuleNode[{}]: STARTING run() 🧠🧠🧠", self.id);
         tracing::info!("🧠 RuleNode[{}]: Evaluating condition from YAML", self.id);
         tracing::debug!("Condition: {}", self.condition);
         
-        match self.id.as_str() {
+        let result = match self.id.as_str() {
             "rule_engine" => {
+                eprintln!("🔍 Calling evaluate_rule_engine...");
                 evaluate_rule_engine(ctx, &self.id, &self.field_mappings)
             }
             "create_po" => {
+                eprintln!("🔍 Calling create_purchase_order...");
                 create_purchase_order(ctx, &self.field_mappings)
             }
             _ => Err(RuleError::Eval(format!("Unknown rule node: {}", self.id)))
-        }
+        };
+        
+        eprintln!("🧠🧠🧠 RuleNode[{}]: FINISHED run() with result: {:?} 🧠🧠🧠", self.id, result.is_ok());
+        result
     }
 }

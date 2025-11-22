@@ -6,24 +6,32 @@ nodes:
     type: DBNode
     database: "oms_db"
     query: "SELECT product_id, avg_daily_demand::float8 as avg_daily_demand, trend FROM oms_history WHERE product_id = $1"
+    params:
+      - product_id
     description: "Fetch order management system history data"
   
   inventory_levels:
     type: DBNode
     database: "inventory_db"
     query: "SELECT product_id, available_qty::float8 as available_qty, reserved_qty::float8 as reserved_qty, warehouse_location FROM inventory WHERE product_id = $1"
+    params:
+      - product_id
     description: "Fetch current inventory levels"
   
   supplier_info:
     type: DBNode
     database: "supplier_db"
     query: "SELECT product_id, supplier_name, unit_price::float8 as unit_price, moq::float8 as moq, lead_time FROM suppliers WHERE product_id = $1"
+    params:
+      - product_id
     description: "Fetch supplier information and pricing"
   
   uom_conversion:
     type: DBNode
     database: "uom_db"
     query: "SELECT product_id, from_uom, to_uom, conversion_factor::float8 as conversion_factor FROM uom_conversions WHERE product_id = $1"
+    params:
+      - product_id
     description: "Fetch unit of measurement conversions"
   
   rule_engine:

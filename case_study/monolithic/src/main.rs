@@ -118,6 +118,7 @@ async fn handle_purchasing_flow(
     State(state): State<AppState>,
     Json(req): Json<PurchasingFlowRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    eprintln!("\n🔥🔥🔥 REQUEST RECEIVED for product: {} 🔥🔥🔥", req.product_id);
     tracing::info!("📦 Processing purchasing flow for product: {}", req.product_id);
 
     match state.executor.lock().await.execute(&req.product_id).await {

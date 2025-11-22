@@ -44,15 +44,13 @@ pub fn evaluate_rule_engine(
     // Use cached rule engine service
     let cache_start = std::time::Instant::now();
     tracing::info!("⏱️  [Cache Access] Calling get_rule_engine()...");
-    let rule_engine = get_rule_engine()?;
-    let cache_elapsed = cache_start.elapsed();
-    tracing::info!("✅ [Cache Access] get_rule_engine() took {:.3}ms", cache_elapsed.as_secs_f64() * 1000.0);
     
-    let lock_start = std::time::Instant::now();
-    let mut service = rule_engine.lock()
-        .map_err(|e| RuleError::Eval(format!("Failed to lock rule engine: {}", e)))?;
-    let lock_elapsed = lock_start.elapsed();
-    tracing::info!("   ✅ Mutex lock took {:.3}ms", lock_elapsed.as_secs_f64() * 1000.0);
+    // TEMPORARY FIX: Create new RuleEngineService for each request to avoid cache issues
+    eprintln!("⚠️  Creating NEW RuleEngineService (disabling cache)");
+    let mut service = RuleEngineService::new()
+        .map_err(|e| RuleError::Eval(format!("Failed to create rule engine: {}", e)))?;
+    let cache_elapsed = cache_start.elapsed();
+    tracing::info!("✅ [Cache Access] RuleEngineService::new() took {:.3}ms", cache_elapsed.as_secs_f64() * 1000.0);
     
     let eval_start = std::time::Instant::now();    
     let rule_output = service.evaluate(inputs)

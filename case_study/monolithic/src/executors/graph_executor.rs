@@ -45,6 +45,7 @@ impl PurchasingGraphExecutor {
     }
     
     pub async fn execute(&mut self, product_id: &str) -> anyhow::Result<Option<PurchaseOrder>> {
+        eprintln!("\n🎯🎯🎯 EXECUTOR.EXECUTE called with product_id: {} 🎯🎯🎯", product_id);
         self.execute_with_config(product_id, "purchasing_flow_graph.yaml").await
     }
     
@@ -62,6 +63,8 @@ impl PurchasingGraphExecutor {
         tracing::info!("✅ Graph loaded: {} nodes, {} edges", graph_def.nodes.len(), graph_def.edges.len());
         
         // Build executor and register nodes dynamically from config
+        // Note: Cache is disabled because each request has different product_id
+        // and results vary per product, making cache ineffective for this use case
         let mut executor = Executor::new();
         
         for (node_id, node_config) in &graph_def.nodes {
@@ -96,11 +99,18 @@ impl PurchasingGraphExecutor {
                         pool
                     };
                     
+                    // Get params from node config, default to empty vec
+                    let params = node_config.params.clone().unwrap_or_default();
+                    
+                    if !params.is_empty() {
+                        tracing::info!("🔑 Node '{}' will extract params from context: {:?}", node_id, params);
+                    }
+                    
                     Box::new(DynamicDBNode::new(
                         node_id.clone(),
                         query,
                         pool,
-                        product_id.to_string(),
+                        params,
                     ))
                 }
                 NodeType::RuleNode => {
