@@ -10,6 +10,7 @@ pub mod parallel;
 pub mod cache;
 pub mod bench_helpers;
 pub mod memory;
+pub mod error;
 
 // Re-export main types
 pub use core::{Graph, GraphDef, Edge, Context, Executor, NodeConfig, ExecutionMetrics, NodeExecutionStats};
@@ -19,6 +20,7 @@ pub use orchestrator::Orchestrator;
 pub use io::GraphIO;
 pub use cache::{CacheManager, CacheConfig, EvictionPolicy};
 pub use memory::{ContextPool, PoolConfig, MemoryMetrics, AllocationTracker};
+pub use error::{RustLogicGraphError, ErrorCategory, ErrorContext, Result as RLGResult};
 
 // Re-export rust-rule-engine types for advanced usage
 pub use rule::{Facts, KnowledgeBase, GRLParser, Value as RuleValue, EngineConfig, RustRuleEngine};

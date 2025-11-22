@@ -1,13 +1,53 @@
 # 🗺️ Rust Logic Graph - Roadmap
 
-Project roadmap and task tracking for future development.
+**Slogan**: "Reasoning Engine for Distributed Backend & AI Orchestration"
+
+Project roadmap focused on reasoning, distributed systems, and AI orchestration.
+
+---
+
+## 🎯 Vision & Direction
+
+Rust Logic Graph is a **reasoning engine** for backend developers building intelligent distributed systems:
+
+### Core Philosophy
+- 🧠 **Reasoning over Automation** - Not just executing tasks, but making intelligent decisions
+- 🌐 **Distributed-First** - Built for microservices, multi-database, multi-service architectures
+- 🤖 **AI-Native** - LLMs and AI models as first-class citizens, not plugins
+- ⚡ **Performance Matters** - Sub-millisecond latency, zero network overhead (embedded library)
+- 🔧 **Developer-Centric** - Code-first, type-safe, testable workflows
+
+### What We Build
+1. **Distributed Reasoning Systems**
+   - Query multiple databases simultaneously
+   - Aggregate and correlate data across services
+   - Apply business rules to distributed data
+   - Make decisions based on global state
+
+2. **AI Agent Orchestration**
+   - Multi-step LLM reasoning chains
+   - Tool calling and function execution
+   - RAG (Retrieval-Augmented Generation) pipelines
+   - Multi-agent collaboration systems
+
+3. **Production Patterns**
+   - Saga pattern for distributed transactions
+   - Circuit breakers and fault tolerance
+   - Retry logic with exponential backoff
+   - Event-driven reasoning
+
+### What We DON'T Build
+- ❌ No-code workflow builders
+- ❌ Batch ETL tools 
+- ❌ General-purpose automation
+- ❌ Standalone SaaS platform 
 
 ---
 
 ## 📊 Current Status
 
-**Version**: 0.9.0 (Beta)
-**Status**: ✅ Advanced Control Flow complete
+**Version**: 0.10.0-alpha.1 (In Progress)
+**Status**: 🚧 Better Error Messages complete, Multi-DB Orchestration in progress
 **Last Updated**: 2025-11-22
 
 ### Completed ✅
@@ -202,23 +242,6 @@ Project roadmap and task tracking for future development.
   - [x] Performance profiling
   - [x] Graph visualization (ASCII)
 
-- [ ] **Macro Support**
-  - [ ] `#[derive(Node)]` macro
-  - [ ] Graph definition macros
-  - [ ] Compile-time validation
-
-- [ ] **Better Error Messages**
-  - [ ] Context in errors
-  - [ ] Suggestions
-  - [ ] Error codes
-  - [ ] Documentation links
-
-#### Testing Tools
-- [ ] Graph testing utilities
-- [ ] Mock nodes
-- [ ] Test fixtures
-- [ ] Assertion helpers
-
 ---
 
 ### v0.9.0 - Advanced Control Flow ✅ COMPLETED (2025-11-22)
@@ -277,65 +300,341 @@ Project roadmap and task tracking for future development.
 
 ---
 
-### v0.10.0 - Monitoring & Observability
+### v0.10.0 - Distributed Systems & Orchestration 🎯 NEXT
 
-**Priority**: Medium
-**Goal**: Production observability and monitoring
+**Priority**: HIGH
+**Goal**: Enable true distributed reasoning across services and databases
 
-#### Monitoring & Observability
-- [ ] **Metrics**
-  - [ ] Prometheus integration
-  - [ ] Custom metrics
-  - [ ] Performance tracking
+**Why This Matters**: Most systems have data scattered across PostgreSQL, MongoDB, Redis, etc. Traditional approaches query each separately and merge in application code. We enable **reasoning directly over distributed data** with business rules.
 
-- [ ] **Tracing**
-  - [ ] OpenTelemetry support
-  - [ ] Distributed tracing
-  - [ ] Trace visualization
+#### Distributed Execution
+- [ ] **Multi-Database Query Orchestration**
+  - [ ] Parallel queries across multiple databases
+  - [ ] Automatic connection pooling per database
+  - [ ] Query result correlation and joining
+  - [ ] Cross-database transaction coordination
 
-- [ ] **Logging**
-  - [ ] Structured logging
-  - [ ] Log levels per node
-  - [ ] Log aggregation
+- [ ] **Distributed Context Sharing**
+  - [ ] Context serialization for remote execution
+  - [ ] State sharing between microservices
+  - [ ] Distributed caching with Redis/Memcached
+  - [ ] Context versioning and conflict resolution
+
+- [ ] **Saga Pattern Implementation**
+  - [ ] Transaction coordinator
+  - [ ] Automatic compensation on failure
+  - [ ] Saga state persistence
+  - [ ] Timeout and deadline handling
+
+- [ ] **Fault Tolerance**
+  - [ ] Distributed circuit breakers with shared state
+  - [ ] Service health monitoring
+  - [ ] Automatic failover to backup services
+  - [ ] Graceful degradation strategies
+
+#### Error Handling & Developer Experience
+- [x] **Better Error Messages** ✅ COMPLETED (2025-11-22) (moved from v0.5.0)
+  - [x] Rich context in error messages
+  - [x] Actionable suggestions for fixes
+  - [x] Unique error codes for documentation (E001-E012)
+  - [x] Error classification (retryable, permanent, transient)
+  - [x] Stack trace with distributed service info
+  - [x] Links to troubleshooting documentation (docs/ERRORS.md)
+  - [x] Example: `examples/error_messages_demo.rs`
+  - [x] 5 comprehensive unit tests
+
+#### Real-World Examples
+- [ ] Multi-region data aggregation example
+- [ ] E-commerce order flow with Saga pattern
+- [ ] Distributed fraud detection system
+- [ ] Microservice orchestration case study
 
 ---
 
-### v0.11.0 - REST API
+### v0.11.0 - Advanced AI Orchestration 🤖
 
-**Priority**: Medium
-**Goal**: Make accessible via REST APIs
+**Priority**: HIGH
+**Goal**: Build sophisticated AI agent systems with reasoning capabilities
 
-#### REST API
-- [ ] **HTTP Server**
-  - [ ] Actix-web or Axum
-  - [ ] Graph submission endpoint
-  - [ ] Execution status endpoint
-  - [ ] Result retrieval
-  - [ ] OpenAPI spec
+**Why This Matters**: LLMs are powerful but unpredictable. We enable **validated, controllable AI systems** where LLMs work within business rules and can call tools reliably.
 
-- [ ] **Authentication**
-  - [ ] JWT support
-  - [ ] API keys
-  - [ ] OAuth2
+#### AI Agent Framework
+- [ ] **RAG (Retrieval-Augmented Generation) Pipeline**
+  - [ ] Vector database integration (Pinecone, Weaviate, Qdrant, pgvector)
+  - [ ] Automatic embedding generation
+  - [ ] Semantic search with reranking
+  - [ ] Document chunking and preprocessing
+  - [ ] Context window management
 
-#### GraphQL API
-- [ ] Schema definition
-- [ ] Queries
-  - [ ] List graphs
-  - [ ] Get execution status
-  - [ ] Query results
-- [ ] Mutations
-  - [ ] Create graph
-  - [ ] Execute graph
-  - [ ] Delete graph
-- [ ] Subscriptions
-  - [ ] Execution updates
-  - [ ] Real-time results
+- [ ] **Tool Calling Framework**
+  - [ ] Tool definition and registration
+  - [ ] Automatic tool schema generation
+  - [ ] Tool execution with validation
+  - [ ] Tool chaining and composition
+  - [ ] Parallel tool execution
 
-#### gRPC API
-- [ ] Protocol buffers
-- [ ] Service definitions
-- [ ] Streaming support
+- [ ] **Multi-Agent Systems**
+  - [ ] Agent communication protocols
+  - [ ] Shared context between agents
+  - [ ] Agent collaboration patterns (coordinator, specialist, validator)
+  - [ ] Consensus mechanisms
+  - [ ] Agent memory and history
+
+- [ ] **LLM Reasoning Patterns**
+  - [ ] Chain-of-thought prompting
+  - [ ] ReAct (Reason + Act) pattern
+  - [ ] Self-reflection and validation loops
+  - [ ] Tree-of-thought exploration
+  - [ ] Reasoning trace export for debugging
+
+#### Production AI Features
+- [ ] LLM response validation with GRL rules
+- [ ] Automatic retry on validation failure
+- [ ] Cost tracking per LLM call
+- [ ] Token usage monitoring and limits
+- [ ] Prompt template versioning
+
+#### Real-World Examples
+- [ ] Customer support AI agent with tools
+- [ ] RAG-based document Q&A system
+- [ ] Multi-agent research assistant
+- [ ] AI-powered decision engine
+
+---
+
+### v0.12.0 - Advanced Rule Engine & Reasoning 🧠
+
+**Priority**: HIGH
+**Goal**: Production-grade business rule capabilities
+
+**Why This Matters**: Business logic changes frequently. We enable **rules as data** where business analysts can modify decision logic without developer involvement.
+
+#### Rule Engine Enhancements
+- [ ] **Dynamic Rule Management**
+  - [ ] Load rules from database at runtime
+  - [ ] Hot-reload rules without restart
+  - [ ] Rule versioning (A/B testing different rule sets)
+  - [ ] Rule inheritance and composition
+  - [ ] Tenant-specific rule isolation
+
+- [ ] **Advanced Reasoning**
+  - [ ] Forward chaining (data-driven reasoning)
+  - [ ] Backward chaining (goal-driven reasoning)
+  - [ ] Conflict resolution strategies (priority, recency, specificity)
+  - [ ] Rule execution tracing
+  - [ ] "Why" and "Why not" explanations
+
+- [ ] **Rule Analytics & Optimization**
+  - [ ] Rule coverage analysis (which rules fire most)
+  - [ ] Dead rule detection
+  - [ ] Rule execution performance profiling
+  - [ ] Automatic rule simplification
+  - [ ] What-if scenario simulation
+
+- [ ] **Complex Reasoning Patterns**
+  - [ ] Fuzzy logic for approximate reasoning
+  - [ ] Probabilistic rules with confidence scores
+  - [ ] Temporal reasoning (time-based rules)
+  - [ ] Constraint satisfaction problems
+
+#### Production Features
+- [ ] Rule validation before deployment
+- [ ] Rule testing framework
+- [ ] Rule migration tools
+- [ ] Rule documentation generation
+- [ ] Audit trail for rule changes
+
+#### Real-World Examples
+- [ ] Dynamic pricing engine
+- [ ] Fraud detection with ML + rules
+- [ ] Insurance underwriting system
+- [ ] Loan approval workflow
+
+---
+
+### v0.13.0 - Observability & Distributed Tracing
+
+**Priority**: HIGH
+**Goal**: Production-grade observability for distributed reasoning
+
+**Why This Matters**: In distributed systems, debugging is hard. We enable **end-to-end tracing** where you can see exactly how a decision was made across multiple services.
+
+#### Distributed Tracing
+- [ ] **OpenTelemetry Integration**
+  - [ ] Automatic span creation for each node
+  - [ ] Trace propagation across services
+  - [ ] Context baggage for reasoning metadata
+  - [ ] Export to Jaeger, Zipkin, Datadog, etc.
+  - [ ] Custom attributes for business context
+
+- [ ] **Metrics & Monitoring**
+  - [ ] Prometheus metrics export
+  - [ ] Node execution latency (p50, p95, p99)
+  - [ ] Rule execution counts and rates
+  - [ ] Error rates by node type
+  - [ ] Resource utilization tracking
+  - [ ] Custom business metrics
+
+- [ ] **Decision Auditing**
+  - [ ] Full reasoning trace export
+  - [ ] "Why this decision?" explanation
+  - [ ] Rule firing history
+  - [ ] Context snapshot at each step
+  - [ ] Decision replay for debugging
+
+- [ ] **Logging**
+  - [ ] Structured logging with tracing crate
+  - [ ] Automatic log correlation with traces
+  - [ ] Dynamic log levels per component
+  - [ ] PII masking and compliance
+
+#### Developer Tools
+- [ ] Execution replay from trace
+- [ ] Visual trace viewer
+- [ ] Performance profiling dashboard
+- [ ] Real-time monitoring UI
+
+#### Real-World Examples
+- [ ] Debugging distributed transaction
+- [ ] Performance optimization case study
+- [ ] Compliance audit workflow
+- [ ] Production incident analysis
+
+---
+
+### v0.14.0 - Event-Driven Architecture 📡
+
+**Priority**: MEDIUM
+**Goal**: Native event streaming for reactive reasoning systems
+
+**Why This Matters**: Modern systems are event-driven. We enable **reactive reasoning** where your logic graph responds to events in real-time (Kafka, NATS, AWS EventBridge).
+
+#### Event Sources
+- [ ] **Stream Integration**
+  - [ ] Kafka consumer/producer
+  - [ ] NATS JetStream support
+  - [ ] AWS Kinesis/EventBridge
+  - [ ] RabbitMQ/AMQP integration
+  - [ ] Redis Streams
+  - [ ] Custom event source adapters
+
+- [ ] **Event-Driven Nodes**
+  - [ ] EventTrigger node (start graph from event)
+  - [ ] EventEmitter node (publish events)
+  - [ ] StreamProcessor node (continuous processing)
+  - [ ] EventAggregator node (windowing, grouping)
+  - [ ] CEP (Complex Event Processing) patterns
+
+- [ ] **Backpressure & Flow Control**
+  - [ ] Automatic rate limiting
+  - [ ] Circuit breaker integration
+  - [ ] Dead letter queue handling
+  - [ ] Retry with exponential backoff
+  - [ ] Event ordering guarantees
+
+#### Patterns
+- [ ] **Event Sourcing**
+  - [ ] Event store integration
+  - [ ] State reconstruction from events
+  - [ ] CQRS pattern support
+  
+- [ ] **SAGA Orchestration**
+  - [ ] Long-running transaction coordination
+  - [ ] Compensation logic
+  - [ ] Event-driven saga steps
+
+- [ ] **Reactive Pipelines**
+  - [ ] Stream transformations
+  - [ ] Windowing operations
+  - [ ] Join multiple streams
+  - [ ] Stateful stream processing
+
+#### Real-World Examples
+- [ ] Real-time fraud detection pipeline
+- [ ] IoT sensor data processing
+- [ ] Event-sourced order system
+- [ ] Multi-tenant event routing
+
+---
+
+### v0.15.0 - Developer SDK & Embeddability
+
+**Priority**: MEDIUM
+**Goal**: Production-ready embedding in any language or platform
+
+**Why This Matters**: Backend teams use diverse tech stacks. We enable **polyglot reasoning** where you can embed the engine in Python microservices, Node.js APIs, Go gRPC servers, etc.
+
+#### Rust API Improvements
+- [ ] **Ergonomic Builders**
+  - [ ] Fluent graph builder API
+  - [ ] Macro support for node creation
+  - [ ] Type-safe graph construction
+  - [ ] Graph validation at compile-time
+
+- [ ] **Plugin System**
+  - [ ] Custom node type registration
+  - [ ] Plugin discovery and loading
+  - [ ] Plugin versioning and compatibility
+  - [ ] Hot-reload for development
+
+#### FFI Bindings
+- [ ] **Python SDK (PyO3)**
+  - [ ] Native Python API with type hints
+  - [ ] Async/await support
+  - [ ] Integration with FastAPI/Django
+  - [ ] Pandas/NumPy interop
+
+- [ ] **Node.js SDK (Neon)**
+  - [ ] TypeScript definitions
+  - [ ] Express/NestJS middleware
+  - [ ] Native Promise support
+  - [ ] NPM package distribution
+
+- [ ] **Go SDK (cgo)**
+  - [ ] Idiomatic Go API
+  - [ ] gRPC service integration
+  - [ ] Concurrent execution patterns
+
+- [ ] **C Bindings**
+  - [ ] Stable C ABI for maximum portability
+  - [ ] Header-only library option
+  - [ ] Dynamic library loading
+
+#### Deployment Tools
+- [ ] **Containerization**
+  - [ ] Docker images with prebuilt binaries
+  - [ ] Multi-arch support (x86_64, ARM64)
+  - [ ] Minimal Alpine-based images
+
+- [ ] **Kubernetes**
+  - [ ] Helm charts for sidecar deployment
+  - [ ] Operator for distributed reasoning clusters
+  - [ ] Custom resource definitions (CRDs)
+
+- [ ] **Infrastructure as Code**
+  - [ ] Terraform modules
+  - [ ] AWS CDK constructs
+  - [ ] Pulumi components
+
+#### Real-World Examples
+- [ ] Python FastAPI with embedded reasoning
+- [ ] Node.js Express middleware
+- [ ] Go gRPC service integration
+- [ ] Kubernetes multi-tenant deployment
+
+---
+
+### ~~v0.11.0 - REST API~~ ❌ REMOVED
+
+**Reason**: Conflicts with vision - Rust Logic Graph is an embedded library, not a standalone service like n8n. Users embed it in their own applications and build their own APIs if needed.
+
+**Alternative**: Users can easily wrap the graph executor in Actix-web/Axum/Rocket for their specific needs.
+
+---
+
+### ~~v0.12.0 - GraphQL API~~ ❌ REMOVED
+
+**Reason**: Same as above - focus on library embedding, not external API exposure. GraphQL belongs in user's application layer, not in the reasoning engine.
 
 ---
 
@@ -504,84 +803,104 @@ Project roadmap and task tracking for future development.
 
 ## 🔮 Future Ideas (Beyond v1.0)
 
-### Distributed Execution
-- [ ] Multi-node execution
-- [ ] Work distribution
-- [ ] Fault tolerance
-- [ ] Kubernetes operator
+### Advanced Reasoning Capabilities
+- [ ] **Neuro-Symbolic AI**
+  - [ ] Neural network integration
+  - [ ] Symbolic reasoning combination
+  - [ ] Differentiable reasoning
+  - [ ] Learning from execution traces
 
-### Plugin System
-- [ ] Plugin API
-- [ ] Dynamic loading
-- [ ] Plugin marketplace
-- [ ] Community plugins
+- [ ] **Multi-Agent Coordination**
+  - [ ] Agent negotiation protocols
+  - [ ] Consensus mechanisms
+  - [ ] Distributed planning
+  - [ ] Agent reputation systems
 
-### Code Generation
-- [ ] Graph to code
-- [ ] Code to graph
-- [ ] Type generation
-- [ ] Client libraries
+### Performance & Scale
+- [ ] **Horizontal Scaling**
+  - [ ] Multi-node execution
+  - [ ] Work distribution algorithms
+  - [ ] Kubernetes operator
+  - [ ] Auto-scaling based on load
 
-### Machine Learning
-- [ ] Auto-optimization
-- [ ] Pattern recognition
-- [ ] Anomaly detection
-- [ ] Predictive scaling
+- [ ] **Optimization**
+  - [ ] Query optimization for graph execution
+  - [ ] Intelligent caching strategies
+  - [ ] Predictive prefetching
+  - [ ] Dynamic resource allocation
 
-### Integrations
-- [ ] Kafka/RabbitMQ
-- [ ] Elasticsearch
-- [ ] Grafana dashboards
-- [ ] Slack/Discord notifications
+### Enterprise Features
+- [ ] **Security & Compliance**
+  - [ ] End-to-end encryption
+  - [ ] Audit logging
+  - [ ] GDPR compliance tools
+  - [ ] Access control per node
+
+- [ ] **Integration Ecosystem**
+  - [ ] Kafka/RabbitMQ streaming
+  - [ ] Elasticsearch integration
+  - [ ] Time-series databases (InfluxDB, TimescaleDB)
+  - [ ] Data lake connectors (S3, GCS, Azure Blob)
 
 ---
 
 ## 📋 Task Categories
 
-### 🔴 Critical (Must Have)
-- Database integrations
-- AI integrations
-- Parallel execution
-- Error handling
-- Security
+### 🔴 Critical (Must Have for v1.0)
+- ✅ Database integrations (DONE)
+- ✅ AI integrations (DONE)
+- ✅ Parallel execution (DONE)
+- ✅ Error handling (DONE)
+- 🎯 Distributed orchestration (v0.10.0)
+- 🎯 Advanced AI reasoning (v0.11.0)
+- 🎯 Rule engine enhancements (v0.12.0)
+- 🎯 Observability & tracing (v0.13.0)
 
 ### 🟡 Important (Should Have)
-- CLI tool
-- REST API
-- Monitoring
-- Documentation
-- Examples
+- ✅ CLI tool (DONE)
+- ✅ Memory optimization (DONE)
+- 🎯 Event-driven architecture (v0.14.0)
+- 🎯 SDK & embeddability (v0.15.0)
+- 🎯 Developer documentation
+- 🎯 Production case studies
 
 ### 🟢 Nice to Have (Could Have)
-- Web UI (✅ Done - v0.8.0)
-- GraphQL API
-- Advanced control flow (✅ Done - v0.9.0)
-- Plugins
-- ML features
+- ✅ Web UI for visualization (DONE - v0.8.0)
+- ✅ Advanced control flow (DONE - v0.9.0)
+- 🔮 Neuro-symbolic AI
+- 🔮 Multi-agent systems
+- 🔮 Auto-optimization
+
+### ❌ Explicitly NOT Building
+- ❌ No-code workflow builder (that's n8n's domain)
+- ❌ REST API server (users build their own)
+- ❌ GraphQL API (users add if needed)
+- ❌ Business automation UI (focus on developers)
+- ❌ Standalone SaaS platform (embed-first approach)
 
 ---
 
 ## 🤝 Contributing
 
-Want to help? Pick a task!
+Want to help build the future of distributed reasoning?
 
 ### For Beginners
-- [ ] Add more examples
-- [ ] Improve documentation
-- [ ] Write tutorials
-- [ ] Create use case guides
+- [ ] Add reasoning examples (decision trees, multi-step AI)
+- [ ] Improve distributed systems documentation
+- [ ] Write tutorials for embedding in microservices
+- [ ] Create AI orchestration case studies
 
 ### For Intermediate
-- [ ] Add database integrations
-- [ ] Implement caching
-- [ ] Create CLI tool
-- [ ] Add more tests
+- [ ] Add vector database integrations
+- [ ] Implement Kafka/RabbitMQ nodes
+- [ ] Create distributed tracing examples
+- [ ] Build RAG pipeline examples
 
 ### For Advanced
-- [ ] Parallel execution engine
-- [ ] GraphQL API
-- [ ] Web UI
-- [ ] Performance optimizations
+- [ ] Distributed execution engine
+- [ ] Multi-agent coordination framework
+- [ ] Advanced rule engine optimizations
+- [ ] Neuro-symbolic reasoning patterns
 
 ---
 
@@ -633,14 +952,20 @@ Want to help? Pick a task!
 - [x] 100% Examples
 - [x] 100% Documentation
 
+### v0.10.0-alpha.1 (In Progress) 🚧
+- [x] 100% Better Error Messages ✅ (2025-11-22)
+- [ ] 0% Multi-Database Orchestration
+- [ ] 0% Distributed Context
+- [ ] 0% Saga Pattern
+
 ### Overall Progress
 ```
-[███████████████████░] 95% Complete
+[███████████████████░] 96% Complete to v1.0
 ```
 
-**Completed**: 8 major versions (v0.1.0 → v0.9.0)
-**In Progress**: Preparing for v0.10.0 (Monitoring)
-**Remaining**: 2-3 versions to v1.0.0
+**Completed**: 8 major versions + 1 feature (v0.1.0 → v0.9.0 + Better Error Messages)
+**Next Focus**: v0.10.0 - Distributed Systems & Orchestration (1/5 features done)
+**Path to v1.0**: 4-5 more versions focused on distributed reasoning, AI orchestration, and production readiness
 
 ---
 
@@ -648,37 +973,57 @@ Want to help? Pick a task!
 
 | Milestone | Status | Notes |
 |-----------|--------|-------|
-| Core Engine | ✅ Done | Completed v0.1.0 |
-| GRL Integration | ✅ Done | Completed v0.1.0 |
-| Documentation | ✅ Done | Completed v0.1.0 |
+| Core Engine | ✅ Done | Completed v0.1.0 - Graph execution, topological sort |
+| GRL Integration | ✅ Done | Completed v0.1.0 - Business rule reasoning |
 | Real DB Integration | ✅ Done | Completed v0.2.0 - PostgreSQL, MySQL, Redis, MongoDB |
 | AI Integration | ✅ Done | Completed v0.2.0 - OpenAI, Claude, Ollama |
-| Streaming Processing | ✅ Done | Completed v0.3.0 - Backpressure, chunking, operators |
+| Streaming Processing | ✅ Done | Completed v0.3.0 - Backpressure, chunking |
 | Parallel Execution | ✅ Done | Completed v0.4.0 - Layer detection, concurrent execution |
 | CLI Tools | ✅ Done | Completed v0.5.0 - Validation, profiling, visualization |
 | Memory Optimization | ✅ Done | Completed v0.7.0 - Context pooling, 2-3x improvement |
-| Graph Editor | ✅ Done | Completed v0.8.0 - Next.js + ReactFlow |
+| Visual Editor | ✅ Done | Completed v0.8.0 - Next.js + ReactFlow (optional) |
 | YAML Configuration | ✅ Done | Completed v0.8.5 - Config-driven workflows |
 | Advanced Control Flow | ✅ Done | Completed v0.9.0 - Conditionals, loops, error handling |
-| Monitoring | 📅 Planned | Target v0.10.0 - Metrics, tracing, logging |
-| REST API | 📅 Planned | Target v0.11.0 - HTTP endpoints |
-| GraphQL API | 📅 Planned | Target v0.12.0 - GraphQL interface |
-| v1.0 Release | 🎯 Goal | Production ready |
+| **Distributed Systems** | 🎯 Next | Target v0.10.0 - Multi-service orchestration, saga pattern |
+| **AI Orchestration** | 📅 Planned | Target v0.11.0 - RAG, multi-agent, tool calling |
+| **Advanced Reasoning** | 📅 Planned | Target v0.12.0 - Complex rules, probabilistic reasoning |
+| **Observability** | 📅 Planned | Target v0.13.0 - OpenTelemetry, distributed tracing |
+| **Event-Driven** | 📅 Planned | Target v0.14.0 - Kafka, NATS, event sourcing |
+| **v1.0 Release** | 🎯 Goal | Production-ready reasoning engine for distributed systems |
 
 ---
 
 ## 📝 Notes
 
 ### Decision Log
-- Chose rust-rule-engine for GRL support
-- Decided on Tokio for async runtime
-- JSON for graph serialization
-- Optional feature flags for integrations
+- ✅ Chose rust-rule-engine for GRL support (reasoning capabilities)
+- ✅ Decided on Tokio for async runtime (performance)
+- ✅ JSON/YAML for graph serialization (flexibility)
+- ✅ Optional feature flags for integrations (modularity)
+- ✅ **Library-first approach, not SaaS** (differentiator from n8n)
+- ✅ **Focus on developers, not business users** (clear target audience)
+- ✅ **Reasoning engine, not automation tool** (core positioning)
 
 ### Questions
 - Q: Support YAML for graphs? ✅ Answered: Yes, added in v0.8.5
-- Q: Which GraphQL library? (async-graphql vs juniper) - Planned for v0.12.0
-- Q: Web framework? (Actix-web vs Axum) - Planned for v0.11.0
+- Q: Build REST API? ❌ Decided: No, users build their own (embed-first)
+- Q: Build GraphQL API? ❌ Decided: No, focus on library (not service)
+- Q: Support visual workflow builder? ✅ Decided: Yes, but optional (v0.8.0)
+- Q: Focus on distributed reasoning? ✅ Decided: Yes, core focus for v0.10+
+
+### Strategic Direction
+**What we ARE:**
+- 🧠 Reasoning engine for distributed systems
+- ⚡ High-performance orchestration library
+- 🤖 AI agent coordination framework
+- 🔧 Business rule engine with GRL
+- 📦 Embeddable Rust library
+
+**What we are NOT:**
+- ❌ No-code automation platform (that's n8n)
+- ❌ Standalone workflow service (we're embedded)
+- ❌ Business user tool (we target developers)
+- ❌ Replacement for Airflow/Prefect (different use case)
 
 ---
 

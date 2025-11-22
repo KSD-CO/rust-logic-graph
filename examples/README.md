@@ -83,6 +83,29 @@ Protect services with circuit breaker pattern.
 cargo run --example circuit_breaker_flow
 ```
 
+### Error Handling Examples (v0.10.0) 🆕
+
+#### **`error_messages_demo.rs`** - Rich Error Messages
+Demonstrates comprehensive error handling with:
+- Unique error codes (E001-E012)
+- Error classification (Retryable/Permanent/Transient)
+- Actionable suggestions
+- Rich context propagation
+- Documentation links
+
+```bash
+cargo run --example error_messages_demo
+```
+
+**Key Features:**
+- 12 predefined error types with unique codes
+- Error context chain: node → graph → step → service
+- Automatic retry strategy based on error category
+- Links to troubleshooting documentation
+- Metadata support for debugging
+
+See [docs/ERRORS.md](../docs/ERRORS.md) for complete error reference.
+
 ## 🚀 Purchasing Flow Example
 
 Purchasing flow (high-level)

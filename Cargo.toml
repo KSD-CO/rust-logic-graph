@@ -1,10 +1,10 @@
 
 [package]
 name = "rust-logic-graph"
-version = "0.9.0"
+version = "0.10.0-alpha.1"
 edition = "2021"
 authors = ["James Vu <ttvuhm@gmail.com>"]
-description = "A modular reasoning graph framework with advanced control flow (subgraphs, conditionals, loops, error handling)"
+description = "Reasoning engine for distributed backend & AI orchestration. Coordinate services, databases, and AI agents with business rules (GRL)."
 license = "MIT"
 
 [dependencies]
