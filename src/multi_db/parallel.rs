@@ -31,18 +31,18 @@ pub struct QueryResult {
 /// 
 /// #[tokio::main]
 /// async fn main() -> anyhow::Result<()> {
-///     let executor = ParallelDBExecutor::new();
+///     let mut executor = ParallelDBExecutor::new();
 ///     
 ///     // Register query closures for different databases
 ///     executor
-///         .add_query("oms_db", "user_query", Box::new(|| async {
+///         .add_query("oms_db", "user_query", Box::new(|| Box::pin(async {
 ///             // Execute query against OMS database
 ///             Ok(serde_json::json!({"user_id": 123, "name": "John"}))
-///         }))
-///         .add_query("inventory_db", "stock_query", Box::new(|| async {
+///         })))
+///         .add_query("inventory_db", "stock_query", Box::new(|| Box::pin(async {
 ///             // Execute query against Inventory database
 ///             Ok(serde_json::json!({"product_id": "PROD-001", "qty": 50}))
-///         }));
+///         })));
 ///     
 ///     let results = executor.execute_all().await?;
 ///     println!("Executed {} queries in parallel", results.len());
