@@ -79,7 +79,8 @@ let order_flow = Graph::new()
 - 🔄 **Topological Execution** - Automatic DAG-based node ordering
 - ⚡ **Async Runtime** - Built on Tokio for high concurrency
 - ⚡ **Parallel Execution** - Automatic parallel execution of independent nodes (v0.5.0)
-- 💾 **Caching Layer** - High-performance result caching with TTL, eviction policies, and memory limits (v0.5.0)
+- �️ **Multi-Database Orchestration** - Parallel queries, correlation, distributed transactions (v0.10.0) 🆕
+- �💾 **Caching Layer** - High-performance result caching with TTL, eviction policies, and memory limits (v0.5.0)
 - 🧠 **Memory Optimization** - Context pooling and allocation tracking (v0.7.0)
 - 🛠️ **CLI Developer Tools** - Graph validation, dry-run, profiling, and visualization (v0.5.0)
 - 🎨 **Web Graph Editor** - Next.js visual editor with drag-and-drop interface (v0.8.0)
@@ -797,6 +798,38 @@ Contributions welcome! Please:
 | `circuit_breaker_flow.rs` | Circuit breaker fault tolerance | CircuitBreakerNode, failure thresholds |
 | `subgraph_flow.rs` | Nested graph execution | SubgraphNode, input/output mapping |
 
+### Multi-Database Orchestration (v0.10.0) 🆕
+
+| Example | Description | Features Demonstrated |
+|---------|-------------|----------------------|
+| `real_multi_db_orchestration.rs` | Query multiple databases in parallel with real data | ParallelDBExecutor, QueryCorrelator, DistributedTransaction |
+
+**Demo 1: Parallel Queries** - Execute queries across 4 databases concurrently  
+**Demo 2: Query Correlation** - JOIN results from different databases (Inner/Left/Right/Full)  
+**Demo 3: Distributed Transactions** - Two-Phase Commit (2PC) for atomic operations
+
+```rust
+use rust_logic_graph::multi_db::{ParallelDBExecutor, QueryCorrelator, JoinStrategy};
+
+// Execute queries in parallel across multiple databases
+let mut executor = ParallelDBExecutor::new();
+executor
+    .add_query("oms_db", "get_user", || async { /* query */ })
+    .add_query("orders_db", "get_orders", || async { /* query */ });
+
+let results = executor.execute_all().await?;
+
+// Correlate results with SQL-like JOINs
+let correlator = QueryCorrelator::new();
+let joined = correlator.join(
+    &users_data, 
+    &orders_data,
+    "user_id", 
+    "user_id",
+    JoinStrategy::Inner
+)?;
+```
+
 **Run examples:**
 ```bash
 # Conditional routing
@@ -819,6 +852,9 @@ cargo run --example subgraph_flow
 
 # Rich error messages (v0.10.0) 🆕
 cargo run --example error_messages_demo
+
+# Multi-database orchestration (v0.10.0) 🆕
+cargo run --example multi_db_orchestration
 ```
 
 ### Error Handling (v0.10.0) 🆕

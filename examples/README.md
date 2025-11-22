@@ -99,6 +99,58 @@ cargo run --example error_messages_demo
 
 **Key Features:**
 - 12 predefined error types with unique codes
+
+### Multi-Database Orchestration (v0.10.0) 🆕
+
+#### **`real_multi_db_orchestration.rs`** - Real Database Demo 🔥
+Uses actual PostgreSQL databases from case study purchasing flow with YAML-driven configuration:
+
+**Prerequisites:**
+```bash
+# Setup databases (creates 4 PostgreSQL databases)
+cd case_study
+./scripts/setup_multi_databases.sh
+
+# Configure .env with database credentials
+cp .env.example .env
+```
+
+**Demo 1: Parallel Query Execution (YAML-based)**
+- Loads queries from `multi_db_graph.yaml` configuration
+- Queries real data from OMS, Inventory, Supplier, and UOM databases
+- Fetches actual purchasing flow data for a product
+- Demonstrates declarative configuration approach
+
+**Demo 2: Aggregated Dashboard Query**
+- Builds purchasing dashboard with metrics from 3 databases
+- Total products, inventory levels, supplier statistics
+- Demonstrates real-time decision making
+
+```bash
+cargo run --example real_multi_db_orchestration
+```
+
+**Database Schema:**
+- `oms_db`: Order Management System (demand history, trends)
+- `inventory_db`: Inventory levels across warehouses
+- `supplier_db`: Supplier catalog (MOQ, lead time, pricing)
+- `uom_db`: Unit of measurement conversions
+
+**Key Concepts:**
+- `ParallelDBExecutor` - Concurrent query execution (see `src/multi_db/parallel.rs`)
+- `QueryCorrelator` - SQL-like JOIN operations (see `src/multi_db/correlation.rs`)
+- `DistributedTransaction` - 2PC transaction coordination (see `src/multi_db/transaction.rs`)
+- YAML-driven configuration - Single source of truth for queries
+- Database pool registry pattern
+
+**YAML Configuration:** See `multi_db_graph.yaml` for the active configuration that drives Demo 1 
+> Full YAML-based execution requires GraphConfig integration with multi-database routing.
+
+**Use Cases:**
+- Aggregating data from multiple databases (OMS + Inventory + Supplier + UOM)
+- Real-time purchasing dashboards with metrics from distributed databases
+- Parallel query execution for performance optimization
+- Multi-tenant systems with database-per-tenant architecture
 - Error context chain: node → graph → step → service
 - Automatic retry strategy based on error category
 - Links to troubleshooting documentation

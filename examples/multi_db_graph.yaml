@@ -1,0 +1,84 @@
+# Multi-Database Orchestration Graph
+# Real purchasing flow graph using actual database schema from case study
+#
+# This YAML configuration is loaded and executed by real_multi_db_orchestration.rs
+# It demonstrates declarative database orchestration with dynamic query execution.
+# 
+# Database Schema (from setup_multi_databases.sh):
+# - oms_db:       oms_history (product_id, avg_daily_demand, trend)
+# - inventory_db: inventory (product_id, warehouse_location, available_qty, reserved_qty)
+# - supplier_db:  suppliers (product_id, supplier_name, moq, lead_time, unit_price)
+# - uom_db:       uom_conversions (product_id, from_uom, to_uom, conversion_factor)
+
+nodes:
+  # Query historical demand from OMS database
+  fetch_oms_history:
+    type: DBNode
+    description: "Fetch historical demand data from OMS database"
+    database: oms_db
+    query: "SELECT product_id, avg_daily_demand::FLOAT8 as avg_daily_demand, trend FROM oms_history WHERE product_id = $1"
+    params: ["product_id"]
+  
+  # Query inventory from Inventory database
+  fetch_inventory:
+    type: DBNode
+    description: "Fetch current inventory levels from Inventory database"
+    database: inventory_db
+    query: "SELECT product_id, warehouse_location, available_qty::FLOAT8 as available_qty, reserved_qty::FLOAT8 as reserved_qty FROM inventory WHERE product_id = $1"
+    params: ["product_id"]
+  
+  # Query supplier info from Supplier database
+  fetch_supplier:
+    type: DBNode
+    description: "Fetch supplier information from Supplier database"
+    database: supplier_db
+    query: "SELECT product_id, supplier_name, moq::FLOAT8 as moq, lead_time, unit_price::FLOAT8 as unit_price FROM suppliers WHERE product_id = $1"
+    params: ["product_id"]
+  
+  # Query UOM conversions from UOM database
+  fetch_uom:
+    type: DBNode
+    description: "Fetch unit of measurement conversions from UOM database"
+    database: uom_db
+    query: "SELECT product_id, from_uom, to_uom, conversion_factor::FLOAT8 as conversion_factor FROM uom_conversions WHERE product_id = $1"
+    params: ["product_id"]
+  
+  # Aggregate and analyze purchasing decision
+  analyze_purchasing:
+    type: RuleNode
+    description: "Analyze all data and determine purchasing requirements"
+    condition: "true"
+    dependencies:
+      - fetch_oms_history
+      - fetch_inventory
+      - fetch_supplier
+      - fetch_uom
+    inputs:
+      oms_data: "fetch_oms_history"
+      inventory_data: "fetch_inventory"
+      supplier_data: "fetch_supplier"
+      uom_data: "fetch_uom"
+    field_mappings:
+      product_id: "fetch_oms_history.product_id"
+      daily_demand: "fetch_oms_history.avg_daily_demand"
+      demand_trend: "fetch_oms_history.trend"
+      total_available: "fetch_inventory.sum(available_qty)"
+      warehouses: "fetch_inventory.count(warehouse_id)"
+      best_supplier: "fetch_supplier.min_by(unit_price).supplier_id"
+      lead_time: "fetch_supplier.min_by(unit_price).lead_time"
+      moq: "fetch_supplier.min_by(unit_price).moq"
+      unit_price: "fetch_supplier.min_by(unit_price).unit_price"
+
+edges:
+  # Parallel execution - no dependencies between DB queries
+  # All 4 queries execute simultaneously
+  
+  # After all queries complete, analyze for purchasing decision
+  - from: fetch_oms_history
+    to: analyze_purchasing
+  - from: fetch_inventory
+    to: analyze_purchasing
+  - from: fetch_supplier
+    to: analyze_purchasing
+  - from: fetch_uom
+    to: analyze_purchasing
