@@ -1,7 +1,7 @@
 
 [package]
 name = "rust-logic-graph"
-version = "0.10.1"
+version = "0.11.0"
 edition = "2021"
 authors = ["James Vu <ttvuhm@gmail.com>"]
 description = "Reasoning engine for distributed backend & AI orchestration. Coordinate services, databases, and AI agents with business rules (GRL)."
@@ -39,6 +39,7 @@ futures = { version = "0.3", optional = true }
 
 [features]
 default = []
+http-health = ["reqwest"]
 postgres = ["sqlx"]
 mysql = ["sqlx"]
 redis-cache = ["redis"]

@@ -52,6 +52,7 @@ pub struct Executor {
     nodes: HashMap<String, Box<dyn Node>>,
     cache: Option<CacheManager>,
     metrics: ExecutionMetrics,
+    fallback_handler: Option<crate::fault_tolerance::degradation::FallbackHandler>,
 }
 
 impl Executor {
@@ -60,6 +61,7 @@ impl Executor {
             nodes: HashMap::new(),
             cache: None,
             metrics: ExecutionMetrics::default(),
+            fallback_handler: None,
         }
     }
 
@@ -69,12 +71,18 @@ impl Executor {
             nodes: HashMap::new(),
             cache: Some(cache),
             metrics: ExecutionMetrics::default(),
+            fallback_handler: None,
         }
     }
 
     /// Enable caching for this executor
     pub fn set_cache(&mut self, cache: CacheManager) {
         self.cache = Some(cache);
+    }
+
+    /// Set a global fallback handler used when node execution fails
+    pub fn set_fallback_handler(&mut self, handler: crate::fault_tolerance::degradation::FallbackHandler) {
+        self.fallback_handler = Some(handler);
     }
 
     /// Get the cache manager (if enabled)
@@ -380,22 +388,30 @@ impl Executor {
                     } else {
                         // Execute node and cache result
                         let exec_result = node.run(&mut graph.context).await;
-                        
-                        // Store result in cache if execution succeeded
-                        if exec_result.is_ok() {
-                            if let Some(cache) = &self.cache {
-                                // Only cache the node's output (keys ending with _result)
-                                // Don't cache input parameters to avoid overwriting them on cache hit
-                                let mut result_only: HashMap<String, serde_json::Value> = HashMap::new();
-                                for (key, value) in &graph.context.data {
-                                    if key.ends_with("_result") {
-                                        result_only.insert(key.clone(), value.clone());
-                                    }
+
+                        // On failure, attempt graceful degradation via fallback handler
+                        if exec_result.is_err() {
+                            let fallback = crate::fault_tolerance::degradation::degrade_on_failure(
+                                &node_id,
+                                &mut graph.context,
+                                self.fallback_handler,
+                            );
+                            if fallback.is_some() {
+                                info!("Applied fallback for node '{}'", node_id);
+                            }
+                        }
+
+                        // Store result in cache if execution succeeded (or fallback set _result)
+                        if let Some(cache) = &self.cache {
+                            let mut result_only: HashMap<String, serde_json::Value> = HashMap::new();
+                            for (key, value) in &graph.context.data {
+                                if key.ends_with("_result") {
+                                    result_only.insert(key.clone(), value.clone());
                                 }
-                                let context_result = serde_json::to_value(&result_only)?;
-                                if let Err(e) = cache.put(cache_key, context_result, None) {
-                                    warn!("Failed to cache result for node '{}': {}", node_id, e);
-                                }
+                            }
+                            let context_result = serde_json::to_value(&result_only)?;
+                            if let Err(e) = cache.put(cache_key, context_result, None) {
+                                warn!("Failed to cache result for node '{}': {}", node_id, e);
                             }
                         }
                         

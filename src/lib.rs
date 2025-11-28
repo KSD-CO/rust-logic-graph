@@ -13,6 +13,7 @@ pub mod memory;
 pub mod error;
 pub mod multi_db;
 pub mod distributed;
+pub mod fault_tolerance;
 
 // Re-export main types
 pub use core::{Graph, GraphDef, Edge, Context, Executor, NodeConfig, ExecutionMetrics, NodeExecutionStats};
@@ -24,6 +25,7 @@ pub use cache::{CacheManager, CacheConfig, EvictionPolicy};
 pub use memory::{ContextPool, PoolConfig, MemoryMetrics, AllocationTracker};
 pub use error::{RustLogicGraphError, ErrorCategory, ErrorContext, Result as RLGResult};
 pub use multi_db::{ParallelDBExecutor, QueryCorrelator, JoinStrategy, DistributedTransaction, TransactionCoordinator};
+pub use fault_tolerance::{CircuitBreaker, CircuitState, CircuitConfig, HealthMonitor, HealthStatus, FailoverManager, ServiceEndpoint};
 
 // Re-export rust-rule-engine types for advanced usage
 pub use rule::{Facts, KnowledgeBase, GRLParser, Value as RuleValue, EngineConfig, RustRuleEngine};

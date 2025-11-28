@@ -102,13 +102,13 @@ let order_flow = Graph::new()
 
 ```toml
 [dependencies]
-rust-logic-graph = "0.10.1"
+rust-logic-graph = "0.11.0"
 
 # With specific integrations
-rust-logic-graph = { version = "0.10.1", features = ["postgres", "openai"] }
+rust-logic-graph = { version = "0.11.0", features = ["postgres", "openai"] }
 
 # With all integrations
-rust-logic-graph = { version = "0.10.1", features = ["all-integrations"] }
+rust-logic-graph = { version = "0.11.0", features = ["all-integrations"] }
 ```
 
 ## 🏢 Real-World Case Study: Purchasing Flow System
@@ -701,7 +701,7 @@ cargo build --release --bin rlg
 
 ## 📦 Project Status
 
-**Version**: 0.10.1 (Latest)
+**Version**: 0.11.0 (Latest)
 **Status**: Production-ready with YAML-driven multi-database orchestration
 
 ### What's Working
@@ -721,6 +721,8 @@ cargo build --release --bin rlg
 - ✅ **Web Graph Editor** - Next.js visual editor with drag-and-drop (v0.8.0)
 - ✅ **Production Case Study** - Purchasing flow with microservices & monolithic (v0.8.0)
 - ✅ **YAML Configuration** - Declarative graph definitions (v0.8.5)
+ - ✅ **Distributed Context Sharing** - MessagePack serialization, shared context, versioning and stores (InMemory/Redis) (v0.11.0)
+ - 🛡️ ✅ **Fault Tolerance** - Circuit breakers, health monitoring, failover, graceful degradation (v0.11.0)
 - ✅ Stream operators (map, filter, fold)
 - ✅ Comprehensive documentation
 
@@ -926,6 +928,16 @@ Designed for developers who write code, not click buttons:
 ---
 
 ## 📝 Changelog
+
+### v0.11.0 (2025-11-28) - Fault Tolerance & Graceful Degradation 🛡️
+
+**New Features:**
+- 🛡️ **Circuit Breakers** - Per-service circuit breakers with shared distributed state and persistence via `distributed::ContextStore`.
+- ❤️ **Health Monitoring** - Pluggable health checks (HTTP and custom) with optional distributed persistence.
+- 🔁 **Failover Manager** - Simple endpoint selection with integration to circuit-breaker state.
+- 🧯 **Graceful Degradation** - Fallback handlers and helpers to inject reduced-capability responses when upstream services fail.
+
+**Example:** `examples/failover_degradation.rs` demonstrates FailoverManager + CircuitBreaker + Executor fallback handler.
 
 ### v0.10.1 (2025-11-22) - YAML-Driven Multi-Database Orchestration 🆕
 

@@ -333,11 +333,13 @@ Rust Logic Graph is a **reasoning engine** for backend developers building intel
   - [ ] Saga state persistence
   - [ ] Timeout and deadline handling
 
-- [ ] **Fault Tolerance**
-  - [ ] Distributed circuit breakers with shared state
-  - [ ] Service health monitoring
-  - [ ] Automatic failover to backup services
-  - [ ] Graceful degradation strategies
+ - [x] **Fault Tolerance** ✅
+  - [x] Distributed circuit breakers with shared state (see `src/fault_tolerance/circuit_breaker.rs`)
+  - [x] Service health monitoring (see `src/fault_tolerance/health.rs` and optional `http-health` feature)
+  - [x] Automatic failover to backup services (`src/fault_tolerance/failover.rs`)
+  - [x] Graceful degradation strategies and fallback handlers (`src/fault_tolerance/degradation.rs`)
+
+  Example: `examples/failover_degradation.rs` demonstrates a FailoverManager + CircuitBreaker + Executor fallback handler.
 
 #### Error Handling & Developer Experience
 - [x] **Better Error Messages** ✅ COMPLETED (2025-11-22) (moved from v0.5.0)
