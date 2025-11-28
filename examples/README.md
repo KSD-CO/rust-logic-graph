@@ -14,6 +14,46 @@ rust-logic-graph library.
 - **`postgres_flow.rs`** - PostgreSQL integration
 - **`openai_flow.rs`** - OpenAI GPT integration
 - **`streaming_flow.rs`** - Streaming with backpressure
+- **`distributed_context.rs`** - Distributed context sharing ⭐ NEW
+
+### Distributed Systems Examples (v0.10.0) 🆕
+
+#### **`distributed_context.rs`** - Context Sharing Across Microservices
+Demonstrates distributed context management for microservices architectures.
+
+**YAML Configuration:**
+- `distributed_context_graph.yaml` - Order processing workflow with distributed state
+
+**Key Features:**
+- Context serialization (MessagePack binary + JSON)
+- State sharing between microservices
+- Distributed caching (Redis/Memcached/InMemory)
+- Conflict resolution (4 strategies)
+- Three-way merge for complex scenarios
+
+**5 Complete Examples:**
+1. **Serialization** - Binary vs JSON comparison, size optimization
+2. **State Sharing** - 3 services: Order → Inventory → Payment
+3. **Distributed Caching** - Write-through strategy, batch operations
+4. **Conflict Resolution** - LastWriteWins, HigherVersionWins, FailOnConflict, MergeAll
+5. **Three-Way Merge** - Complex merge with base/local/remote changes
+
+```bash
+# Run all 5 examples
+cargo run --example distributed_context
+
+# Validate the YAML config
+./target/debug/rlg validate --file examples/distributed_context_graph.yaml
+
+# Visualize the workflow
+./target/debug/rlg visualize --file examples/distributed_context_graph.yaml --graph --details
+```
+
+**Use Cases:**
+- Multi-database orchestration
+- Microservices communication
+- Distributed transaction coordination
+- Cross-service state management
 
 ### GRL (Business Rules) Examples
 - **`grl_rules.rs`** - GRL rule examples

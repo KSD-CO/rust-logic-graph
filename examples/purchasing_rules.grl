@@ -1,0 +1,96 @@
+// Purchasing Flow Business Rules
+// GRL syntax for rust-rule-engine v0.17
+// Rewritten to use pure GRL (no custom functions)
+
+// Rule 1: Check if product needs reordering
+rule "Check if product needs reordering" salience 100 {
+    when
+        (avg_daily_demand > 0) && (lead_time_days > 0) && (available_qty < demand_lead_time)
+    then
+        need_reorder = true;
+        shortage = demand_lead_time - available_qty;
+}
+
+// Rule 1b: No reorder needed
+rule "Sufficient inventory" salience 100 {
+    when
+        available_qty >= demand_lead_time
+    then
+        need_reorder = false;
+        shortage = 0.0;
+}
+
+// Rule 2: Apply safety stock for increasing trend
+rule "Add safety stock for increasing demand trend" salience 90 {
+    when
+        (trend == "increasing") && (need_reorder == true) && (shortage > 0)
+    then
+        adjusted_shortage = shortage * 1.2;
+}
+
+// Rule 3: Apply reduction for decreasing trend
+rule "Reduce order for decreasing demand" salience 90 {
+    when
+        (trend == "decreasing") && (need_reorder == true) && (shortage > 0)
+    then
+        adjusted_shortage = shortage * 0.9;
+}
+
+// Rule 4: No changes for stable trend
+rule "Keep as-is for stable demand" salience 90 {
+    when
+        (trend == "stable") && (need_reorder == true) && (shortage > 0)
+    then
+        adjusted_shortage = shortage * 1.0;
+}
+
+// Rule 5: Calculate order quantity - use adjusted shortage or original
+rule "Calculate final order quantity - below MOQ" salience 80 {
+    when
+        (need_reorder == true) && (adjusted_shortage > 0) && (adjusted_shortage < moq)
+    then
+        order_qty = moq;
+}
+
+rule "Calculate final order quantity - above MOQ" salience 80 {
+    when
+        (need_reorder == true) && (adjusted_shortage >= moq)
+    then
+        order_qty = adjusted_shortage;
+}
+
+// Rule 6: Validate supplier is active
+rule "Ensure supplier is active" salience 95 {
+    when
+        is_active == false
+    then
+        need_reorder = false;
+        order_qty = 0.0;
+        supplier_error = "Supplier is not active";
+}
+
+// Rule 7: Calculate total amount
+rule "Calculate purchase order total" salience 60 {
+    when
+        (order_qty > 0) && (unit_price > 0)
+    then
+        total_amount = order_qty * unit_price;
+}
+
+// Rule 8: Flag high value orders (> $10000)
+rule "Flag high-value orders for approval" salience 50 {
+    when
+        total_amount > 10000
+    then
+        requires_approval = true;
+        approval_status = "pending";
+}
+
+// Rule 9: Auto-approve low value orders
+rule "Auto-approve orders under $10000" salience 50 {
+    when
+        (total_amount <= 10000) && (total_amount > 0)
+    then
+        requires_approval = false;
+        approval_status = "auto_approved";
+}

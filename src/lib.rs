@@ -12,6 +12,7 @@ pub mod bench_helpers;
 pub mod memory;
 pub mod error;
 pub mod multi_db;
+pub mod distributed;
 
 // Re-export main types
 pub use core::{Graph, GraphDef, Edge, Context, Executor, NodeConfig, ExecutionMetrics, NodeExecutionStats};

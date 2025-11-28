@@ -1,0 +1,169 @@
+# Distributed Context Sharing - Order Processing Flow
+# Demonstrates context sharing across microservices with distributed state
+
+nodes:
+  - id: validate_order
+    node_type: Rule
+    config:
+      rule_content: |
+        rule "validate_order" "Validate order data"
+        when
+          $order_total: Number(this > 0.0) from order_total
+          $customer_id: String(this != "") from customer_id
+        then
+          insert!(validated => true);
+          insert!(validation_time => current_time());
+        end
+    description: "Validate order data from context"
+
+  - id: check_inventory
+    node_type: DB
+    config:
+      db_type: Postgres
+      query: |
+        SELECT 
+          product_id,
+          available_quantity,
+          reserved_quantity,
+          CASE 
+            WHEN available_quantity >= $1 THEN true 
+            ELSE false 
+          END as in_stock
+        FROM inventory
+        WHERE product_id = ANY($2::text[])
+      params:
+        - "{{required_quantity}}"
+        - "{{product_ids}}"
+      connection_string: "{{POSTGRES_URL}}"
+    description: "Check inventory across distributed database"
+
+  - id: calculate_shipping
+    node_type: Rule
+    config:
+      rule_content: |
+        rule "calculate_shipping" "Calculate shipping cost"
+        when
+          $total: Number from order_total
+          $weight: Number from total_weight
+        then
+          if $total > 100.0 {
+            insert!(shipping_cost => 0.0);
+            insert!(shipping_method => "FREE");
+          } else {
+            insert!(shipping_cost => $weight * 2.5);
+            insert!(shipping_method => "STANDARD");
+          }
+        end
+    description: "Calculate shipping based on order total"
+
+  - id: process_payment
+    node_type: AI
+    config:
+      provider: OpenAI
+      model: gpt-4
+      system_prompt: |
+        You are a payment processing assistant. Analyze the order context and determine:
+        1. Payment method validation
+        2. Fraud risk score (0-100)
+        3. Recommended action (APPROVE, REVIEW, DECLINE)
+        
+        Return JSON format:
+        {
+          "payment_valid": true/false,
+          "fraud_score": <number>,
+          "action": "APPROVE/REVIEW/DECLINE",
+          "reason": "<explanation>"
+        }
+      user_prompt: |
+        Order Context:
+        - Customer ID: {{customer_id}}
+        - Order Total: ${{order_total}}
+        - Shipping Address: {{shipping_address}}
+        - Payment Method: {{payment_method}}
+        - Previous Orders: {{previous_order_count}}
+    description: "AI-powered payment processing with fraud detection"
+
+  - id: update_order_status
+    node_type: DB
+    config:
+      db_type: Postgres
+      query: |
+        UPDATE orders 
+        SET 
+          status = $1,
+          validated = $2,
+          inventory_checked = $3,
+          payment_processed = $4,
+          shipping_cost = $5,
+          fraud_score = $6,
+          updated_at = NOW()
+        WHERE order_id = $7
+        RETURNING *
+      params:
+        - "{{order_status}}"
+        - "{{validated}}"
+        - "{{in_stock}}"
+        - "{{payment_valid}}"
+        - "{{shipping_cost}}"
+        - "{{fraud_score}}"
+        - "{{order_id}}"
+      connection_string: "{{POSTGRES_URL}}"
+    description: "Update order with distributed context state"
+
+  - id: send_notification
+    node_type: Rule
+    config:
+      rule_content: |
+        rule "send_notification" "Prepare notification message"
+        when
+          $status: String from order_status
+          $customer: String from customer_id
+          $total: Number from order_total
+        then
+          if $status == "APPROVED" {
+            insert!(notification_type => "SUCCESS");
+            insert!(notification_message => format!("Order approved for ${}", $total));
+          } else if $status == "REVIEW" {
+            insert!(notification_type => "PENDING");
+            insert!(notification_message => "Order under review");
+          } else {
+            insert!(notification_type => "ERROR");
+            insert!(notification_message => "Order declined");
+          }
+        end
+    description: "Generate customer notification"
+
+edges:
+  - from: validate_order
+    to: check_inventory
+    condition: "validated == true"
+    
+  - from: check_inventory
+    to: calculate_shipping
+    condition: "in_stock == true"
+    
+  - from: calculate_shipping
+    to: process_payment
+    
+  - from: process_payment
+    to: update_order_status
+    condition: "payment_valid == true"
+    
+  - from: update_order_status
+    to: send_notification
+
+metadata:
+  name: "Distributed Context Order Flow"
+  description: "Demonstrates distributed context sharing across microservices"
+  version: "1.0.0"
+  features:
+    - "Context serialization with MessagePack"
+    - "State sharing between services"
+    - "Distributed caching"
+    - "Conflict resolution"
+    - "Three-way merge"
+  use_cases:
+    - "Multi-database orchestration"
+    - "Microservices communication"
+    - "Distributed transaction coordination"
+    - "Cross-service state management"

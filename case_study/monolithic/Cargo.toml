@@ -15,7 +15,7 @@ path = "src/main.rs"
 rust-logic-graph = { path = "../.." }
 
 # Rule engine
-rust-rule-engine = "0.17"
+rust-rule-engine = "0.17.2"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
