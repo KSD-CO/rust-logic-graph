@@ -39,15 +39,12 @@ async fn main() -> anyhow::Result<()> {
         main_workflow.nodes.len()
     );
     for (name, config) in &main_workflow.nodes {
-        println!(
-            "   • {} ({})",
-            name,
-            if name == "calculate_discount" {
-                "SubgraphNode"
-            } else {
-                &format!("{:?}", config.node_type)
-            }
-        );
+        let node_type_str = if name == "calculate_discount" {
+            "SubgraphNode".to_string()
+        } else {
+            format!("{:?}", config.node_type)
+        };
+        println!("   • {} ({})", name, node_type_str);
     }
     println!();
 
