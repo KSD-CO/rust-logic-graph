@@ -6,7 +6,7 @@ pub use rust_rule_engine::{
         EngineConfig,
         RustRuleEngine,
     },
-    parser::grl::GRLParser,
+    GRLParser,  // v1.18.0-alpha: re-exported from root (now uses grl_no_regex parser)
     types::Value,
 };
 

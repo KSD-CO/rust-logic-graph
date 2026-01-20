@@ -308,7 +308,6 @@ Rust Logic Graph is a **reasoning engine** for backend developers building intel
 **Why This Matters**: Most systems have data scattered across PostgreSQL, MongoDB, Redis, etc. Traditional approaches query each separately and merge in application code. We enable **reasoning directly over distributed data** with business rules.
 
 #### Distributed Execution
-- [x] **Multi-Database Query Orchestration** ✅ COMPLETED (2025-11-22)
   - [x] Parallel queries across multiple databases (ParallelDBExecutor)
   - [x] Automatic connection pooling per database (DatabasePool wrapper)
   - [x] Query result correlation and joining (QueryCorrelator with 4 strategies)
@@ -318,7 +317,6 @@ Rust Logic Graph is a **reasoning engine** for backend developers building intel
   - [x] Documentation: `src/multi_db/*.rs` with inline examples
   - [x] 6 unit tests passing (parallel, correlation, transaction)
 
-- [x] **Distributed Context Sharing** ✅ COMPLETED (2025-11-22)
   - [x] Context serialization for remote execution (MessagePack + JSON)
   - [x] State sharing between microservices (SharedContext wrapper)
   - [x] Distributed caching with Redis/Memcached/InMemory (4 strategies)
@@ -327,13 +325,11 @@ Rust Logic Graph is a **reasoning engine** for backend developers building intel
   - [x] Documentation: `src/distributed/*.rs` with inline examples
   - [x] 19 unit tests passing (context, store, versioning, cache)
 
-- [ ] **Saga Pattern Implementation**
-  - [ ] Transaction coordinator
-  - [ ] Automatic compensation on failure
-  - [ ] Saga state persistence
-  - [ ] Timeout and deadline handling
+  - [x] Transaction coordinator
+  - [x] Automatic compensation on failure
+  - [x] Saga state persistence
+  - [x] Timeout and deadline handling
 
- - [x] **Fault Tolerance** ✅
   - [x] Distributed circuit breakers with shared state (see `src/fault_tolerance/circuit_breaker.rs`)
   - [x] Service health monitoring (see `src/fault_tolerance/health.rs` and optional `http-health` feature)
   - [x] Automatic failover to backup services (`src/fault_tolerance/failover.rs`)
@@ -342,7 +338,6 @@ Rust Logic Graph is a **reasoning engine** for backend developers building intel
   Example: `examples/failover_degradation.rs` demonstrates a FailoverManager + CircuitBreaker + Executor fallback handler.
 
 #### Error Handling & Developer Experience
-- [x] **Better Error Messages** ✅ COMPLETED (2025-11-22) (moved from v0.5.0)
   - [x] Rich context in error messages
   - [x] Actionable suggestions for fixes
   - [x] Unique error codes for documentation (E001-E012)
@@ -353,10 +348,6 @@ Rust Logic Graph is a **reasoning engine** for backend developers building intel
   - [x] 5 comprehensive unit tests
 
 #### Real-World Examples
-- [ ] Multi-region data aggregation example
-- [ ] E-commerce order flow with Saga pattern
-- [ ] Distributed fraud detection system
-- [ ] Microservice orchestration case study
 
 ---
 

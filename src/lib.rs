@@ -14,8 +14,10 @@ pub mod error;
 pub mod multi_db;
 pub mod distributed;
 pub mod fault_tolerance;
+pub mod saga;
 
 // Re-export main types
+pub use saga::*;
 pub use core::{Graph, GraphDef, Edge, Context, Executor, NodeConfig, ExecutionMetrics, NodeExecutionStats};
 pub use node::{Node, NodeType, RuleNode, DBNode, AINode, GrpcNode, DatabaseExecutor, MockDatabaseExecutor};
 pub use rule::{Rule, RuleResult, RuleError, RuleEngine};
