@@ -41,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
 
         let node1 = OpenAINode::gpt4(
             "analyzer",
-            "Analyze the following text for sentiment: {{text}}"
+            "Analyze the following text for sentiment: {{text}}",
         )
         .with_temperature(0.7)
         .with_max_tokens(100);
@@ -49,7 +49,10 @@ async fn main() -> anyhow::Result<()> {
         let mut ctx1 = Context {
             data: HashMap::new(),
         };
-        ctx1.data.insert("text".to_string(), serde_json::json!("I love this product!"));
+        ctx1.data.insert(
+            "text".to_string(),
+            serde_json::json!("I love this product!"),
+        );
 
         println!("Prompt: Analyze the following text for sentiment: I love this product!");
         println!("Model: gpt-4");
@@ -75,19 +78,18 @@ async fn main() -> anyhow::Result<()> {
         // Example 2: GPT-3.5 Turbo with system prompt
         println!("=== Example 2: GPT-3.5 Turbo with System Prompt ===\n");
 
-        let node2 = OpenAINode::gpt35_turbo(
-            "assistant",
-            "{{user_question}}"
-        )
-        .with_system_prompt("You are a helpful coding assistant specialized in Rust programming.")
-        .with_temperature(0.5);
+        let node2 = OpenAINode::gpt35_turbo("assistant", "{{user_question}}")
+            .with_system_prompt(
+                "You are a helpful coding assistant specialized in Rust programming.",
+            )
+            .with_temperature(0.5);
 
         let mut ctx2 = Context {
             data: HashMap::new(),
         };
         ctx2.data.insert(
             "user_question".to_string(),
-            serde_json::json!("How do I create a HashMap in Rust?")
+            serde_json::json!("How do I create a HashMap in Rust?"),
         );
 
         println!("System: You are a helpful coding assistant specialized in Rust programming.");
@@ -125,14 +127,14 @@ async fn main() -> anyhow::Result<()> {
 
         ctx3.data.insert(
             "document".to_string(),
-            serde_json::json!("Our Q4 revenue increased by 25%...")
+            serde_json::json!("Our Q4 revenue increased by 25%..."),
         );
 
         // Stage 1: Extract key points
         println!("Stage 1: Extract key points");
         let node3a = OpenAINode::gpt4(
             "extract_points",
-            "Extract the key points from this document: {{document}}"
+            "Extract the key points from this document: {{document}}",
         );
         println!("  Node: extract_points");
         println!("  Prompt: Extract the key points from this document...\n");
@@ -141,7 +143,7 @@ async fn main() -> anyhow::Result<()> {
         println!("Stage 2: Summarize key points");
         let node3b = OpenAINode::gpt35_turbo(
             "summarize",
-            "Summarize these points in 2-3 sentences: {{extract_points_content}}"
+            "Summarize these points in 2-3 sentences: {{extract_points_content}}",
         );
         println!("  Node: summarize");
         println!("  Prompt: Summarize these points in 2-3 sentences...\n");
@@ -150,7 +152,7 @@ async fn main() -> anyhow::Result<()> {
         println!("Stage 3: Generate action items");
         let node3c = OpenAINode::gpt4(
             "action_items",
-            "Based on this summary, generate 3 action items: {{summarize_content}}"
+            "Based on this summary, generate 3 action items: {{summarize_content}}",
         );
         println!("  Node: action_items");
         println!("  Prompt: Based on this summary, generate 3 action items...\n");

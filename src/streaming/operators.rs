@@ -1,7 +1,7 @@
 //! Stream transformation operators
 
 use crate::core::Context;
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use crate::streaming::StreamProcessor;
 use async_trait::async_trait;
 use serde_json::Value;
@@ -136,10 +136,14 @@ where
         Ok(item)
     }
 
-    async fn process_chunk(&self, items: Vec<Value>, _ctx: &Context) -> Result<Vec<Value>, RuleError> {
-        let result = items.into_iter().fold(self.initial.clone(), |acc, item| {
-            (self.func)(acc, item)
-        });
+    async fn process_chunk(
+        &self,
+        items: Vec<Value>,
+        _ctx: &Context,
+    ) -> Result<Vec<Value>, RuleError> {
+        let result = items
+            .into_iter()
+            .fold(self.initial.clone(), |acc, item| (self.func)(acc, item));
 
         Ok(vec![result.into()])
     }
@@ -220,7 +224,10 @@ mod tests {
             data: HashMap::new(),
         };
 
-        let result = op.process_item(Value::Number(5.into()), &ctx).await.unwrap();
+        let result = op
+            .process_item(Value::Number(5.into()), &ctx)
+            .await
+            .unwrap();
         assert_eq!(result, Value::Number(10.into()));
     }
 
@@ -273,7 +280,10 @@ mod tests {
             data: HashMap::new(),
         };
 
-        let result = op.process_item(Value::Number(5.into()), &ctx).await.unwrap();
+        let result = op
+            .process_item(Value::Number(5.into()), &ctx)
+            .await
+            .unwrap();
         assert_eq!(result, Value::Number(10.into()));
     }
 }

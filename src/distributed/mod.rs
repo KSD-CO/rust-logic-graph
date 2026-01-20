@@ -31,17 +31,17 @@
 //! # }
 //! ```
 
+pub mod cache;
 pub mod context;
 pub mod store;
 pub mod versioning;
-pub mod cache;
 
-pub use context::{DistributedContext, ContextSnapshot, SharedContext};
+pub use context::{ContextSnapshot, DistributedContext, SharedContext};
 pub use store::{ContextStore, InMemoryStore};
 
 #[cfg(feature = "redis")]
 pub use store::RedisStore;
 
+pub use cache::{CacheStrategy, CacheWarmer, DistributedCache};
 pub use store::MemcachedStore;
-pub use versioning::{ContextVersion, ConflictResolution, VersionedContext, ThreeWayMerge};
-pub use cache::{DistributedCache, CacheStrategy, CacheWarmer};
+pub use versioning::{ConflictResolution, ContextVersion, ThreeWayMerge, VersionedContext};

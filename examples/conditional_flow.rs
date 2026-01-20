@@ -1,11 +1,10 @@
-/// Example: Conditional branching with if/else logic
-/// 
-/// This example demonstrates how to use ConditionalNode to route execution
-/// based on runtime conditions.
-
-use rust_logic_graph::{Graph, GraphDef, Edge, Context};
 use rust_logic_graph::node::{ConditionalNode, RuleNode};
 use rust_logic_graph::Executor;
+/// Example: Conditional branching with if/else logic
+///
+/// This example demonstrates how to use ConditionalNode to route execution
+/// based on runtime conditions.
+use rust_logic_graph::{Context, Edge, Graph, GraphDef};
 use serde_json::json;
 
 #[tokio::main]
@@ -25,8 +24,9 @@ async fn main() -> anyhow::Result<()> {
     // Node 2: Conditional router
     let condition = ConditionalNode::new(
         "route_based_on_stock",
-        "available > 100"  // Condition to evaluate
-    ).with_branches("process_order", "notify_supplier");
+        "available > 100", // Condition to evaluate
+    )
+    .with_branches("process_order", "notify_supplier");
     executor.register_node(Box::new(condition));
 
     // Node 3: Process order (if condition is true)
@@ -44,7 +44,9 @@ async fn main() -> anyhow::Result<()> {
             ("route_based_on_stock".to_string(), Default::default()),
             ("process_order".to_string(), Default::default()),
             ("notify_supplier".to_string(), Default::default()),
-        ].into_iter().collect(),
+        ]
+        .into_iter()
+        .collect(),
         edges: vec![
             Edge::new("check_inventory", "route_based_on_stock"),
             Edge::new("route_based_on_stock", "process_order"),
@@ -56,23 +58,29 @@ async fn main() -> anyhow::Result<()> {
     println!("Test 1: High inventory (available = 150)");
     let mut graph = Graph::new(graph_def.clone());
     graph.context.set("available", json!(150));
-    
+
     executor.execute(&mut graph).await?;
-    
+
     let branch_taken = graph.context.get("_branch_taken");
     println!("Branch taken: {:?}", branch_taken);
-    println!("Result: {:?}\n", graph.context.data.get("route_based_on_stock_result"));
+    println!(
+        "Result: {:?}\n",
+        graph.context.data.get("route_based_on_stock_result")
+    );
 
     // Test Case 2: Low inventory (should take notify_supplier branch)
     println!("Test 2: Low inventory (available = 50)");
     let mut graph = Graph::new(graph_def.clone());
     graph.context.set("available", json!(50));
-    
+
     executor.execute(&mut graph).await?;
-    
+
     let branch_taken = graph.context.get("_branch_taken");
     println!("Branch taken: {:?}", branch_taken);
-    println!("Result: {:?}", graph.context.data.get("route_based_on_stock_result"));
+    println!(
+        "Result: {:?}",
+        graph.context.data.get("route_based_on_stock_result")
+    );
 
     Ok(())
 }

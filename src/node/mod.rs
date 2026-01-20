@@ -1,9 +1,8 @@
-
 use async_trait::async_trait;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tracing::{info, debug};
 use std::sync::Arc;
+use tracing::{debug, info};
 
 use crate::core::Context;
 use crate::rule::RuleResult;
@@ -60,7 +59,10 @@ impl Node for RuleNode {
     }
 
     async fn run(&self, ctx: &mut Context) -> RuleResult {
-        info!("RuleNode[{}]: Evaluating condition '{}'", self.id, self.condition);
+        info!(
+            "RuleNode[{}]: Evaluating condition '{}'",
+            self.id, self.condition
+        );
 
         // Simple condition evaluation (can be extended with proper parser)
         let result = if self.condition == "true" {
@@ -69,11 +71,15 @@ impl Node for RuleNode {
             Value::Bool(false)
         } else {
             // Try to evaluate based on context
-            ctx.data.get(&self.condition).cloned().unwrap_or(Value::Bool(true))
+            ctx.data
+                .get(&self.condition)
+                .cloned()
+                .unwrap_or(Value::Bool(true))
         };
 
         debug!("RuleNode[{}]: Result = {:?}", self.id, result);
-        ctx.data.insert(format!("{}_result", self.id), result.clone());
+        ctx.data
+            .insert(format!("{}_result", self.id), result.clone());
 
         Ok(result)
     }
@@ -99,7 +105,7 @@ impl DatabaseExecutor for MockDatabaseExecutor {
     async fn execute(&self, query: &str, _params: &[&str]) -> Result<Value, String> {
         // Simulate async DB operation
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         Ok(serde_json::json!({
             "query": query,
             "rows": [
@@ -129,7 +135,7 @@ impl DBNode {
             param_keys: None,
         }
     }
-    
+
     /// Create DBNode with parameter keys to extract from context
     pub fn with_params(
         id: impl Into<String>,
@@ -143,7 +149,7 @@ impl DBNode {
             param_keys: Some(param_keys),
         }
     }
-    
+
     /// Create DBNode with custom executor (MySQL, Postgres, etc.)
     pub fn with_executor(
         id: impl Into<String>,
@@ -157,7 +163,7 @@ impl DBNode {
             param_keys: None,
         }
     }
-    
+
     /// Create DBNode with custom executor and parameter keys
     pub fn with_executor_and_params(
         id: impl Into<String>,
@@ -198,10 +204,12 @@ impl Node for DBNode {
     async fn run(&self, ctx: &mut Context) -> RuleResult {
         info!("DBNode[{}]: Executing query '{}'", self.id, self.query);
 
-        let executor = self.executor.as_ref()
+        let executor = self
+            .executor
+            .as_ref()
             .map(|e| e.clone())
             .unwrap_or_else(|| Arc::new(MockDatabaseExecutor) as Arc<dyn DatabaseExecutor>);
-        
+
         // Extract params from context based on param_keys
         let params: Vec<String> = if let Some(keys) = &self.param_keys {
             keys.iter()
@@ -221,19 +229,26 @@ impl Node for DBNode {
         } else {
             vec![]
         };
-        
+
         if !params.is_empty() {
-            debug!("DBNode[{}]: Using {} parameter(s) from context: {:?}", 
-                   self.id, params.len(), params);
+            debug!(
+                "DBNode[{}]: Using {} parameter(s) from context: {:?}",
+                self.id,
+                params.len(),
+                params
+            );
         }
-        
+
         let params_refs: Vec<&str> = params.iter().map(|s| s.as_str()).collect();
-        
-        let result = executor.execute(&self.query, &params_refs).await
+
+        let result = executor
+            .execute(&self.query, &params_refs)
+            .await
             .map_err(|e| crate::rule::RuleError::Eval(format!("Database error: {}", e)))?;
 
         debug!("DBNode[{}]: Query result = {:?}", self.id, result);
-        ctx.data.insert(format!("{}_result", self.id), result.clone());
+        ctx.data
+            .insert(format!("{}_result", self.id), result.clone());
 
         Ok(result)
     }
@@ -284,7 +299,8 @@ impl Node for AINode {
         });
 
         debug!("AINode[{}]: AI response = {:?}", self.id, mock_response);
-        ctx.data.insert(format!("{}_result", self.id), mock_response.clone());
+        ctx.data
+            .insert(format!("{}_result", self.id), mock_response.clone());
 
         Ok(mock_response)
     }
@@ -302,7 +318,11 @@ pub struct GrpcNode {
 }
 
 impl GrpcNode {
-    pub fn new(id: impl Into<String>, service_url: impl Into<String>, method: impl Into<String>) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        service_url: impl Into<String>,
+        method: impl Into<String>,
+    ) -> Self {
         Self {
             id: id.into(),
             service_url: service_url.into(),
@@ -322,8 +342,10 @@ impl Node for GrpcNode {
     }
 
     async fn run(&self, ctx: &mut Context) -> RuleResult {
-        info!("GrpcNode[{}]: Calling gRPC service '{}' method '{}'", 
-              self.id, self.service_url, self.method);
+        info!(
+            "GrpcNode[{}]: Calling gRPC service '{}' method '{}'",
+            self.id, self.service_url, self.method
+        );
 
         // Simulate async gRPC call
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
@@ -338,7 +360,8 @@ impl Node for GrpcNode {
         });
 
         debug!("GrpcNode[{}]: gRPC response = {:?}", self.id, mock_response);
-        ctx.data.insert(format!("{}_result", self.id), mock_response.clone());
+        ctx.data
+            .insert(format!("{}_result", self.id), mock_response.clone());
 
         Ok(mock_response)
     }
@@ -348,23 +371,20 @@ impl Node for GrpcNode {
 // SubgraphNode - Nested graph execution for reusable components
 // ============================================================
 
-use crate::core::{Graph, GraphDef};
 use crate::core::executor::Executor;
+use crate::core::{Graph, GraphDef};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct SubgraphNode {
     pub id: String,
     pub graph_def: GraphDef,
-    pub input_mapping: HashMap<String, String>,  // parent_key -> child_key
+    pub input_mapping: HashMap<String, String>, // parent_key -> child_key
     pub output_mapping: HashMap<String, String>, // child_key -> parent_key
 }
 
 impl SubgraphNode {
-    pub fn new(
-        id: impl Into<String>,
-        graph_def: GraphDef,
-    ) -> Self {
+    pub fn new(id: impl Into<String>, graph_def: GraphDef) -> Self {
         Self {
             id: id.into(),
             graph_def,
@@ -395,35 +415,48 @@ impl Node for SubgraphNode {
     }
 
     async fn run(&self, ctx: &mut Context) -> RuleResult {
-        info!("🔷 SubgraphNode[{}]: Executing nested graph with {} nodes", 
-            self.id, self.graph_def.nodes.len());
+        info!(
+            "🔷 SubgraphNode[{}]: Executing nested graph with {} nodes",
+            self.id,
+            self.graph_def.nodes.len()
+        );
 
         // Create child graph with mapped inputs
         let mut child_graph = Graph::new(self.graph_def.clone());
-        
+
         // Map inputs from parent context to child context
         for (parent_key, child_key) in &self.input_mapping {
             if let Some(value) = ctx.data.get(parent_key) {
-                debug!("SubgraphNode[{}]: Mapping {} -> {}", self.id, parent_key, child_key);
-                child_graph.context.data.insert(child_key.clone(), value.clone());
+                debug!(
+                    "SubgraphNode[{}]: Mapping {} -> {}",
+                    self.id, parent_key, child_key
+                );
+                child_graph
+                    .context
+                    .data
+                    .insert(child_key.clone(), value.clone());
             }
         }
 
         // Create executor and register nodes from subgraph definition
         let mut executor = Executor::new();
-        
+
         // TODO: Need to register nodes from graph_def
         // This requires access to node constructors, which should be handled
         // by a NodeFactory or similar pattern
-        
+
         // Execute child graph
-        executor.execute(&mut child_graph).await
-            .map_err(|e| crate::rule::RuleError::Eval(format!("Subgraph execution failed: {}", e)))?;
+        executor.execute(&mut child_graph).await.map_err(|e| {
+            crate::rule::RuleError::Eval(format!("Subgraph execution failed: {}", e))
+        })?;
 
         // Map outputs from child context back to parent context
         for (child_key, parent_key) in &self.output_mapping {
             if let Some(value) = child_graph.context.data.get(child_key) {
-                debug!("SubgraphNode[{}]: Mapping output {} -> {}", self.id, child_key, parent_key);
+                debug!(
+                    "SubgraphNode[{}]: Mapping output {} -> {}",
+                    self.id, child_key, parent_key
+                );
                 ctx.data.insert(parent_key.clone(), value.clone());
             }
         }
@@ -433,8 +466,9 @@ impl Node for SubgraphNode {
             "status": "completed",
             "nodes_executed": self.graph_def.nodes.len()
         });
-        
-        ctx.data.insert(format!("{}_result", self.id), result.clone());
+
+        ctx.data
+            .insert(format!("{}_result", self.id), result.clone());
 
         info!("✅ SubgraphNode[{}]: Completed successfully", self.id);
         Ok(result)
@@ -454,10 +488,7 @@ pub struct ConditionalNode {
 }
 
 impl ConditionalNode {
-    pub fn new(
-        id: impl Into<String>,
-        condition: impl Into<String>,
-    ) -> Self {
+    pub fn new(id: impl Into<String>, condition: impl Into<String>) -> Self {
         Self {
             id: id.into(),
             condition: condition.into(),
@@ -488,7 +519,10 @@ impl Node for ConditionalNode {
     }
 
     async fn run(&self, ctx: &mut Context) -> RuleResult {
-        info!("🔀 ConditionalNode[{}]: Evaluating condition: {}", self.id, self.condition);
+        info!(
+            "🔀 ConditionalNode[{}]: Evaluating condition: {}",
+            self.id, self.condition
+        );
 
         // Use existing rule engine to evaluate condition
         use crate::rule::Rule;
@@ -512,13 +546,21 @@ impl Node for ConditionalNode {
             "condition": self.condition
         });
 
-        ctx.data.insert(format!("{}_result", self.id), result.clone());
-        ctx.data.insert("_branch_taken".to_string(), Value::String(
-            selected_branch.cloned().unwrap_or_else(|| "none".to_string())
-        ));
+        ctx.data
+            .insert(format!("{}_result", self.id), result.clone());
+        ctx.data.insert(
+            "_branch_taken".to_string(),
+            Value::String(
+                selected_branch
+                    .cloned()
+                    .unwrap_or_else(|| "none".to_string()),
+            ),
+        );
 
-        info!("✅ ConditionalNode[{}]: Branch selected: {:?}", 
-            self.id, selected_branch);
+        info!(
+            "✅ ConditionalNode[{}]: Branch selected: {:?}",
+            self.id, selected_branch
+        );
 
         Ok(result)
     }
@@ -552,10 +594,7 @@ impl LoopNode {
         }
     }
 
-    pub fn new_foreach(
-        id: impl Into<String>,
-        collection_key: impl Into<String>,
-    ) -> Self {
+    pub fn new_foreach(id: impl Into<String>, collection_key: impl Into<String>) -> Self {
         Self {
             id: id.into(),
             condition: "true".to_string(),
@@ -591,20 +630,26 @@ impl Node for LoopNode {
         if let Some(collection_key) = &self.collection_key {
             // Clone collection first to avoid borrow checker issues
             let collection_clone = ctx.data.get(collection_key).cloned();
-            
+
             if let Some(collection) = collection_clone {
                 if let Some(array) = collection.as_array() {
-                    info!("LoopNode[{}]: Iterating over collection with {} items", 
-                        self.id, array.len());
-                    
+                    info!(
+                        "LoopNode[{}]: Iterating over collection with {} items",
+                        self.id,
+                        array.len()
+                    );
+
                     for (index, item) in array.iter().enumerate() {
                         if iterations >= self.max_iterations {
-                            info!("⚠️  LoopNode[{}]: Max iterations ({}) reached", 
-                                self.id, self.max_iterations);
+                            info!(
+                                "⚠️  LoopNode[{}]: Max iterations ({}) reached",
+                                self.id, self.max_iterations
+                            );
                             break;
                         }
 
-                        ctx.data.insert("_loop_index".to_string(), Value::from(index));
+                        ctx.data
+                            .insert("_loop_index".to_string(), Value::from(index));
                         ctx.data.insert("_loop_item".to_string(), item.clone());
 
                         // TODO: Execute body node if specified
@@ -635,7 +680,8 @@ impl Node for LoopNode {
                     break;
                 }
 
-                ctx.data.insert("_loop_iteration".to_string(), Value::from(iterations));
+                ctx.data
+                    .insert("_loop_iteration".to_string(), Value::from(iterations));
 
                 // TODO: Execute body node if specified
 
@@ -653,9 +699,13 @@ impl Node for LoopNode {
             "results": loop_results
         });
 
-        ctx.data.insert(format!("{}_result", self.id), result.clone());
+        ctx.data
+            .insert(format!("{}_result", self.id), result.clone());
 
-        info!("✅ LoopNode[{}]: Completed {} iterations", self.id, iterations);
+        info!(
+            "✅ LoopNode[{}]: Completed {} iterations",
+            self.id, iterations
+        );
         Ok(result)
     }
 }
@@ -673,10 +723,7 @@ pub struct TryCatchNode {
 }
 
 impl TryCatchNode {
-    pub fn new(
-        id: impl Into<String>,
-        try_node_id: impl Into<String>,
-    ) -> Self {
+    pub fn new(id: impl Into<String>, try_node_id: impl Into<String>) -> Self {
         Self {
             id: id.into(),
             try_node_id: try_node_id.into(),
@@ -711,14 +758,22 @@ impl Node for TryCatchNode {
 
         // TODO: Execute try_node_id
         // For now, simulate success/failure based on context
-        let error_occurred = ctx.data.get("_simulate_error")
+        let error_occurred = ctx
+            .data
+            .get("_simulate_error")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
         let result = if error_occurred {
-            info!("⚠️  TryCatchNode[{}]: Error occurred, executing catch block", self.id);
-            ctx.data.insert("_error".to_string(), Value::String("Simulated error".to_string()));
-            
+            info!(
+                "⚠️  TryCatchNode[{}]: Error occurred, executing catch block",
+                self.id
+            );
+            ctx.data.insert(
+                "_error".to_string(),
+                Value::String("Simulated error".to_string()),
+            );
+
             serde_json::json!({
                 "status": "error_handled",
                 "try_node": self.try_node_id,
@@ -733,7 +788,8 @@ impl Node for TryCatchNode {
 
         // TODO: Execute finally block if specified
 
-        ctx.data.insert(format!("{}_result", self.id), result.clone());
+        ctx.data
+            .insert(format!("{}_result", self.id), result.clone());
         Ok(result)
     }
 }
@@ -786,8 +842,10 @@ impl Node for RetryNode {
     }
 
     async fn run(&self, ctx: &mut Context) -> RuleResult {
-        info!("🔄 RetryNode[{}]: Starting with max {} retries", 
-            self.id, self.max_retries);
+        info!(
+            "🔄 RetryNode[{}]: Starting with max {} retries",
+            self.id, self.max_retries
+        );
 
         let mut attempt = 0;
         let mut delay_ms = self.initial_delay_ms;
@@ -795,10 +853,13 @@ impl Node for RetryNode {
         while attempt <= self.max_retries {
             // TODO: Execute target_node_id
             // For now, simulate retry logic
-            
-            let should_retry = ctx.data.get("_simulate_failure")
+
+            let should_retry = ctx
+                .data
+                .get("_simulate_failure")
                 .and_then(|v| v.as_bool())
-                .unwrap_or(false) && attempt < self.max_retries;
+                .unwrap_or(false)
+                && attempt < self.max_retries;
 
             if !should_retry {
                 let result = serde_json::json!({
@@ -806,15 +867,23 @@ impl Node for RetryNode {
                     "attempts": attempt + 1,
                     "target_node": self.target_node_id
                 });
-                ctx.data.insert(format!("{}_result", self.id), result.clone());
-                info!("✅ RetryNode[{}]: Succeeded after {} attempts", 
-                    self.id, attempt + 1);
+                ctx.data
+                    .insert(format!("{}_result", self.id), result.clone());
+                info!(
+                    "✅ RetryNode[{}]: Succeeded after {} attempts",
+                    self.id,
+                    attempt + 1
+                );
                 return Ok(result);
             }
 
-            info!("⚠️  RetryNode[{}]: Attempt {} failed, retrying in {}ms", 
-                self.id, attempt + 1, delay_ms);
-            
+            info!(
+                "⚠️  RetryNode[{}]: Attempt {} failed, retrying in {}ms",
+                self.id,
+                attempt + 1,
+                delay_ms
+            );
+
             sleep(Duration::from_millis(delay_ms)).await;
             delay_ms = (delay_ms as f64 * self.backoff_multiplier) as u64;
             attempt += 1;
@@ -825,10 +894,14 @@ impl Node for RetryNode {
             "attempts": attempt,
             "target_node": self.target_node_id
         });
-        
-        ctx.data.insert(format!("{}_result", self.id), error_result.clone());
-        info!("❌ RetryNode[{}]: Failed after {} attempts", self.id, attempt);
-        
+
+        ctx.data
+            .insert(format!("{}_result", self.id), error_result.clone());
+        info!(
+            "❌ RetryNode[{}]: Failed after {} attempts",
+            self.id, attempt
+        );
+
         Ok(error_result)
     }
 }
@@ -879,32 +952,39 @@ impl Node for CircuitBreakerNode {
         // States: Closed, Open, HalfOpen
         // For now, simple implementation
 
-        let is_circuit_open = ctx.data.get("_circuit_open")
+        let is_circuit_open = ctx
+            .data
+            .get("_circuit_open")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
         if is_circuit_open {
-            info!("🚫 CircuitBreakerNode[{}]: Circuit is OPEN, fast-failing", self.id);
+            info!(
+                "🚫 CircuitBreakerNode[{}]: Circuit is OPEN, fast-failing",
+                self.id
+            );
             let result = serde_json::json!({
                 "status": "circuit_open",
                 "message": "Circuit breaker is open, request rejected"
             });
-            ctx.data.insert(format!("{}_result", self.id), result.clone());
+            ctx.data
+                .insert(format!("{}_result", self.id), result.clone());
             return Ok(result);
         }
 
         // Circuit is closed, execute target node
         // TODO: Execute target_node_id and track failures
-        
+
         let result = serde_json::json!({
             "status": "success",
             "circuit_state": "closed",
             "target_node": self.target_node_id
         });
 
-        ctx.data.insert(format!("{}_result", self.id), result.clone());
+        ctx.data
+            .insert(format!("{}_result", self.id), result.clone());
         info!("✅ CircuitBreakerNode[{}]: Request completed", self.id);
-        
+
         Ok(result)
     }
 }

@@ -1,6 +1,6 @@
-use rust_logic_graph::{Graph, GraphIO, Executor, RuleNode, DBNode, AINode, RuleEngine};
-use tracing_subscriber;
+use rust_logic_graph::{AINode, DBNode, Executor, Graph, GraphIO, RuleEngine, RuleNode};
 use serde_json::json;
+use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,47 +21,59 @@ async fn main() -> anyhow::Result<()> {
     // Input validation with GRL
     executor.register_node(Box::new(RuleNode::new(
         "input_validation",
-        "loan_amount > 0 && loan_amount <= 1000000"
+        "loan_amount > 0 && loan_amount <= 1000000",
     )));
 
     // Fetch customer data
     executor.register_node(Box::new(DBNode::new(
         "fetch_customer",
-        "SELECT * FROM customers WHERE id = ?"
+        "SELECT * FROM customers WHERE id = ?",
     )));
 
     // Risk assessment with complex GRL rules
     executor.register_node(Box::new(RuleNode::new(
         "risk_assessment",
-        "credit_score >= 600 && income >= loan_amount * 3"
+        "credit_score >= 600 && income >= loan_amount * 3",
     )));
 
     // Fraud detection AI
     executor.register_node(Box::new(AINode::new(
         "fraud_detection",
-        "Analyze transaction patterns for fraud indicators"
+        "Analyze transaction patterns for fraud indicators",
     )));
 
     // Final approval decision
     executor.register_node(Box::new(RuleNode::new(
         "approval_decision",
-        "risk_score < 50 && fraud_score < 30"
+        "risk_score < 50 && fraud_score < 30",
     )));
 
     // Notification
     executor.register_node(Box::new(AINode::new(
         "notification",
-        "Generate approval/rejection notification email"
+        "Generate approval/rejection notification email",
     )));
 
     // Create graph with initial context
     let mut graph = Graph::new(def);
 
     // Set application data
-    graph.context.data.insert("loan_amount".to_string(), json!(50000));
-    graph.context.data.insert("credit_score".to_string(), json!(720));
-    graph.context.data.insert("income".to_string(), json!(180000));
-    graph.context.data.insert("customer_id".to_string(), json!(12345));
+    graph
+        .context
+        .data
+        .insert("loan_amount".to_string(), json!(50000));
+    graph
+        .context
+        .data
+        .insert("credit_score".to_string(), json!(720));
+    graph
+        .context
+        .data
+        .insert("income".to_string(), json!(180000));
+    graph
+        .context
+        .data
+        .insert("customer_id".to_string(), json!(12345));
 
     println!("Application Data:");
     println!("  Loan Amount: $50,000");

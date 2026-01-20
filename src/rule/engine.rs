@@ -1,13 +1,8 @@
 // Re-export rust-rule-engine types for convenience
 pub use rust_rule_engine::{
-    engine::{
-        facts::Facts,
-        knowledge_base::KnowledgeBase,
-        EngineConfig,
-        RustRuleEngine,
-    },
-    GRLParser,  // v1.18.0-alpha: re-exported from root (now uses grl_no_regex parser)
+    engine::{facts::Facts, knowledge_base::KnowledgeBase, EngineConfig, RustRuleEngine},
     types::Value,
+    GRLParser, // v1.18.0-alpha: re-exported from root (now uses grl_no_regex parser)
 };
 
 use serde_json::Value as JsonValue;
@@ -93,19 +88,25 @@ impl RuleEngine {
     pub fn add_grl_rule(&mut self, grl_content: &str) -> Result<(), RuleError> {
         let start = std::time::Instant::now();
         debug!("⏱️  [GRL Parse] Starting GRLParser::parse_rules()...");
-        
+
         let parse_start = std::time::Instant::now();
         let rules = GRLParser::parse_rules(grl_content)
             .map_err(|e| RuleError::Eval(format!("Failed to parse GRL: {}", e)))?;
         let parse_elapsed = parse_start.elapsed();
-        
-        let rule_count = rules.len();
-        debug!("   ✅ GRLParser::parse_rules() took {:.3}s for {} rules", 
-            parse_elapsed.as_secs_f64(), rule_count);
 
-        debug!("⏱️  [GRL Add] Adding {} rules to knowledge_base...", rule_count);
+        let rule_count = rules.len();
+        debug!(
+            "   ✅ GRLParser::parse_rules() took {:.3}s for {} rules",
+            parse_elapsed.as_secs_f64(),
+            rule_count
+        );
+
+        debug!(
+            "⏱️  [GRL Add] Adding {} rules to knowledge_base...",
+            rule_count
+        );
         let add_start = std::time::Instant::now();
-        
+
         for (idx, rule) in rules.into_iter().enumerate() {
             let rule_start = std::time::Instant::now();
             self.engine
@@ -113,17 +114,28 @@ impl RuleEngine {
                 .add_rule(rule)
                 .map_err(|e| RuleError::Eval(format!("Failed to add rule: {}", e)))?;
             let rule_elapsed = rule_start.elapsed();
-            
+
             if rule_elapsed.as_millis() > 10 {
-                debug!("      Rule #{} took {:.3}ms", idx + 1, rule_elapsed.as_secs_f64() * 1000.0);
+                debug!(
+                    "      Rule #{} took {:.3}ms",
+                    idx + 1,
+                    rule_elapsed.as_secs_f64() * 1000.0
+                );
             }
         }
-        
+
         let add_elapsed = add_start.elapsed();
-        debug!("   ✅ add_rule() loop took {:.3}s", add_elapsed.as_secs_f64());
+        debug!(
+            "   ✅ add_rule() loop took {:.3}s",
+            add_elapsed.as_secs_f64()
+        );
 
         let total_elapsed = start.elapsed();
-        debug!("✅ [GRL Total] Loaded {} GRL rules in {:.3}s", rule_count, total_elapsed.as_secs_f64());
+        debug!(
+            "✅ [GRL Total] Loaded {} GRL rules in {:.3}s",
+            rule_count,
+            total_elapsed.as_secs_f64()
+        );
 
         Ok(())
     }
@@ -190,7 +202,7 @@ impl RuleEngine {
                 // Get ALL facts from the engine after rule execution
                 // This captures all values set by rules (including Expression Evaluation results)
                 let all_facts = facts.get_all_facts();
-                
+
                 let mut result = HashMap::new();
                 for (key, value) in all_facts {
                     if let Some(json_value) = convert_value(&value) {
@@ -305,7 +317,10 @@ mod tests {
 
         let result = engine.evaluate(&context).unwrap();
         assert_eq!(result.get("result").unwrap().as_bool().unwrap(), true);
-        assert_eq!(result.get("message").unwrap().as_str().unwrap(), "x is positive");
+        assert_eq!(
+            result.get("message").unwrap().as_str().unwrap(),
+            "x is positive"
+        );
     }
 
     #[test]
@@ -341,7 +356,10 @@ mod tests {
         let result = engine.evaluate(&context).unwrap();
         // Only high priority rule should fire for value > 100
         assert_eq!(result.get("priority").unwrap().as_str().unwrap(), "high");
-        assert_eq!(result.get("high_rule_fired").unwrap().as_bool().unwrap(), true);
+        assert_eq!(
+            result.get("high_rule_fired").unwrap().as_bool().unwrap(),
+            true
+        );
 
         // Test with medium value
         let mut context2 = HashMap::new();
@@ -350,7 +368,10 @@ mod tests {
         let result2 = engine.evaluate(&context2).unwrap();
         // Only medium priority rule should fire for 50 < value <= 100
         assert_eq!(result2.get("priority").unwrap().as_str().unwrap(), "medium");
-        assert_eq!(result2.get("medium_rule_fired").unwrap().as_bool().unwrap(), true);
+        assert_eq!(
+            result2.get("medium_rule_fired").unwrap().as_bool().unwrap(),
+            true
+        );
     }
 
     #[test]

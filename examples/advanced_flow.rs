@@ -1,6 +1,6 @@
-use rust_logic_graph::{Graph, GraphIO, Executor, RuleNode, DBNode, AINode};
-use tracing_subscriber;
+use rust_logic_graph::{AINode, DBNode, Executor, Graph, GraphIO, RuleNode};
 use serde_json::json;
+use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -19,42 +19,45 @@ async fn main() -> anyhow::Result<()> {
     let mut executor = Executor::new();
 
     // Register nodes with custom logic
-    executor.register_node(Box::new(RuleNode::new(
-        "validate_input",
-        "user_id > 0"
-    )));
+    executor.register_node(Box::new(RuleNode::new("validate_input", "user_id > 0")));
 
     executor.register_node(Box::new(DBNode::new(
         "fetch_user_data",
-        "SELECT * FROM users WHERE id = ?"
+        "SELECT * FROM users WHERE id = ?",
     )));
 
     executor.register_node(Box::new(RuleNode::new(
         "check_permissions",
-        "user_role == \"admin\""
+        "user_role == \"admin\"",
     )));
 
     executor.register_node(Box::new(DBNode::new(
         "query_analytics",
-        "SELECT * FROM analytics WHERE user_id = ?"
+        "SELECT * FROM analytics WHERE user_id = ?",
     )));
 
     executor.register_node(Box::new(AINode::new(
         "generate_report",
-        "Generate comprehensive analytics report from data"
+        "Generate comprehensive analytics report from data",
     )));
 
     executor.register_node(Box::new(AINode::new(
         "send_notification",
-        "Send notification to user about report status"
+        "Send notification to user about report status",
     )));
 
     // Create graph and set initial context
     let mut graph = Graph::new(def);
 
     // Simulate input data
-    graph.context.data.insert("user_id".to_string(), json!(1001));
-    graph.context.data.insert("user_role".to_string(), json!("admin"));
+    graph
+        .context
+        .data
+        .insert("user_id".to_string(), json!(1001));
+    graph
+        .context
+        .data
+        .insert("user_role".to_string(), json!("admin"));
 
     println!("Initial Context:");
     println!("  - user_id: 1001");

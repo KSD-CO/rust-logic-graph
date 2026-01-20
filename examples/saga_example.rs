@@ -1,8 +1,8 @@
 //! Example: Saga Pattern Implementation
 //! Demonstrates transaction coordinator, compensation, state persistence, timeout/deadline
 
-use rust_logic_graph::saga::{SagaCoordinator, SagaStep, SagaStepStatus, SagaContext};
 use anyhow::Result;
+use rust_logic_graph::saga::{SagaContext, SagaCoordinator, SagaStep, SagaStepStatus};
 use std::time::Duration;
 
 fn main() -> Result<()> {
@@ -13,12 +13,14 @@ fn main() -> Result<()> {
         id: "reserve_inventory".to_string(),
         action: Box::new(|ctx| {
             println!("Reserving inventory...");
-            ctx.data.insert("inventory_reserved".to_string(), serde_json::json!(true));
+            ctx.data
+                .insert("inventory_reserved".to_string(), serde_json::json!(true));
             Ok(())
         }),
         compensation: Some(Box::new(|ctx| {
             println!("Releasing inventory...");
-            ctx.data.insert("inventory_reserved".to_string(), serde_json::json!(false));
+            ctx.data
+                .insert("inventory_reserved".to_string(), serde_json::json!(false));
             Ok(())
         })),
         status: SagaStepStatus::Pending,

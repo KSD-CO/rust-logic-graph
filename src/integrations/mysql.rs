@@ -4,11 +4,11 @@
 
 use crate::core::Context;
 use crate::node::{Node, NodeType};
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use async_trait::async_trait;
 use serde_json::Value;
-use sqlx::{MySqlPool, Row, Column};
-use tracing::{info, error};
+use sqlx::{Column, MySqlPool, Row};
+use tracing::{error, info};
 
 /// MySQL database node
 #[derive(Debug, Clone)]
@@ -39,11 +39,16 @@ impl MySqlNode {
 
     /// Execute query and return results
     async fn execute_query(&self, query: &str, ctx: &Context) -> Result<Vec<Value>, RuleError> {
-        let pool = self.pool.as_ref()
+        let pool = self
+            .pool
+            .as_ref()
             .ok_or_else(|| RuleError::Eval("MySQL pool not initialized".to_string()))?;
 
         let processed_query = self.process_query(query, ctx);
-        info!("MySqlNode[{}]: Executing query: {}", self.id, processed_query);
+        info!(
+            "MySqlNode[{}]: Executing query: {}",
+            self.id, processed_query
+        );
 
         let rows = sqlx::query(&processed_query)
             .fetch_all(pool)
@@ -111,9 +116,17 @@ impl Node for MySqlNode {
 
         match self.execute_query(&self.query, ctx).await {
             Ok(results) => {
-                info!("MySqlNode[{}]: Query returned {} rows", self.id, results.len());
-                ctx.data.insert(format!("{}_result", self.id), Value::Array(results.clone()));
-                ctx.data.insert(format!("{}_count", self.id), Value::Number(results.len().into()));
+                info!(
+                    "MySqlNode[{}]: Query returned {} rows",
+                    self.id,
+                    results.len()
+                );
+                ctx.data
+                    .insert(format!("{}_result", self.id), Value::Array(results.clone()));
+                ctx.data.insert(
+                    format!("{}_count", self.id),
+                    Value::Number(results.len().into()),
+                );
                 Ok(Value::Array(results))
             }
             Err(e) => {

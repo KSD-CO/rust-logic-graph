@@ -4,12 +4,12 @@
 
 use crate::core::Context;
 use crate::node::{Node, NodeType};
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tracing::{info, error};
+use tracing::{error, info};
 
 /// Ollama node for local LLM operations
 #[derive(Debug, Clone)]
@@ -123,7 +123,10 @@ impl OllamaNode {
             options,
         };
 
-        info!("OllamaNode[{}]: Calling Ollama API with model {}", self.id, self.model);
+        info!(
+            "OllamaNode[{}]: Calling Ollama API with model {}",
+            self.id, self.model
+        );
 
         let client = Client::new();
         let url = format!("{}/api/generate", self.base_url);
@@ -139,14 +142,21 @@ impl OllamaNode {
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
-            return Err(RuleError::Eval(format!("Ollama API error {}: {}", status, error_text)));
+            return Err(RuleError::Eval(format!(
+                "Ollama API error {}: {}",
+                status, error_text
+            )));
         }
 
-        let completion: GenerateResponse = response.json()
+        let completion: GenerateResponse = response
+            .json()
             .await
             .map_err(|e| RuleError::Eval(format!("Failed to parse Ollama response: {}", e)))?;
 
-        let duration_ms = completion.total_duration.map(|d| d / 1_000_000).unwrap_or(0);
+        let duration_ms = completion
+            .total_duration
+            .map(|d| d / 1_000_000)
+            .unwrap_or(0);
 
         info!(
             "OllamaNode[{}]: Completion successful. Duration: {}ms, Eval tokens: {:?}, Prompt tokens: {:?}",
@@ -208,11 +218,15 @@ impl Node for OllamaNode {
                 info!("OllamaNode[{}]: Completion successful", self.id);
 
                 // Store full result
-                ctx.data.insert(format!("{}_result", self.id), result.clone());
+                ctx.data
+                    .insert(format!("{}_result", self.id), result.clone());
 
                 // Extract and store content separately for convenience
                 if let Some(content) = result.get("content").and_then(|v| v.as_str()) {
-                    ctx.data.insert(format!("{}_content", self.id), Value::String(content.to_string()));
+                    ctx.data.insert(
+                        format!("{}_content", self.id),
+                        Value::String(content.to_string()),
+                    );
                 }
 
                 Ok(result)
@@ -236,7 +250,8 @@ mod tests {
         let mut ctx = Context {
             data: HashMap::new(),
         };
-        ctx.data.insert("data".to_string(), Value::String("test data".to_string()));
+        ctx.data
+            .insert("data".to_string(), Value::String("test data".to_string()));
 
         let processed = node.process_prompt(&node.prompt, &ctx);
         assert_eq!(processed, "Analyze this data: test data");

@@ -1,9 +1,9 @@
-use std::time::Duration;
 use async_trait::async_trait;
 use serde_json::json;
+use std::time::Duration;
 
-use crate::node::{Node, NodeType};
 use crate::core::Context;
+use crate::node::{Node, NodeType};
 use crate::rule::RuleResult;
 
 /// A simple node that simulates an expensive computation by sleeping.
@@ -14,7 +14,10 @@ pub struct ExpensiveComputeNode {
 
 impl ExpensiveComputeNode {
     pub fn new(id: &str, work_ms: u64) -> Self {
-        Self { id: id.to_string(), work_ms }
+        Self {
+            id: id.to_string(),
+            work_ms,
+        }
     }
 }
 

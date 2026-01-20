@@ -3,17 +3,17 @@
 //! Provides stream-based node execution with backpressure handling
 
 use crate::core::Context;
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use async_trait::async_trait;
 use serde_json::Value;
+use std::pin::Pin;
 use tokio::sync::mpsc;
 use tokio_stream::Stream;
-use std::pin::Pin;
 
 pub mod operators;
 pub mod stream_node;
 
-pub use operators::{StreamOperator, MapOperator, FilterOperator, FoldOperator};
+pub use operators::{FilterOperator, FoldOperator, MapOperator, StreamOperator};
 pub use stream_node::StreamNode;
 
 /// Stream item type
@@ -65,7 +65,11 @@ pub trait StreamProcessor: Send + Sync {
     async fn process_item(&self, item: Value, ctx: &Context) -> RuleResult;
 
     /// Process a chunk of items (for batch operations)
-    async fn process_chunk(&self, items: Vec<Value>, ctx: &Context) -> Result<Vec<Value>, RuleError> {
+    async fn process_chunk(
+        &self,
+        items: Vec<Value>,
+        ctx: &Context,
+    ) -> Result<Vec<Value>, RuleError> {
         let mut results = Vec::with_capacity(items.len());
         for item in items {
             let result = self.process_item(item, ctx).await?;
@@ -76,10 +80,7 @@ pub trait StreamProcessor: Send + Sync {
 }
 
 /// Create a stream from a vector with backpressure
-pub fn create_stream_from_vec(
-    data: Vec<Value>,
-    config: BackpressureConfig,
-) -> ValueStream {
+pub fn create_stream_from_vec(data: Vec<Value>, config: BackpressureConfig) -> ValueStream {
     let (tx, rx) = mpsc::channel(config.buffer_size);
 
     tokio::spawn(async move {
@@ -109,10 +110,7 @@ pub fn create_chunked_stream(
 /// Apply backpressure to a stream
 /// Note: This is a placeholder. For full backpressure,
 /// use StreamNode with BackpressureConfig
-pub fn apply_backpressure(
-    stream: ValueStream,
-    _config: BackpressureConfig,
-) -> ValueStream {
+pub fn apply_backpressure(stream: ValueStream, _config: BackpressureConfig) -> ValueStream {
     // Simply return the stream as-is
     // Backpressure is handled by the bounded channels
     stream
@@ -144,9 +142,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_chunked_stream() {
-        let data: Vec<Value> = (0..10)
-            .map(|i| Value::Number(i.into()))
-            .collect();
+        let data: Vec<Value> = (0..10).map(|i| Value::Number(i.into())).collect();
 
         let config = ChunkConfig {
             chunk_size: 3,

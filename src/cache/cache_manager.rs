@@ -29,7 +29,7 @@ impl Default for CacheConfig {
     fn default() -> Self {
         Self {
             max_entries: 10000,
-            max_memory_bytes: 100 * 1024 * 1024, // 100MB
+            max_memory_bytes: 100 * 1024 * 1024,         // 100MB
             default_ttl: Some(Duration::from_secs(300)), // 5 minutes
             eviction_policy: EvictionPolicy::LRU,
             enable_background_cleanup: true,
@@ -107,7 +107,7 @@ impl CacheManager {
                 // Update access metadata
                 entry.mark_accessed();
                 let value = entry.value.clone();
-                
+
                 self.hits.fetch_add(1, Ordering::Relaxed);
                 debug!("Cache hit: {:?}", key);
                 Some(value)
@@ -145,7 +145,8 @@ impl CacheManager {
     /// Invalidate (remove) a specific cache entry
     pub fn invalidate(&self, key: &CacheKey) -> bool {
         if let Some((_, entry)) = self.cache.remove(key) {
-            self.current_memory.fetch_sub(entry.size_bytes, Ordering::Relaxed);
+            self.current_memory
+                .fetch_sub(entry.size_bytes, Ordering::Relaxed);
             debug!("Invalidated cache entry: {:?}", key);
             true
         } else {

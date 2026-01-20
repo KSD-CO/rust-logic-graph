@@ -4,7 +4,11 @@ use serde_json::Value;
 pub type FallbackHandler = fn(node_id: &str, ctx: &mut crate::core::Context) -> Option<Value>;
 
 /// Simple helper: attempt fallback when node execution fails
-pub fn degrade_on_failure(node_id: &str, ctx: &mut crate::core::Context, handler: Option<FallbackHandler>) -> Option<Value> {
+pub fn degrade_on_failure(
+    node_id: &str,
+    ctx: &mut crate::core::Context,
+    handler: Option<FallbackHandler>,
+) -> Option<Value> {
     if let Some(h) = handler {
         h(node_id, ctx)
     } else {

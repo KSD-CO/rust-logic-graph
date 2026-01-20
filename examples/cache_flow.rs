@@ -67,10 +67,9 @@ impl Node for ExpensiveComputeNode {
         let result = (1..=input).product::<i64>();
 
         // Store in context
-        context.data.insert(
-            format!("{}_result", self.id),
-            json!(result)
-        );
+        context
+            .data
+            .insert(format!("{}_result", self.id), json!(result));
 
         info!(
             "Node '{}': Computation complete. Result: {}",
@@ -88,7 +87,7 @@ async fn demo_basic_caching() -> anyhow::Result<()> {
     let cache_config = CacheConfig {
         max_entries: 100,
         max_memory_bytes: 10 * 1024 * 1024, // 10MB
-        default_ttl: None,                   // No expiration
+        default_ttl: None,                  // No expiration
         eviction_policy: EvictionPolicy::LRU,
         enable_background_cleanup: false,
     };
@@ -132,7 +131,10 @@ async fn demo_basic_caching() -> anyhow::Result<()> {
 
     println!("Second execution time: {:?}", duration2);
     println!("Cache stats: {:?}", cache.stats());
-    println!("Speedup: {:.2}x", duration1.as_secs_f64() / duration2.as_secs_f64());
+    println!(
+        "Speedup: {:.2}x",
+        duration1.as_secs_f64() / duration2.as_secs_f64()
+    );
 
     // Third execution with different input - cache miss
     info!("\nThird execution with different input (cache miss):");
@@ -204,7 +206,11 @@ async fn demo_ttl_expiration() -> anyhow::Result<()> {
 async fn demo_eviction_policies() -> anyhow::Result<()> {
     println!("\n\n=== Demo 3: Eviction Policies ===\n");
 
-    for policy in [EvictionPolicy::LRU, EvictionPolicy::FIFO, EvictionPolicy::LFU] {
+    for policy in [
+        EvictionPolicy::LRU,
+        EvictionPolicy::FIFO,
+        EvictionPolicy::LFU,
+    ] {
         println!("\n--- Testing {:?} Policy ---", policy);
 
         let cache_config = CacheConfig {
@@ -235,8 +241,10 @@ async fn demo_eviction_policies() -> anyhow::Result<()> {
         }
 
         let stats = cache.stats();
-        println!("Final stats: entries={}, evictions={}", 
-                 stats.current_entries, stats.evictions);
+        println!(
+            "Final stats: entries={}, evictions={}",
+            stats.current_entries, stats.evictions
+        );
     }
 
     Ok(())
@@ -280,8 +288,10 @@ async fn demo_memory_limits() -> anyhow::Result<()> {
     }
 
     let stats = cache.stats();
-    println!("\nFinal memory usage: {} bytes (limit: 1024 bytes)", 
-             stats.current_memory_bytes);
+    println!(
+        "\nFinal memory usage: {} bytes (limit: 1024 bytes)",
+        stats.current_memory_bytes
+    );
     println!("Total evictions: {}", stats.evictions);
 
     Ok(())

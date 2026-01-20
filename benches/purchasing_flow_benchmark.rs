@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use rust_logic_graph::{Graph, GraphDef, Executor, NodeType};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use rust_logic_graph::{Executor, Graph, GraphDef, NodeType};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -66,7 +66,12 @@ fn benchmark_mock_purchasing_flow(c: &mut Criterion) {
             let mut exec = Executor::new();
 
             // Register mock DBNodes
-            for id in ["oms_history", "inventory_levels", "supplier_info", "uom_conversion"] {
+            for id in [
+                "oms_history",
+                "inventory_levels",
+                "supplier_info",
+                "uom_conversion",
+            ] {
                 exec.register_node(Box::new(rust_logic_graph::node::DBNode::new(
                     id,
                     format!("SELECT * FROM {}", id),
@@ -112,7 +117,8 @@ fn benchmark_mock_purchasing_flow(c: &mut Criterion) {
                     let stock_qty = stock.get("qty").and_then(|v| v.as_i64()).unwrap_or(0);
                     let order = ((avg - stock_qty).max(0) as i64 / moq as i64) * moq as i64;
                     let res = json!({"order_qty": order});
-                    ctx.data.insert("calc_order_qty_result".to_string(), res.clone());
+                    ctx.data
+                        .insert("calc_order_qty_result".to_string(), res.clone());
                     Ok(res)
                 }
             }

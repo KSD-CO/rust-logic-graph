@@ -4,11 +4,11 @@ mod engine;
 pub use engine::RuleEngine;
 
 // Re-export rust-rule-engine types for advanced usage
-pub use engine::{Facts, KnowledgeBase, GRLParser, EngineConfig, RustRuleEngine, Value};
+pub use engine::{EngineConfig, Facts, GRLParser, KnowledgeBase, RustRuleEngine, Value};
 
 use serde_json::Value as JsonValue;
-use thiserror::Error;
 use std::collections::HashMap;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum RuleError {
@@ -77,7 +77,11 @@ impl Rule {
         Ok(JsonValue::Bool(true))
     }
 
-    fn evaluate_comparison(&self, expr: &str, context: &HashMap<String, JsonValue>) -> Option<RuleResult> {
+    fn evaluate_comparison(
+        &self,
+        expr: &str,
+        context: &HashMap<String, JsonValue>,
+    ) -> Option<RuleResult> {
         for op in ["==", "!=", ">=", "<=", ">", "<"] {
             if let Some((left, right)) = expr.split_once(op) {
                 let left = left.trim();
@@ -163,7 +167,12 @@ impl Rule {
             .ok_or_else(|| RuleError::MissingVariable(s.to_string()))
     }
 
-    fn compare_values(&self, left: &JsonValue, right: &JsonValue, ordering: std::cmp::Ordering) -> bool {
+    fn compare_values(
+        &self,
+        left: &JsonValue,
+        right: &JsonValue,
+        ordering: std::cmp::Ordering,
+    ) -> bool {
         match (left, right) {
             (JsonValue::Number(l), JsonValue::Number(r)) => {
                 if let (Some(l), Some(r)) = (l.as_f64(), r.as_f64()) {

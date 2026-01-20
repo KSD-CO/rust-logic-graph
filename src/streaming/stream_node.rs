@@ -2,16 +2,16 @@
 
 use crate::core::Context;
 use crate::node::{Node, NodeType};
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use crate::streaming::{
-    StreamProcessor, BackpressureConfig, ChunkConfig,
-    create_stream_from_vec, create_chunked_stream, apply_backpressure,
+    apply_backpressure, create_chunked_stream, create_stream_from_vec, BackpressureConfig,
+    ChunkConfig, StreamProcessor,
 };
 use async_trait::async_trait;
 use serde_json::Value;
-use tokio_stream::StreamExt;
-use tracing::{info, error};
 use std::sync::Arc;
+use tokio_stream::StreamExt;
+use tracing::{error, info};
 
 /// Stream node for processing data streams
 #[derive(Clone)]
@@ -55,11 +55,7 @@ impl StreamNode {
     }
 
     /// Process a stream of data
-    pub async fn process_stream(
-        &self,
-        data: Vec<Value>,
-        ctx: &Context,
-    ) -> RuleResult {
+    pub async fn process_stream(&self, data: Vec<Value>, ctx: &Context) -> RuleResult {
         info!("StreamNode[{}]: Processing {} items", self.id, data.len());
 
         if let Some(chunk_config) = &self.chunk_config {
@@ -72,11 +68,7 @@ impl StreamNode {
     }
 
     /// Regular stream processing
-    async fn process_regular(
-        &self,
-        data: Vec<Value>,
-        ctx: &Context,
-    ) -> RuleResult {
+    async fn process_regular(&self, data: Vec<Value>, ctx: &Context) -> RuleResult {
         let stream = create_stream_from_vec(data, self.backpressure_config.clone());
         let stream = apply_backpressure(stream, self.backpressure_config.clone());
 
@@ -85,12 +77,10 @@ impl StreamNode {
 
         while let Some(item) = stream.next().await {
             match item {
-                Ok(value) => {
-                    match self.processor.process_item(value, ctx).await {
-                        Ok(result) => results.push(result),
-                        Err(_) => continue,
-                    }
-                }
+                Ok(value) => match self.processor.process_item(value, ctx).await {
+                    Ok(result) => results.push(result),
+                    Err(_) => continue,
+                },
                 Err(_) => continue,
             }
         }
@@ -100,9 +90,10 @@ impl StreamNode {
         if self.collect_results {
             Ok(Value::Array(results))
         } else {
-            results.last().cloned().ok_or_else(|| {
-                RuleError::Eval("No results produced".to_string())
-            })
+            results
+                .last()
+                .cloned()
+                .ok_or_else(|| RuleError::Eval("No results produced".to_string()))
         }
     }
 
@@ -126,7 +117,11 @@ impl StreamNode {
         while let Some(chunk_result) = stream.next().await {
             match chunk_result {
                 Ok(chunk) => {
-                    info!("StreamNode[{}]: Processing chunk of {} items", self.id, chunk.len());
+                    info!(
+                        "StreamNode[{}]: Processing chunk of {} items",
+                        self.id,
+                        chunk.len()
+                    );
                     match self.processor.process_chunk(chunk, ctx).await {
                         Ok(results) => {
                             if self.collect_results {
@@ -150,14 +145,19 @@ impl StreamNode {
             }
         }
 
-        info!("StreamNode[{}]: Total processed {} items", self.id, all_results.len());
+        info!(
+            "StreamNode[{}]: Total processed {} items",
+            self.id,
+            all_results.len()
+        );
 
         if self.collect_results {
             Ok(Value::Array(all_results))
         } else {
-            all_results.last().cloned().ok_or_else(|| {
-                RuleError::Eval("No results produced".to_string())
-            })
+            all_results
+                .last()
+                .cloned()
+                .ok_or_else(|| RuleError::Eval("No results produced".to_string()))
         }
     }
 }
@@ -188,7 +188,9 @@ impl Node for StreamNode {
 
         // Get input data from context
         let input_key = format!("{}_input", self.id);
-        let data = ctx.data.get(&input_key)
+        let data = ctx
+            .data
+            .get(&input_key)
             .and_then(|v| v.as_array())
             .ok_or_else(|| RuleError::Eval(format!("No input data found for key: {}", input_key)))?
             .clone();
@@ -196,7 +198,8 @@ impl Node for StreamNode {
         let result = self.process_stream(data, ctx).await?;
 
         // Store result in context
-        ctx.data.insert(format!("{}_result", self.id), result.clone());
+        ctx.data
+            .insert(format!("{}_result", self.id), result.clone());
 
         Ok(result)
     }
@@ -245,11 +248,10 @@ mod tests {
     #[tokio::test]
     async fn test_stream_node_chunked() {
         let processor = Arc::new(TestProcessor);
-        let node = StreamNode::new("test", processor)
-            .with_chunking(ChunkConfig {
-                chunk_size: 3,
-                overlap: 0,
-            });
+        let node = StreamNode::new("test", processor).with_chunking(ChunkConfig {
+            chunk_size: 3,
+            overlap: 0,
+        });
 
         let data: Vec<Value> = (1..=10).map(|i| Value::Number(i.into())).collect();
 

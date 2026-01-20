@@ -1,4 +1,4 @@
-use rust_logic_graph::{Executor, Graph, GraphDef, NodeType, DBNode};
+use rust_logic_graph::{DBNode, Executor, Graph, GraphDef, NodeType};
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
@@ -9,7 +9,9 @@ async fn main() -> anyhow::Result<()> {
 
     // Build a simple graph with a DBNode (simulated 100ms delay in DBNode.run)
     let graph_def = GraphDef::from_node_types(
-        vec![("dbnode".to_string(), NodeType::DBNode)].into_iter().collect(),
+        vec![("dbnode".to_string(), NodeType::DBNode)]
+            .into_iter()
+            .collect(),
         vec![],
     );
 
@@ -26,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
 
         handles.push(tokio::spawn(async move {
             let _p = permit; // keep permit until the end
-            // create executor locally per task
+                             // create executor locally per task
             let mut exec = Executor::new();
             exec.register_node(Box::new(DBNode::new("dbnode", "SELECT 1")));
             let mut graph = Graph::new(def);
@@ -42,6 +44,9 @@ async fn main() -> anyhow::Result<()> {
         let _ = h.await;
     }
 
-    println!("Load test complete: executed {} graphs with concurrency {}", total, concurrency);
+    println!(
+        "Load test complete: executed {} graphs with concurrency {}",
+        total, concurrency
+    );
     Ok(())
 }

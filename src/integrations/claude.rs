@@ -4,12 +4,12 @@
 
 use crate::core::Context;
 use crate::node::{Node, NodeType};
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tracing::{info, error};
+use tracing::{error, info};
 
 /// Claude node for LLM operations
 #[derive(Debug, Clone)]
@@ -146,7 +146,10 @@ impl ClaudeNode {
             max_tokens: self.max_tokens,
         };
 
-        info!("ClaudeNode[{}]: Calling Anthropic API with model {}", self.id, self.model);
+        info!(
+            "ClaudeNode[{}]: Calling Anthropic API with model {}",
+            self.id, self.model
+        );
 
         let client = Client::new();
         let response = client
@@ -162,21 +165,25 @@ impl ClaudeNode {
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
-            return Err(RuleError::Eval(format!("Anthropic API error {}: {}", status, error_text)));
+            return Err(RuleError::Eval(format!(
+                "Anthropic API error {}: {}",
+                status, error_text
+            )));
         }
 
-        let completion: MessagesResponse = response.json()
+        let completion: MessagesResponse = response
+            .json()
             .await
             .map_err(|e| RuleError::Eval(format!("Failed to parse Anthropic response: {}", e)))?;
 
-        let content = completion.content.first()
+        let content = completion
+            .content
+            .first()
             .ok_or_else(|| RuleError::Eval("No content blocks returned".to_string()))?;
 
         info!(
             "ClaudeNode[{}]: Completion successful. Tokens: {} input + {} output",
-            self.id,
-            completion.usage.input_tokens,
-            completion.usage.output_tokens
+            self.id, completion.usage.input_tokens, completion.usage.output_tokens
         );
 
         Ok(serde_json::json!({
@@ -230,11 +237,15 @@ impl Node for ClaudeNode {
                 info!("ClaudeNode[{}]: Completion successful", self.id);
 
                 // Store full result
-                ctx.data.insert(format!("{}_result", self.id), result.clone());
+                ctx.data
+                    .insert(format!("{}_result", self.id), result.clone());
 
                 // Extract and store content separately for convenience
                 if let Some(content) = result.get("content").and_then(|v| v.as_str()) {
-                    ctx.data.insert(format!("{}_content", self.id), Value::String(content.to_string()));
+                    ctx.data.insert(
+                        format!("{}_content", self.id),
+                        Value::String(content.to_string()),
+                    );
                 }
 
                 Ok(result)
@@ -258,7 +269,8 @@ mod tests {
         let mut ctx = Context {
             data: HashMap::new(),
         };
-        ctx.data.insert("data".to_string(), Value::String("test data".to_string()));
+        ctx.data
+            .insert("data".to_string(), Value::String("test data".to_string()));
 
         let processed = node.process_prompt(&node.prompt, &ctx);
         assert_eq!(processed, "Analyze this data: test data");

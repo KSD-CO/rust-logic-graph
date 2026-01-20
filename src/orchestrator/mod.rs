@@ -1,8 +1,7 @@
-
 use anyhow::Result;
 use tracing::info;
 
-use crate::core::{Graph, Executor};
+use crate::core::{Executor, Graph};
 
 pub struct Orchestrator {
     executor: Executor,

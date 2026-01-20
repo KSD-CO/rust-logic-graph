@@ -7,12 +7,12 @@
 //!
 //! To run: cargo run --example streaming_flow
 
-use rust_logic_graph::{Context, Node};
-use rust_logic_graph::streaming::{
-    StreamNode, StreamProcessor, BackpressureConfig, ChunkConfig,
-    MapOperator, FilterOperator, FoldOperator,
-};
 use async_trait::async_trait;
+use rust_logic_graph::streaming::{
+    BackpressureConfig, ChunkConfig, FilterOperator, FoldOperator, MapOperator, StreamNode,
+    StreamProcessor,
+};
+use rust_logic_graph::{Context, Node};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -22,7 +22,11 @@ struct NumberProcessor;
 
 #[async_trait]
 impl StreamProcessor for NumberProcessor {
-    async fn process_item(&self, item: Value, _ctx: &Context) -> Result<Value, rust_logic_graph::RuleError> {
+    async fn process_item(
+        &self,
+        item: Value,
+        _ctx: &Context,
+    ) -> Result<Value, rust_logic_graph::RuleError> {
         // Simulate some async processing
         tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
 
@@ -46,11 +50,10 @@ async fn main() -> anyhow::Result<()> {
     let data: Vec<Value> = (1..=100).map(|i| Value::Number(i.into())).collect();
 
     let processor = Arc::new(NumberProcessor);
-    let node = StreamNode::new("processor", processor)
-        .with_backpressure(BackpressureConfig {
-            buffer_size: 10,
-            max_concurrent: 5,
-        });
+    let node = StreamNode::new("processor", processor).with_backpressure(BackpressureConfig {
+        buffer_size: 10,
+        max_concurrent: 5,
+    });
 
     let ctx = Context {
         data: HashMap::new(),
@@ -63,7 +66,11 @@ async fn main() -> anyhow::Result<()> {
 
     if let Value::Array(results) = result {
         println!("✓ Processed {} items in {:?}", results.len(), duration);
-        println!("  First: {:?}, Last: {:?}\n", results.first(), results.last());
+        println!(
+            "  First: {:?}, Last: {:?}\n",
+            results.first(),
+            results.last()
+        );
     }
 
     // Example 2: Large dataset with chunking
@@ -93,7 +100,10 @@ async fn main() -> anyhow::Result<()> {
 
     if let Value::Array(results) = result {
         println!("✓ Processed {} items in {:?}", results.len(), duration);
-        println!("  Throughput: {:.0} items/sec\n", results.len() as f64 / duration.as_secs_f64());
+        println!(
+            "  Throughput: {:.0} items/sec\n",
+            results.len() as f64 / duration.as_secs_f64()
+        );
     }
 
     // Example 3: Map operator

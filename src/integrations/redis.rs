@@ -4,11 +4,11 @@
 
 use crate::core::Context;
 use crate::node::{Node, NodeType};
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use async_trait::async_trait;
 use redis::{AsyncCommands, Client};
 use serde_json::Value;
-use tracing::{info, error};
+use tracing::{error, info};
 
 /// Redis cache node
 #[derive(Debug, Clone)]
@@ -70,10 +70,13 @@ impl RedisNode {
 
     /// Execute Redis operation
     async fn execute_operation(&self, ctx: &Context) -> Result<Value, RuleError> {
-        let client = self.client.as_ref()
+        let client = self
+            .client
+            .as_ref()
             .ok_or_else(|| RuleError::Eval("Redis client not initialized".to_string()))?;
 
-        let mut conn = client.get_async_connection()
+        let mut conn = client
+            .get_async_connection()
             .await
             .map_err(|e| RuleError::Eval(format!("Failed to get Redis connection: {}", e)))?;
 
@@ -82,7 +85,8 @@ impl RedisNode {
         match &self.operation {
             RedisOperation::Get => {
                 info!("RedisNode[{}]: GET key: {}", self.id, key);
-                let result: Option<String> = conn.get(&key)
+                let result: Option<String> = conn
+                    .get(&key)
                     .await
                     .map_err(|e| RuleError::Eval(format!("GET failed: {}", e)))?;
 
@@ -100,18 +104,25 @@ impl RedisNode {
             }
 
             RedisOperation::Set => {
-                let value = self.value.as_ref()
+                let value = self
+                    .value
+                    .as_ref()
                     .ok_or_else(|| RuleError::Eval("SET operation requires value".to_string()))?;
                 let processed_value = self.process_value(value, ctx);
 
-                info!("RedisNode[{}]: SET key: {} = {}", self.id, key, processed_value);
+                info!(
+                    "RedisNode[{}]: SET key: {} = {}",
+                    self.id, key, processed_value
+                );
 
                 if let Some(ttl) = self.ttl {
-                    let _: () = conn.set_ex(&key, &processed_value, ttl)
+                    let _: () = conn
+                        .set_ex(&key, &processed_value, ttl)
                         .await
                         .map_err(|e| RuleError::Eval(format!("SET with TTL failed: {}", e)))?;
                 } else {
-                    let _: () = conn.set(&key, &processed_value)
+                    let _: () = conn
+                        .set(&key, &processed_value)
                         .await
                         .map_err(|e| RuleError::Eval(format!("SET failed: {}", e)))?;
                 }
@@ -121,7 +132,8 @@ impl RedisNode {
 
             RedisOperation::Delete => {
                 info!("RedisNode[{}]: DELETE key: {}", self.id, key);
-                let deleted: i32 = conn.del(&key)
+                let deleted: i32 = conn
+                    .del(&key)
                     .await
                     .map_err(|e| RuleError::Eval(format!("DELETE failed: {}", e)))?;
 
@@ -130,7 +142,8 @@ impl RedisNode {
 
             RedisOperation::Exists => {
                 info!("RedisNode[{}]: EXISTS key: {}", self.id, key);
-                let exists: bool = conn.exists(&key)
+                let exists: bool = conn
+                    .exists(&key)
                     .await
                     .map_err(|e| RuleError::Eval(format!("EXISTS failed: {}", e)))?;
 
@@ -188,12 +201,16 @@ impl Node for RedisNode {
     }
 
     async fn run(&self, ctx: &mut Context) -> RuleResult {
-        info!("RedisNode[{}]: Starting {:?} operation", self.id, self.operation);
+        info!(
+            "RedisNode[{}]: Starting {:?} operation",
+            self.id, self.operation
+        );
 
         match self.execute_operation(ctx).await {
             Ok(result) => {
                 info!("RedisNode[{}]: Operation successful", self.id);
-                ctx.data.insert(format!("{}_result", self.id), result.clone());
+                ctx.data
+                    .insert(format!("{}_result", self.id), result.clone());
                 Ok(result)
             }
             Err(e) => {

@@ -1,5 +1,4 @@
-
-use rust_logic_graph::{Graph, Orchestrator, GraphIO};
+use rust_logic_graph::{Graph, GraphIO, Orchestrator};
 use tracing_subscriber;
 
 #[tokio::main]
@@ -13,7 +12,8 @@ async fn main() -> anyhow::Result<()> {
 
     // Load graph definition from YAML
     let def = GraphIO::load_from_file("examples/simple_flow.yaml")?;
-    println!("Loaded graph with {} nodes and {} edges\n",
+    println!(
+        "Loaded graph with {} nodes and {} edges\n",
         def.nodes.len(),
         def.edges.len()
     );

@@ -58,30 +58,52 @@ fn full_bench(c: &mut Criterion) {
             // Register nodes with appropriate concrete node types
             for node_id in graph_def.nodes.keys() {
                 let boxed: Box<dyn rust_logic_graph::node::Node> = match node_type {
-                    NodeType::RuleNode => Box::new(rust_logic_graph::node::RuleNode::new(node_id, "true")),
-                    NodeType::DBNode => Box::new(rust_logic_graph::node::DBNode::new(node_id, format!("SELECT {}", node_id))),
-                    NodeType::AINode => Box::new(rust_logic_graph::node::AINode::new(node_id, format!("Prompt {}", node_id))),
+                    NodeType::RuleNode => {
+                        Box::new(rust_logic_graph::node::RuleNode::new(node_id, "true"))
+                    }
+                    NodeType::DBNode => Box::new(rust_logic_graph::node::DBNode::new(
+                        node_id,
+                        format!("SELECT {}", node_id),
+                    )),
+                    NodeType::AINode => Box::new(rust_logic_graph::node::AINode::new(
+                        node_id,
+                        format!("Prompt {}", node_id),
+                    )),
                 };
                 exec_no_cache.register_node(boxed);
             }
 
             // Executor with cache
-            let cache = rt.block_on(CacheManager::new(cache_config.clone())).unwrap();
+            let cache = rt
+                .block_on(CacheManager::new(cache_config.clone()))
+                .unwrap();
             let mut exec_with_cache = Executor::with_cache(cache.clone());
             for node_id in graph_def.nodes.keys() {
                 let boxed: Box<dyn rust_logic_graph::node::Node> = match node_type {
-                    NodeType::RuleNode => Box::new(rust_logic_graph::node::RuleNode::new(node_id, "true")),
-                    NodeType::DBNode => Box::new(rust_logic_graph::node::DBNode::new(node_id, format!("SELECT {}", node_id))),
-                    NodeType::AINode => Box::new(rust_logic_graph::node::AINode::new(node_id, format!("Prompt {}", node_id))),
+                    NodeType::RuleNode => {
+                        Box::new(rust_logic_graph::node::RuleNode::new(node_id, "true"))
+                    }
+                    NodeType::DBNode => Box::new(rust_logic_graph::node::DBNode::new(
+                        node_id,
+                        format!("SELECT {}", node_id),
+                    )),
+                    NodeType::AINode => Box::new(rust_logic_graph::node::AINode::new(
+                        node_id,
+                        format!("Prompt {}", node_id),
+                    )),
                 };
                 exec_with_cache.register_node(boxed);
             }
 
-            let mut group = c.benchmark_group(format!("full/{}-nodes-{}", match node_type {
-                NodeType::RuleNode => "rule",
-                NodeType::DBNode => "db",
-                NodeType::AINode => "ai",
-            }, size));
+            let mut group = c.benchmark_group(format!(
+                "full/{}-nodes-{}",
+                match node_type {
+                    NodeType::RuleNode => "rule",
+                    NodeType::DBNode => "db",
+                    NodeType::AINode => "ai",
+                },
+                size
+            ));
             group.sampling_mode(SamplingMode::Flat);
 
             group.bench_with_input(BenchmarkId::new("no_cache", size), &size, |b, &_s| {
@@ -89,7 +111,9 @@ fn full_bench(c: &mut Criterion) {
             });
 
             group.bench_with_input(BenchmarkId::new("with_cache", size), &size, |b, &_s| {
-                b.iter(|| rt.block_on(async { run_n_times(&exec_with_cache, &graph_def, 5).await }));
+                b.iter(|| {
+                    rt.block_on(async { run_n_times(&exec_with_cache, &graph_def, 5).await })
+                });
             });
 
             group.finish();

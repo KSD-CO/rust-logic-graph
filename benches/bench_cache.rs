@@ -1,9 +1,9 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use rust_logic_graph::bench_helpers::ExpensiveComputeNode;
 use rust_logic_graph::{
     cache::{CacheConfig, CacheManager},
-    Graph, GraphDef, NodeType, Executor, Context,
+    Context, Executor, Graph, GraphDef, NodeType,
 };
-use rust_logic_graph::bench_helpers::ExpensiveComputeNode;
 use serde_json::json;
 use std::time::Duration;
 
@@ -18,7 +18,9 @@ fn bench_executor(c: &mut Criterion) {
 
     // Simple graph definition with one RuleNode (simulate expensive node in example)
     let graph_def = GraphDef::from_node_types(
-        vec![("compute".to_string(), NodeType::RuleNode)].into_iter().collect(),
+        vec![("compute".to_string(), NodeType::RuleNode)]
+            .into_iter()
+            .collect(),
         vec![],
     );
 
@@ -44,11 +46,15 @@ fn bench_executor(c: &mut Criterion) {
     for &use_cache in &[false, true] {
         let mut id = if use_cache { "with_cache" } else { "no_cache" };
 
-            group.bench_function(BenchmarkId::new("execute", id), |b| {
+        group.bench_function(BenchmarkId::new("execute", id), |b| {
             if use_cache {
-                b.iter(|| rt.block_on(async { run_graph_once(&exec_with_cache, &graph_def, 10).await }));
+                b.iter(|| {
+                    rt.block_on(async { run_graph_once(&exec_with_cache, &graph_def, 10).await })
+                });
             } else {
-                b.iter(|| rt.block_on(async { run_graph_once(&exec_no_cache, &graph_def, 10).await }));
+                b.iter(|| {
+                    rt.block_on(async { run_graph_once(&exec_no_cache, &graph_def, 10).await })
+                });
             }
         });
     }

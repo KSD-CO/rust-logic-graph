@@ -6,7 +6,7 @@
 //! - Rich context propagation
 //! - Documentation links
 
-use rust_logic_graph::error::{RustLogicGraphError, ErrorCategory, ErrorContext};
+use rust_logic_graph::error::{ErrorCategory, ErrorContext, RustLogicGraphError};
 
 fn main() {
     println!("🧪 Rust Logic Graph - Rich Error Messages Demo\n");
@@ -16,8 +16,8 @@ fn main() {
     println!("\n1️⃣ Node Execution Error:");
     println!("{}", "─".repeat(60));
     let err = RustLogicGraphError::node_execution_error(
-        "validate_order", 
-        "Order validation failed: missing required field 'customer_id'"
+        "validate_order",
+        "Order validation failed: missing required field 'customer_id'",
     );
     println!("{}", err);
 
@@ -25,13 +25,14 @@ fn main() {
     println!("\n\n2️⃣ Database Connection Error:");
     println!("{}", "─".repeat(60));
     let err = RustLogicGraphError::database_connection_error(
-        "Failed to connect to PostgreSQL at localhost:5432"
-    ).with_context(
+        "Failed to connect to PostgreSQL at localhost:5432",
+    )
+    .with_context(
         ErrorContext::new()
             .with_graph("purchasing_flow")
             .with_step("database_initialization")
             .add_metadata("database", "orders_db")
-            .add_metadata("timeout", "5s")
+            .add_metadata("timeout", "5s"),
     );
     println!("{}", err);
 
@@ -39,11 +40,12 @@ fn main() {
     println!("\n\n3️⃣ Rule Evaluation Error:");
     println!("{}", "─".repeat(60));
     let err = RustLogicGraphError::rule_evaluation_error(
-        "Undefined variable 'total_amount' in rule 'discount_policy'"
-    ).with_context(
+        "Undefined variable 'total_amount' in rule 'discount_policy'",
+    )
+    .with_context(
         ErrorContext::new()
             .with_node("apply_discount_rules")
-            .with_graph("pricing_engine")
+            .with_graph("pricing_engine"),
     );
     println!("{}", err);
 
@@ -51,35 +53,34 @@ fn main() {
     println!("\n\n4️⃣ Configuration Error:");
     println!("{}", "─".repeat(60));
     let err = RustLogicGraphError::configuration_error(
-        "Missing required field 'database.connection_string' in config file"
+        "Missing required field 'database.connection_string' in config file",
     );
     println!("{}", err);
 
     // Example 5: Timeout error
     println!("\n\n5️⃣ Timeout Error:");
     println!("{}", "─".repeat(60));
-    let err = RustLogicGraphError::timeout_error(
-        "Node execution exceeded 30s timeout"
-    ).with_context(
-        ErrorContext::new()
-            .with_node("fetch_supplier_data")
-            .with_graph("supply_chain_flow")
-            .add_metadata("timeout_ms", "30000")
-            .add_metadata("elapsed_ms", "30124")
-    );
+    let err = RustLogicGraphError::timeout_error("Node execution exceeded 30s timeout")
+        .with_context(
+            ErrorContext::new()
+                .with_node("fetch_supplier_data")
+                .with_graph("supply_chain_flow")
+                .add_metadata("timeout_ms", "30000")
+                .add_metadata("elapsed_ms", "30124"),
+        );
     println!("{}", err);
 
     // Example 6: AI/LLM error
     println!("\n\n6️⃣ AI/LLM Error:");
     println!("{}", "─".repeat(60));
-    let err = RustLogicGraphError::ai_error(
-        "OpenAI API rate limit exceeded: 60 requests per minute"
-    ).with_context(
-        ErrorContext::new()
-            .with_node("generate_product_description")
-            .add_metadata("model", "gpt-4")
-            .add_metadata("retry_after", "45s")
-    );
+    let err =
+        RustLogicGraphError::ai_error("OpenAI API rate limit exceeded: 60 requests per minute")
+            .with_context(
+                ErrorContext::new()
+                    .with_node("generate_product_description")
+                    .add_metadata("model", "gpt-4")
+                    .add_metadata("retry_after", "45s"),
+            );
     println!("{}", err);
 
     // Example 7: Distributed system error
@@ -87,13 +88,14 @@ fn main() {
     println!("{}", "─".repeat(60));
     let err = RustLogicGraphError::distributed_error(
         "Service unavailable: inventory-service returned 503",
-        "inventory-service"
-    ).with_context(
+        "inventory-service",
+    )
+    .with_context(
         ErrorContext::new()
             .with_graph("order_orchestration")
             .with_step("check_inventory")
             .add_metadata("service_url", "http://inventory-service:8080")
-            .add_metadata("attempt", "3/3")
+            .add_metadata("attempt", "3/3"),
     );
     println!("{}", err);
 
@@ -113,26 +115,42 @@ fn main() {
     let err = RustLogicGraphError::new(
         "E999",
         "Payment gateway returned insufficient funds error",
-        ErrorCategory::Permanent
+        ErrorCategory::Permanent,
     )
     .with_context(context)
-    .with_suggestion("Notify customer about payment failure and suggest alternative payment method.");
+    .with_suggestion(
+        "Notify customer about payment failure and suggest alternative payment method.",
+    );
     println!("{}", err);
 
     // Example 9: Error classification
     println!("\n\n9️⃣ Error Classification:");
     println!("{}", "─".repeat(60));
     let errors = vec![
-        ("Database connection", RustLogicGraphError::database_connection_error("test")),
-        ("Configuration", RustLogicGraphError::configuration_error("test")),
+        (
+            "Database connection",
+            RustLogicGraphError::database_connection_error("test"),
+        ),
+        (
+            "Configuration",
+            RustLogicGraphError::configuration_error("test"),
+        ),
         ("Timeout", RustLogicGraphError::timeout_error("test")),
-        ("Graph validation", RustLogicGraphError::graph_validation_error("test")),
+        (
+            "Graph validation",
+            RustLogicGraphError::graph_validation_error("test"),
+        ),
     ];
 
     for (name, err) in errors {
-        println!("{}: {} ({})", 
+        println!(
+            "{}: {} ({})",
             name,
-            if err.is_retryable() { "✅ Retryable" } else { "❌ Permanent" },
+            if err.is_retryable() {
+                "✅ Retryable"
+            } else {
+                "❌ Permanent"
+            },
             format!("{:?}", err.category)
         );
     }

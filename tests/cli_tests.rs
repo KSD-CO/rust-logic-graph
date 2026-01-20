@@ -7,13 +7,11 @@ fn test_valid_graph_structure() {
     nodes.insert("start".to_string(), NodeType::RuleNode);
     nodes.insert("end".to_string(), NodeType::RuleNode);
 
-    let edges = vec![
-        rust_logic_graph::Edge {
-            from: "start".to_string(),
-            to: "end".to_string(),
-            rule: None,
-        }
-    ];
+    let edges = vec![rust_logic_graph::Edge {
+        from: "start".to_string(),
+        to: "end".to_string(),
+        rule: None,
+    }];
 
     let graph_def = GraphDef::from_node_types(nodes, edges);
 
@@ -103,13 +101,11 @@ mod integration_tests {
         nodes.insert("start".to_string(), NodeType::RuleNode);
         nodes.insert("end".to_string(), NodeType::RuleNode);
 
-        let edges = vec![
-            rust_logic_graph::Edge {
-                from: "start".to_string(),
-                to: "end".to_string(),
-                rule: None,
-            }
-        ];
+        let edges = vec![rust_logic_graph::Edge {
+            from: "start".to_string(),
+            to: "end".to_string(),
+            rule: None,
+        }];
 
         let graph_def = GraphDef::from_node_types(nodes, edges);
         let _file_path = create_test_graph_file(&temp_dir, "test_graph.json", &graph_def);

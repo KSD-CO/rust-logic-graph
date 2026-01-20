@@ -2,9 +2,9 @@
 //!
 //! Provides parallel node execution with layer detection and concurrent processing
 
-use std::collections::{HashMap, HashSet};
 use anyhow::Result;
-use tracing::{info, debug, warn};
+use std::collections::{HashMap, HashSet};
+use tracing::{debug, info, warn};
 
 use crate::core::{Graph, GraphDef};
 use crate::node::Node;
@@ -206,12 +206,7 @@ impl ParallelExecutor {
 
     /// Check if a node should execute based on incoming edge rules
     fn check_incoming_rules(&self, node_id: &str, graph: &Graph) -> bool {
-        let incoming_edges: Vec<_> = graph
-            .def
-            .edges
-            .iter()
-            .filter(|e| e.to == node_id)
-            .collect();
+        let incoming_edges: Vec<_> = graph.def.edges.iter().filter(|e| e.to == node_id).collect();
 
         for edge in &incoming_edges {
             if let Some(rule_id) = &edge.rule {
@@ -252,10 +247,7 @@ impl ParallelExecutor {
             return Ok(());
         }
 
-        info!(
-            "ParallelExecutor: Executing {} layers",
-            layers.len()
-        );
+        info!("ParallelExecutor: Executing {} layers", layers.len());
 
         let mut total_executed = 0;
 
@@ -331,7 +323,10 @@ impl ParallelismStats {
         println!("Total nodes: {}", self.total_nodes);
         println!("Execution layers: {}", self.num_layers);
         println!("Max parallel nodes: {}", self.max_parallel_nodes);
-        println!("Avg parallel nodes per layer: {:.2}", self.avg_parallel_nodes);
+        println!(
+            "Avg parallel nodes per layer: {:.2}",
+            self.avg_parallel_nodes
+        );
         println!("Theoretical speedup: {:.2}x", self.theoretical_speedup);
         println!("\nLayer breakdown:");
         for layer in &self.layers {

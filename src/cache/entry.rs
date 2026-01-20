@@ -48,11 +48,7 @@ pub struct CacheEntry {
 
 impl CacheEntry {
     /// Create a new cache entry
-    pub fn new(
-        key: CacheKey,
-        value: serde_json::Value,
-        ttl: Option<Duration>,
-    ) -> Self {
+    pub fn new(key: CacheKey, value: serde_json::Value, ttl: Option<Duration>) -> Self {
         let size_bytes = Self::estimate_size(&value);
         let now = SystemTime::now();
 
@@ -113,7 +109,7 @@ mod tests {
         let inputs = json!({"x": 10, "y": 20});
         let key1 = CacheKey::new("node1", &inputs);
         let key2 = CacheKey::new("node1", &inputs);
-        
+
         assert_eq!(key1, key2);
         assert_eq!(key1.node_id, "node1");
     }
@@ -122,24 +118,20 @@ mod tests {
     fn test_cache_key_different_inputs() {
         let inputs1 = json!({"x": 10});
         let inputs2 = json!({"x": 20});
-        
+
         let key1 = CacheKey::new("node1", &inputs1);
         let key2 = CacheKey::new("node1", &inputs2);
-        
+
         assert_ne!(key1.input_hash, key2.input_hash);
     }
 
     #[test]
     fn test_cache_entry_expiration() {
         let key = CacheKey::new("node1", &json!({}));
-        let mut entry = CacheEntry::new(
-            key,
-            json!({"result": 42}),
-            Some(Duration::from_millis(1)),
-        );
+        let mut entry = CacheEntry::new(key, json!({"result": 42}), Some(Duration::from_millis(1)));
 
         assert!(!entry.is_expired());
-        
+
         std::thread::sleep(Duration::from_millis(10));
         assert!(entry.is_expired());
     }
@@ -148,7 +140,7 @@ mod tests {
     fn test_cache_entry_no_expiration() {
         let key = CacheKey::new("node1", &json!({}));
         let entry = CacheEntry::new(key, json!({"result": 42}), None);
-        
+
         assert!(!entry.is_expired());
     }
 
@@ -156,12 +148,12 @@ mod tests {
     fn test_cache_entry_access_tracking() {
         let key = CacheKey::new("node1", &json!({}));
         let mut entry = CacheEntry::new(key, json!({"result": 42}), None);
-        
+
         assert_eq!(entry.access_count, 0);
-        
+
         entry.mark_accessed();
         assert_eq!(entry.access_count, 1);
-        
+
         entry.mark_accessed();
         assert_eq!(entry.access_count, 2);
     }

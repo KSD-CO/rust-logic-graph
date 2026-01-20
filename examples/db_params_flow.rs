@@ -1,9 +1,8 @@
 /// Example demonstrating DBNode with context-based parameter extraction
-/// 
+///
 /// This example shows how to use the params feature to extract values from
 /// the execution context and pass them as SQL query parameters.
-
-use rust_logic_graph::{Graph, GraphDef, NodeConfig, Edge, Executor};
+use rust_logic_graph::{Edge, Executor, Graph, GraphDef, NodeConfig};
 use std::collections::HashMap;
 
 #[tokio::main]
@@ -13,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Create a graph with DBNodes that use parameters from context
     let mut nodes = HashMap::new();
-    
+
     // Node 1: DBNode with parameter extracted from context
     // The query uses $1 placeholder, and "product_id" will be extracted from context
     nodes.insert(
@@ -23,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
             vec!["product_id".to_string()],
         ),
     );
-    
+
     // Node 2: DBNode with multiple parameters
     // Uses $1, $2 placeholders, extracts "user_id" and "status" from context
     nodes.insert(
@@ -33,12 +32,9 @@ async fn main() -> anyhow::Result<()> {
             vec!["user_id".to_string(), "status".to_string()],
         ),
     );
-    
+
     // Node 3: RuleNode to process results
-    nodes.insert(
-        "validate".to_string(),
-        NodeConfig::rule_node("true"),
-    );
+    nodes.insert("validate".to_string(), NodeConfig::rule_node("true"));
 
     let edges = vec![
         Edge {
@@ -58,7 +54,9 @@ async fn main() -> anyhow::Result<()> {
 
     // Initialize context with parameter values
     // These will be extracted by the DBNodes
-    graph.context.set("product_id", serde_json::json!("PROD-001"));
+    graph
+        .context
+        .set("product_id", serde_json::json!("PROD-001"));
     graph.context.set("user_id", serde_json::json!("USER-123"));
     graph.context.set("status", serde_json::json!("pending"));
 

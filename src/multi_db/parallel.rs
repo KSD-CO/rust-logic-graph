@@ -1,12 +1,12 @@
-use std::collections::HashMap;
-use std::time::Instant;
-use std::pin::Pin;
-use std::future::Future;
 use serde_json::Value;
+use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
+use std::time::Instant;
 use tokio::task::JoinSet;
-use tracing::{info, debug};
+use tracing::{debug, info};
 
-use crate::error::{RustLogicGraphError, ErrorContext};
+use crate::error::{ErrorContext, RustLogicGraphError};
 
 type BoxedFuture = Pin<Box<dyn Future<Output = Result<Value, RustLogicGraphError>> + Send>>;
 
@@ -21,14 +21,14 @@ pub struct QueryResult {
 }
 
 /// Parallel Database Executor
-/// 
+///
 /// Executes multiple database queries concurrently across different databases,
 /// collecting results and providing detailed execution statistics.
-/// 
+///
 /// # Example
 /// ```no_run
 /// use rust_logic_graph::multi_db::ParallelDBExecutor;
-/// 
+///
 /// #[tokio::main]
 /// async fn main() -> anyhow::Result<()> {
 ///     let mut executor = ParallelDBExecutor::new();
@@ -62,15 +62,15 @@ impl ParallelDBExecutor {
             max_concurrent: 10, // Default: 10 concurrent queries
         }
     }
-    
+
     /// Set maximum number of concurrent queries
     pub fn with_max_concurrent(mut self, max: usize) -> Self {
         self.max_concurrent = max;
         self
     }
-    
+
     /// Add a query to execute
-    /// 
+    ///
     /// # Arguments
     /// * `database` - Database identifier (e.g., "oms_db", "inventory_db")
     /// * `query_id` - Unique query identifier for tracking
@@ -87,44 +87,52 @@ impl ParallelDBExecutor {
     {
         let db = database.into();
         let qid = query_id.into();
-        
+
         // Box the future
         let boxed: BoxedFuture = Box::pin(query_fn());
         self.queries.push((db, qid, boxed));
         self
     }
-    
+
     /// Execute all registered queries in parallel
-    /// 
+    ///
     /// Returns a HashMap with query_id as key and QueryResult as value.
-    /// 
+    ///
     /// # Errors
     /// If any query fails, returns the first encountered error.
-    pub async fn execute_all(&mut self) -> Result<HashMap<String, QueryResult>, RustLogicGraphError> {
+    pub async fn execute_all(
+        &mut self,
+    ) -> Result<HashMap<String, QueryResult>, RustLogicGraphError> {
         let total_start = Instant::now();
         let query_count = self.queries.len();
-        
-        info!("🚀 Parallel DB Executor: Starting {} queries across databases", query_count);
-        
+
+        info!(
+            "🚀 Parallel DB Executor: Starting {} queries across databases",
+            query_count
+        );
+
         if query_count == 0 {
             return Ok(HashMap::new());
         }
-        
+
         let mut join_set = JoinSet::new();
         let mut results = HashMap::new();
-        
+
         // Take ownership of queries
         let queries = std::mem::take(&mut self.queries);
-        
+
         // Spawn all queries as concurrent tasks
         for (database, query_id, query_future) in queries {
             let db_clone = database.clone();
             let qid_clone = query_id.clone();
-            
+
             join_set.spawn(async move {
                 let start = Instant::now();
-                debug!("⏱️  Executing query '{}' on database '{}'", qid_clone, db_clone);
-                
+                debug!(
+                    "⏱️  Executing query '{}' on database '{}'",
+                    qid_clone, db_clone
+                );
+
                 match query_future.await {
                     Ok(result) => {
                         let duration_ms = start.elapsed().as_millis();
@@ -135,28 +143,32 @@ impl ParallelDBExecutor {
                         } else {
                             0
                         };
-                        
-                        debug!("✅ Query '{}' completed in {}ms ({} rows)", qid_clone, duration_ms, row_count);
-                        
-                        Ok((query_id, QueryResult {
-                            database: db_clone,
-                            query: qid_clone,
-                            result,
-                            duration_ms,
-                            row_count,
-                        }))
-                    }
-                    Err(e) => {
-                        Err(e.with_context(
-                            ErrorContext::new()
-                                .with_service(&db_clone)
-                                .add_metadata("query_id", &qid_clone)
+
+                        debug!(
+                            "✅ Query '{}' completed in {}ms ({} rows)",
+                            qid_clone, duration_ms, row_count
+                        );
+
+                        Ok((
+                            query_id,
+                            QueryResult {
+                                database: db_clone,
+                                query: qid_clone,
+                                result,
+                                duration_ms,
+                                row_count,
+                            },
                         ))
                     }
+                    Err(e) => Err(e.with_context(
+                        ErrorContext::new()
+                            .with_service(&db_clone)
+                            .add_metadata("query_id", &qid_clone),
+                    )),
                 }
             });
         }
-        
+
         // Collect all results
         while let Some(task_result) = join_set.join_next().await {
             match task_result {
@@ -172,18 +184,20 @@ impl ParallelDBExecutor {
                     join_set.abort_all();
                     return Err(RustLogicGraphError::node_execution_error(
                         "parallel_executor",
-                        format!("Task join error: {}", join_err)
+                        format!("Task join error: {}", join_err),
                     ));
                 }
             }
         }
-        
+
         let total_duration_ms = total_start.elapsed().as_millis();
         let total_rows: usize = results.values().map(|r| r.row_count).sum();
-        
-        info!("✅ Parallel DB Executor: Completed {} queries in {}ms ({} total rows)", 
-            query_count, total_duration_ms, total_rows);
-        
+
+        info!(
+            "✅ Parallel DB Executor: Completed {} queries in {}ms ({} total rows)",
+            query_count, total_duration_ms, total_rows
+        );
+
         // Log per-database statistics
         let mut db_stats: HashMap<String, (usize, u128)> = HashMap::new();
         for result in results.values() {
@@ -191,11 +205,11 @@ impl ParallelDBExecutor {
             entry.0 += 1; // query count
             entry.1 += result.duration_ms; // total duration
         }
-        
+
         for (db, (count, duration)) in db_stats {
             info!("  📊 {}: {} queries, {}ms total", db, count, duration);
         }
-        
+
         Ok(results)
     }
 }
@@ -210,11 +224,11 @@ impl Default for ParallelDBExecutor {
 mod tests {
     use super::*;
     use serde_json::json;
-    
+
     #[tokio::test]
     async fn test_parallel_execution() {
         let mut executor = ParallelDBExecutor::new();
-        
+
         executor
             .add_query("db1", "query1", || async {
                 tokio::time::sleep(std::time::Duration::from_millis(10)).await;
@@ -224,25 +238,23 @@ mod tests {
                 tokio::time::sleep(std::time::Duration::from_millis(10)).await;
                 Ok(json!({"result": 2}))
             });
-        
+
         let results = executor.execute_all().await.unwrap();
         assert_eq!(results.len(), 2);
         assert!(results.contains_key("query1"));
         assert!(results.contains_key("query2"));
     }
-    
+
     #[tokio::test]
     async fn test_error_propagation() {
         let mut executor = ParallelDBExecutor::new();
-        
+
         executor
-            .add_query("db1", "query1", || async {
-                Ok(json!({"result": 1}))
-            })
+            .add_query("db1", "query1", || async { Ok(json!({"result": 1})) })
             .add_query("db2", "failing_query", || async {
                 Err(RustLogicGraphError::database_connection_error("Test error"))
             });
-        
+
         let result = executor.execute_all().await;
         assert!(result.is_err());
     }

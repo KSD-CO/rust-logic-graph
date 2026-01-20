@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::time::Duration;
@@ -23,10 +23,17 @@ pub struct HealthMonitor {
 
 impl HealthMonitor {
     pub fn new(poll_interval: Duration) -> Self {
-        Self { checks: Arc::new(RwLock::new(Vec::new())), poll_interval, store: None }
+        Self {
+            checks: Arc::new(RwLock::new(Vec::new())),
+            poll_interval,
+            store: None,
+        }
     }
 
-    pub fn with_store(mut self, store: std::sync::Arc<dyn crate::distributed::store::ContextStore>) -> Self {
+    pub fn with_store(
+        mut self,
+        store: std::sync::Arc<dyn crate::distributed::store::ContextStore>,
+    ) -> Self {
         self.store = Some(store);
         self
     }
@@ -43,7 +50,8 @@ impl HealthMonitor {
                 let status = chk.check().await;
                 if let Some(store) = &self.store {
                     // persist health to distributed context
-                    let mut ctx = crate::distributed::DistributedContext::new(format!("health:{}", "global"));
+                    let mut ctx =
+                        crate::distributed::DistributedContext::new(format!("health:{}", "global"));
                     ctx.set("status", serde_json::json!(format!("{:?}", status)));
                     let _ = store.save(&ctx, None).await;
                 }
@@ -60,7 +68,9 @@ mod tests {
     struct AlwaysHealthy;
     #[async_trait::async_trait]
     impl HealthCheck for AlwaysHealthy {
-        async fn check(&self) -> HealthStatus { HealthStatus::Healthy }
+        async fn check(&self) -> HealthStatus {
+            HealthStatus::Healthy
+        }
     }
 
     #[tokio::test]

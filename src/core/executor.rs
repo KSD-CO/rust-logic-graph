@@ -1,12 +1,12 @@
-use std::collections::{HashMap, HashSet, VecDeque};
 use anyhow::Result;
-use tracing::{info, debug, warn};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
+use tracing::{debug, info, warn};
 
+use crate::cache::{CacheKey, CacheManager};
 use crate::core::{Graph, GraphDef};
-use crate::node::{Node, RuleNode as ConcreteRuleNode, DBNode, AINode};
+use crate::node::{AINode, DBNode, Node, RuleNode as ConcreteRuleNode};
 use crate::rule::Rule;
-use crate::cache::{CacheManager, CacheKey};
 
 /// Execution statistics for a single node
 #[derive(Debug, Clone)]
@@ -29,24 +29,24 @@ pub struct ExecutionMetrics {
 }
 
 /// Executor for running graph nodes in topological order.
-/// 
+///
 /// # Thread Safety
-/// 
+///
 /// The Executor is **NOT thread-safe** for concurrent executions on the same instance.
 /// While `execute()` is async and takes `&self` (shared reference), the underlying
 /// implementation assumes single-threaded access patterns:
-/// 
+///
 /// - `self.nodes` is a regular `HashMap` without synchronization
 /// - Multiple concurrent calls to `execute()` would have data races when accessing nodes
-/// 
+///
 /// ## Safe Usage Patterns
-/// 
+///
 /// 1. **Single execution at a time**: Only call `execute()` once at a time per executor instance
 /// 2. **Clone for parallelism**: Create separate executor instances for parallel graph executions
 /// 3. **Sequential async**: Use `.await` to ensure executions don't overlap
-/// 
+///
 /// ## Future Work
-/// 
+///
 /// For true concurrent execution support, wrap `nodes` in `Arc<RwLock<HashMap>>` or similar.
 pub struct Executor {
     nodes: HashMap<String, Box<dyn Node>>,
@@ -81,7 +81,10 @@ impl Executor {
     }
 
     /// Set a global fallback handler used when node execution fails
-    pub fn set_fallback_handler(&mut self, handler: crate::fault_tolerance::degradation::FallbackHandler) {
+    pub fn set_fallback_handler(
+        &mut self,
+        handler: crate::fault_tolerance::degradation::FallbackHandler,
+    ) {
         self.fallback_handler = Some(handler);
     }
 
@@ -89,12 +92,12 @@ impl Executor {
     pub fn cache(&self) -> Option<&CacheManager> {
         self.cache.as_ref()
     }
-    
+
     /// Get execution metrics from last run
     pub fn metrics(&self) -> &ExecutionMetrics {
         &self.metrics
     }
-    
+
     /// Reset execution metrics
     pub fn reset_metrics(&mut self) {
         self.metrics = ExecutionMetrics::default();
@@ -112,9 +115,11 @@ impl Executor {
                     Box::new(ConcreteRuleNode::new(node_id, condition))
                 }
                 crate::node::NodeType::DBNode => {
-                    let query = config.query.clone()
+                    let query = config
+                        .query
+                        .clone()
                         .unwrap_or_else(|| format!("SELECT * FROM {}", node_id));
-                    
+
                     // Create DBNode with params if specified
                     if let Some(params) = config.params.clone() {
                         Box::new(DBNode::with_params(node_id, query, params))
@@ -123,27 +128,34 @@ impl Executor {
                     }
                 }
                 crate::node::NodeType::AINode => {
-                    let prompt = config.prompt.clone()
+                    let prompt = config
+                        .prompt
+                        .clone()
                         .unwrap_or_else(|| format!("Process data for {}", node_id));
                     Box::new(AINode::new(node_id, prompt))
                 }
                 crate::node::NodeType::GrpcNode => {
                     // Parse query field as "service_url#method"
-                    let query = config.query.clone()
+                    let query = config
+                        .query
+                        .clone()
                         .unwrap_or_else(|| format!("http://localhost:50051#{}_method", node_id));
                     let parts: Vec<&str> = query.split('#').collect();
-                    let service_url = parts.get(0).unwrap_or(&"http://localhost:50051").to_string();
+                    let service_url = parts
+                        .get(0)
+                        .unwrap_or(&"http://localhost:50051")
+                        .to_string();
                     let method = parts.get(1).unwrap_or(&"UnknownMethod").to_string();
                     Box::new(crate::node::GrpcNode::new(node_id, service_url, method))
                 }
                 // Advanced nodes - not yet fully supported in from_graph_def
                 // Use Node trait directly if needed
-                crate::node::NodeType::SubgraphNode |
-                crate::node::NodeType::ConditionalNode |
-                crate::node::NodeType::LoopNode |
-                crate::node::NodeType::TryCatchNode |
-                crate::node::NodeType::RetryNode |
-                crate::node::NodeType::CircuitBreakerNode => {
+                crate::node::NodeType::SubgraphNode
+                | crate::node::NodeType::ConditionalNode
+                | crate::node::NodeType::LoopNode
+                | crate::node::NodeType::TryCatchNode
+                | crate::node::NodeType::RetryNode
+                | crate::node::NodeType::CircuitBreakerNode => {
                     // Placeholder: create a simple rule node
                     // TODO: Implement proper constructors for advanced nodes
                     Box::new(ConcreteRuleNode::new(node_id, "true"))
@@ -166,7 +178,7 @@ impl Executor {
     fn detect_cycles(&self, graph: &Graph) -> Result<()> {
         let mut visited = HashSet::new();
         let mut rec_stack = HashSet::new();
-        
+
         // Build adjacency list for cycle detection
         let mut adj_list: HashMap<String, Vec<String>> = HashMap::new();
         for edge in &graph.def.edges {
@@ -175,7 +187,7 @@ impl Executor {
                 .or_insert_with(Vec::new)
                 .push(edge.to.clone());
         }
-        
+
         // DFS to detect cycles
         fn dfs_cycle_check(
             node: &str,
@@ -187,11 +199,13 @@ impl Executor {
             visited.insert(node.to_string());
             rec_stack.insert(node.to_string());
             path.push(node.to_string());
-            
+
             if let Some(neighbors) = adj_list.get(node) {
                 for neighbor in neighbors {
                     if !visited.contains(neighbor) {
-                        if let Some(cycle) = dfs_cycle_check(neighbor, adj_list, visited, rec_stack, path) {
+                        if let Some(cycle) =
+                            dfs_cycle_check(neighbor, adj_list, visited, rec_stack, path)
+                        {
                             return Some(cycle);
                         }
                     } else if rec_stack.contains(neighbor) {
@@ -201,17 +215,19 @@ impl Executor {
                     }
                 }
             }
-            
+
             path.pop();
             rec_stack.remove(node);
             None
         }
-        
+
         // Check all nodes
         for node_id in graph.def.nodes.keys() {
             if !visited.contains(node_id) {
                 let mut path = Vec::new();
-                if let Some(cycle) = dfs_cycle_check(node_id, &adj_list, &mut visited, &mut rec_stack, &mut path) {
+                if let Some(cycle) =
+                    dfs_cycle_check(node_id, &adj_list, &mut visited, &mut rec_stack, &mut path)
+                {
                     return Err(anyhow::anyhow!(
                         "Cycle detected in graph: {} -> {}",
                         cycle.join(" -> "),
@@ -220,23 +236,27 @@ impl Executor {
                 }
             }
         }
-        
+
         Ok(())
     }
 
     /// Execute the graph in topological order
     pub async fn execute(&mut self, graph: &mut Graph) -> Result<()> {
         eprintln!("\n⚡⚡⚡ CORE EXECUTOR.EXECUTE called ⚡⚡⚡");
-        eprintln!("Graph has {} nodes, {} edges", graph.def.nodes.len(), graph.def.edges.len());
+        eprintln!(
+            "Graph has {} nodes, {} edges",
+            graph.def.nodes.len(),
+            graph.def.edges.len()
+        );
         info!("Executor: Starting graph execution");
         let execution_start = Instant::now();
-        
+
         // Reset metrics
         self.metrics = ExecutionMetrics::default();
 
         // Validate graph structure first
         graph.def.validate()?;
-        
+
         // Warn about disconnected components
         if graph.def.has_disconnected_components() {
             warn!("Graph has disconnected components - some nodes may not be reachable");
@@ -340,17 +360,20 @@ impl Executor {
                 if let Some(node) = self.nodes.get(&node_id) {
                     let node_start = Instant::now();
                     let mut cache_hit = false;
-                    
+
                     // Create cache key based on node ID and relevant context
                     // Include both upstream node results AND initial parameters
                     let mut relevant_context: HashMap<String, serde_json::Value> = incoming_edges
                         .iter()
                         .filter_map(|edge| {
-                            graph.context.data.get(&format!("{}_result", edge.from))
+                            graph
+                                .context
+                                .data
+                                .get(&format!("{}_result", edge.from))
                                 .map(|v| (edge.from.clone(), v.clone()))
                         })
                         .collect();
-                    
+
                     // For nodes with no incoming edges (root nodes), include initial params in cache key
                     // This ensures different initial parameters (e.g., product_id) create different cache entries
                     if incoming_edges.is_empty() {
@@ -361,7 +384,7 @@ impl Executor {
                             }
                         }
                     }
-                    
+
                     let context_value = serde_json::to_value(&relevant_context)?;
                     let cache_key = CacheKey::new(&node_id, &context_value);
 
@@ -376,14 +399,14 @@ impl Executor {
                         info!("Node '{}' result retrieved from cache", node_id);
                         cache_hit = true;
                         self.metrics.cache_hits += 1;
-                        
+
                         // Merge cached result into context
                         if let serde_json::Value::Object(cached_obj) = cached_value {
                             for (k, v) in cached_obj {
                                 graph.context.data.insert(k, v);
                             }
                         }
-                        
+
                         Ok(serde_json::Value::Null) // Successfully used cache
                     } else {
                         // Execute node and cache result
@@ -403,7 +426,8 @@ impl Executor {
 
                         // Store result in cache if execution succeeded (or fallback set _result)
                         if let Some(cache) = &self.cache {
-                            let mut result_only: HashMap<String, serde_json::Value> = HashMap::new();
+                            let mut result_only: HashMap<String, serde_json::Value> =
+                                HashMap::new();
                             for (key, value) in &graph.context.data {
                                 if key.ends_with("_result") {
                                     result_only.insert(key.clone(), value.clone());
@@ -414,7 +438,7 @@ impl Executor {
                                 warn!("Failed to cache result for node '{}': {}", node_id, e);
                             }
                         }
-                        
+
                         exec_result
                     };
 
@@ -423,7 +447,7 @@ impl Executor {
                             let duration = node_start.elapsed();
                             info!("Node '{}' executed successfully in {:?}", node_id, duration);
                             execution_order.push(node_id.clone());
-                            
+
                             self.metrics.nodes_executed += 1;
                             self.metrics.node_stats.push(NodeExecutionStats {
                                 node_id: node_id.clone(),
@@ -435,7 +459,7 @@ impl Executor {
                         Err(e) => {
                             let duration = node_start.elapsed();
                             warn!("Node '{}' execution failed: {:?}", node_id, e);
-                            
+
                             self.metrics.nodes_failed += 1;
                             self.metrics.node_stats.push(NodeExecutionStats {
                                 node_id: node_id.clone(),
@@ -466,7 +490,7 @@ impl Executor {
         }
 
         self.metrics.total_duration = execution_start.elapsed();
-        
+
         info!(
             "Executor: Completed execution in {:?}. Executed: {}, Skipped: {}, Failed: {}, Cache hits: {}",
             self.metrics.total_duration,

@@ -1,7 +1,7 @@
 //! Multi-region data aggregation example
 //! Simulates querying multiple region databases in parallel and aggregating results.
 
-use rust_logic_graph::{Graph, GraphDef, NodeType, NodeConfig, Edge, Executor};
+use rust_logic_graph::{Edge, Executor, Graph, GraphDef, NodeConfig, NodeType};
 use std::collections::HashMap;
 use tokio::time::Duration;
 
@@ -48,9 +48,16 @@ impl MockRegionDBNode {
 
 #[async_trait::async_trait]
 impl rust_logic_graph::node::Node for MockRegionDBNode {
-    fn id(&self) -> &str { &self.id }
-    fn node_type(&self) -> NodeType { NodeType::DBNode }
-    async fn run(&self, ctx: &mut rust_logic_graph::core::Context) -> rust_logic_graph::rule::RuleResult {
+    fn id(&self) -> &str {
+        &self.id
+    }
+    fn node_type(&self) -> NodeType {
+        NodeType::DBNode
+    }
+    async fn run(
+        &self,
+        ctx: &mut rust_logic_graph::core::Context,
+    ) -> rust_logic_graph::rule::RuleResult {
         // Simulate region data
         let data = serde_json::json!({
             "region": self.id,
@@ -79,15 +86,25 @@ struct AggregateNode {
 
 impl AggregateNode {
     fn new(id: &str, regions: Vec<&'static str>) -> Self {
-        Self { id: id.to_string(), regions }
+        Self {
+            id: id.to_string(),
+            regions,
+        }
     }
 }
 
 #[async_trait::async_trait]
 impl rust_logic_graph::node::Node for AggregateNode {
-    fn id(&self) -> &str { &self.id }
-    fn node_type(&self) -> NodeType { NodeType::RuleNode }
-    async fn run(&self, ctx: &mut rust_logic_graph::core::Context) -> rust_logic_graph::rule::RuleResult {
+    fn id(&self) -> &str {
+        &self.id
+    }
+    fn node_type(&self) -> NodeType {
+        NodeType::RuleNode
+    }
+    async fn run(
+        &self,
+        ctx: &mut rust_logic_graph::core::Context,
+    ) -> rust_logic_graph::rule::RuleResult {
         // Aggregate results from all regions
         let mut total_sales = 0;
         let mut total_customers = 0;

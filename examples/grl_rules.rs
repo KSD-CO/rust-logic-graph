@@ -1,6 +1,6 @@
 use rust_logic_graph::RuleEngine;
-use std::collections::HashMap;
 use serde_json::json;
+use std::collections::HashMap;
 
 fn main() -> anyhow::Result<()> {
     println!("=== Rust Logic Graph - GRL Rules Example ===\n");

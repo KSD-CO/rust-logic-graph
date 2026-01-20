@@ -4,12 +4,12 @@
 
 use crate::core::Context;
 use crate::node::{Node, NodeType};
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tracing::{info, error};
+use tracing::{error, info};
 
 /// OpenAI node for LLM operations
 #[derive(Debug, Clone)]
@@ -142,7 +142,10 @@ impl OpenAINode {
             max_tokens: self.max_tokens,
         };
 
-        info!("OpenAINode[{}]: Calling OpenAI API with model {}", self.id, self.model);
+        info!(
+            "OpenAINode[{}]: Calling OpenAI API with model {}",
+            self.id, self.model
+        );
 
         let client = Client::new();
         let response = client
@@ -157,14 +160,20 @@ impl OpenAINode {
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
-            return Err(RuleError::Eval(format!("OpenAI API error {}: {}", status, error_text)));
+            return Err(RuleError::Eval(format!(
+                "OpenAI API error {}: {}",
+                status, error_text
+            )));
         }
 
-        let completion: ChatCompletionResponse = response.json()
+        let completion: ChatCompletionResponse = response
+            .json()
             .await
             .map_err(|e| RuleError::Eval(format!("Failed to parse OpenAI response: {}", e)))?;
 
-        let choice = completion.choices.first()
+        let choice = completion
+            .choices
+            .first()
             .ok_or_else(|| RuleError::Eval("No completion choices returned".to_string()))?;
 
         info!(
@@ -226,11 +235,15 @@ impl Node for OpenAINode {
                 info!("OpenAINode[{}]: Completion successful", self.id);
 
                 // Store full result
-                ctx.data.insert(format!("{}_result", self.id), result.clone());
+                ctx.data
+                    .insert(format!("{}_result", self.id), result.clone());
 
                 // Extract and store content separately for convenience
                 if let Some(content) = result.get("content").and_then(|v| v.as_str()) {
-                    ctx.data.insert(format!("{}_content", self.id), Value::String(content.to_string()));
+                    ctx.data.insert(
+                        format!("{}_content", self.id),
+                        Value::String(content.to_string()),
+                    );
                 }
 
                 Ok(result)
@@ -254,7 +267,8 @@ mod tests {
         let mut ctx = Context {
             data: HashMap::new(),
         };
-        ctx.data.insert("data".to_string(), Value::String("test data".to_string()));
+        ctx.data
+            .insert("data".to_string(), Value::String("test data".to_string()));
 
         let processed = node.process_prompt(&node.prompt, &ctx);
         assert_eq!(processed, "Analyze this data: test data");

@@ -1,5 +1,4 @@
-
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::node::NodeType;
@@ -62,7 +61,7 @@ impl NodeConfig {
             params: None,
         }
     }
-    
+
     /// Create a DBNode with query parameters from context
     pub fn db_node_with_params(query: impl Into<String>, params: Vec<String>) -> Self {
         Self {
@@ -83,7 +82,7 @@ impl NodeConfig {
             params: None,
         }
     }
-    
+
     /// Create a GrpcNode configuration
     pub fn grpc_node(service_url: impl Into<String>, method: impl Into<String>) -> Self {
         Self {
@@ -104,10 +103,7 @@ pub struct GraphDef {
 
 impl GraphDef {
     /// Create a GraphDef from simple node types (backward compatibility helper)
-    pub fn from_node_types(
-        nodes: HashMap<String, NodeType>,
-        edges: Vec<Edge>,
-    ) -> Self {
+    pub fn from_node_types(nodes: HashMap<String, NodeType>, edges: Vec<Edge>) -> Self {
         let nodes = nodes
             .into_iter()
             .map(|(id, node_type)| {
@@ -117,7 +113,7 @@ impl GraphDef {
                     NodeType::AINode => NodeConfig::ai_node(format!("Process data for {}", id)),
                     NodeType::GrpcNode => NodeConfig::grpc_node(
                         format!("http://localhost:50051"),
-                        format!("{}_method", id)
+                        format!("{}_method", id),
                     ),
                     NodeType::SubgraphNode => NodeConfig::rule_node("true"), // Placeholder
                     NodeType::ConditionalNode => NodeConfig::rule_node("true"),
@@ -129,17 +125,17 @@ impl GraphDef {
                 (id, config)
             })
             .collect();
-        
+
         Self { nodes, edges }
     }
-    
+
     /// Validate graph structure
     pub fn validate(&self) -> anyhow::Result<()> {
         // Check for empty graph
         if self.nodes.is_empty() {
             return Err(anyhow::anyhow!("Graph has no nodes"));
         }
-        
+
         // Check for invalid edge references
         for edge in &self.edges {
             if !self.nodes.contains_key(&edge.from) {
@@ -155,32 +151,32 @@ impl GraphDef {
                 ));
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Check if graph has disconnected components
     pub fn has_disconnected_components(&self) -> bool {
         if self.nodes.is_empty() {
             return false;
         }
-        
+
         use std::collections::HashSet;
         let mut visited = HashSet::new();
         let mut stack = Vec::new();
-        
+
         // Start from first node
         if let Some(first_node) = self.nodes.keys().next() {
             stack.push(first_node.clone());
         }
-        
+
         // DFS traversal (undirected)
         while let Some(node) = stack.pop() {
             if visited.contains(&node) {
                 continue;
             }
             visited.insert(node.clone());
-            
+
             // Add neighbors (both directions)
             for edge in &self.edges {
                 if edge.from == node && !visited.contains(&edge.to) {
@@ -191,7 +187,7 @@ impl GraphDef {
                 }
             }
         }
-        
+
         visited.len() < self.nodes.len()
     }
 }
@@ -216,17 +212,17 @@ impl Context {
     pub fn get(&self, key: &str) -> Option<&serde_json::Value> {
         self.data.get(key)
     }
-    
+
     /// Check if key exists in context
     pub fn contains_key(&self, key: &str) -> bool {
         self.data.contains_key(key)
     }
-    
+
     /// Remove a value from context
     pub fn remove(&mut self, key: &str) -> Option<serde_json::Value> {
         self.data.remove(key)
     }
-    
+
     /// Clear all context data
     pub fn clear(&mut self) {
         self.data.clear();

@@ -1,12 +1,14 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use rust_logic_graph::{ContextPool, PoolConfig, Context, MemoryMetrics};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use rust_logic_graph::{Context, ContextPool, MemoryMetrics, PoolConfig};
 
 fn bench_context_without_pool(c: &mut Criterion) {
     c.bench_function("context_without_pool", |b| {
         b.iter(|| {
             let mut ctx = Context::new();
-            ctx.data.insert("key1".to_string(), black_box(serde_json::json!(100)));
-            ctx.data.insert("key2".to_string(), black_box(serde_json::json!("value")));
+            ctx.data
+                .insert("key1".to_string(), black_box(serde_json::json!(100)));
+            ctx.data
+                .insert("key2".to_string(), black_box(serde_json::json!("value")));
             black_box(ctx);
         });
     });
@@ -18,8 +20,10 @@ fn bench_context_with_pool(c: &mut Criterion) {
     c.bench_function("context_with_pool", |b| {
         b.iter(|| {
             let mut ctx = pool.acquire();
-            ctx.data.insert("key1".to_string(), black_box(serde_json::json!(100)));
-            ctx.data.insert("key2".to_string(), black_box(serde_json::json!("value")));
+            ctx.data
+                .insert("key1".to_string(), black_box(serde_json::json!(100)));
+            ctx.data
+                .insert("key2".to_string(), black_box(serde_json::json!("value")));
             pool.release(ctx);
         });
     });
@@ -75,7 +79,8 @@ fn bench_allocation_patterns(c: &mut Criterion) {
             let mut contexts = Vec::new();
             for i in 0..100 {
                 let mut ctx = Context::new();
-                ctx.data.insert("key".to_string(), black_box(serde_json::json!(i)));
+                ctx.data
+                    .insert("key".to_string(), black_box(serde_json::json!(i)));
                 contexts.push(ctx);
             }
             black_box(contexts);
@@ -89,7 +94,8 @@ fn bench_allocation_patterns(c: &mut Criterion) {
             let mut contexts = Vec::new();
             for i in 0..100 {
                 let mut ctx = pool.acquire();
-                ctx.data.insert("key".to_string(), black_box(serde_json::json!(i)));
+                ctx.data
+                    .insert("key".to_string(), black_box(serde_json::json!(i)));
                 contexts.push(ctx);
             }
             for ctx in contexts {
@@ -120,7 +126,8 @@ fn bench_context_reuse(c: &mut Criterion) {
 
                 b.iter(|| {
                     let mut ctx = pool.acquire();
-                    ctx.data.insert("test".to_string(), black_box(serde_json::json!(42)));
+                    ctx.data
+                        .insert("test".to_string(), black_box(serde_json::json!(42)));
                     pool.release(ctx);
                 });
             },

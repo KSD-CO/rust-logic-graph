@@ -4,11 +4,14 @@
 
 use crate::core::Context;
 use crate::node::{Node, NodeType};
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use async_trait::async_trait;
-use mongodb::{Client, Collection, bson::{self, Document}};
+use mongodb::{
+    bson::{self, Document},
+    Client, Collection,
+};
 use serde_json::Value;
-use tracing::{info, error};
+use tracing::{error, info};
 
 /// MongoDB database node
 #[derive(Debug, Clone)]
@@ -31,34 +34,55 @@ pub enum MongoOperation {
 
 impl MongoNode {
     /// Create a new MongoDB find node
-    pub fn find(id: impl Into<String>, database: impl Into<String>, collection: impl Into<String>, filter: impl Into<String>) -> Self {
+    pub fn find(
+        id: impl Into<String>,
+        database: impl Into<String>,
+        collection: impl Into<String>,
+        filter: impl Into<String>,
+    ) -> Self {
         Self {
             id: id.into(),
             database: database.into(),
             collection: collection.into(),
-            operation: MongoOperation::Find { filter: filter.into() },
+            operation: MongoOperation::Find {
+                filter: filter.into(),
+            },
             client: None,
         }
     }
 
     /// Create a new MongoDB find_one node
-    pub fn find_one(id: impl Into<String>, database: impl Into<String>, collection: impl Into<String>, filter: impl Into<String>) -> Self {
+    pub fn find_one(
+        id: impl Into<String>,
+        database: impl Into<String>,
+        collection: impl Into<String>,
+        filter: impl Into<String>,
+    ) -> Self {
         Self {
             id: id.into(),
             database: database.into(),
             collection: collection.into(),
-            operation: MongoOperation::FindOne { filter: filter.into() },
+            operation: MongoOperation::FindOne {
+                filter: filter.into(),
+            },
             client: None,
         }
     }
 
     /// Create a new MongoDB insert node
-    pub fn insert(id: impl Into<String>, database: impl Into<String>, collection: impl Into<String>, document: impl Into<String>) -> Self {
+    pub fn insert(
+        id: impl Into<String>,
+        database: impl Into<String>,
+        collection: impl Into<String>,
+        document: impl Into<String>,
+    ) -> Self {
         Self {
             id: id.into(),
             database: database.into(),
             collection: collection.into(),
-            operation: MongoOperation::Insert { document: document.into() },
+            operation: MongoOperation::Insert {
+                document: document.into(),
+            },
             client: None,
         }
     }
@@ -74,12 +98,12 @@ impl MongoNode {
 
     /// Get collection
     fn get_collection(&self) -> Result<Collection<Document>, RuleError> {
-        let client = self.client.as_ref()
+        let client = self
+            .client
+            .as_ref()
             .ok_or_else(|| RuleError::Eval("MongoDB client not initialized".to_string()))?;
 
-        Ok(client
-            .database(&self.database)
-            .collection(&self.collection))
+        Ok(client.database(&self.database).collection(&self.collection))
     }
 
     /// Execute MongoDB operation
@@ -95,11 +119,14 @@ impl MongoNode {
 
                 use futures::stream::TryStreamExt;
 
-                let cursor = collection.find(filter_doc, None)
+                let cursor = collection
+                    .find(filter_doc, None)
                     .await
                     .map_err(|e| RuleError::Eval(format!("Find failed: {}", e)))?;
 
-                let docs: Vec<Document> = cursor.try_collect().await
+                let docs: Vec<Document> = cursor
+                    .try_collect()
+                    .await
                     .map_err(|e| RuleError::Eval(format!("Failed to collect results: {}", e)))?;
 
                 let mut results = Vec::new();
@@ -118,18 +145,24 @@ impl MongoNode {
                 let processed_filter = self.process_json(filter, ctx)?;
                 let filter_doc = self.json_to_document(&processed_filter)?;
 
-                info!("MongoNode[{}]: FIND_ONE with filter: {:?}", self.id, filter_doc);
+                info!(
+                    "MongoNode[{}]: FIND_ONE with filter: {:?}",
+                    self.id, filter_doc
+                );
 
-                let result = collection.find_one(filter_doc, None)
+                let result = collection
+                    .find_one(filter_doc, None)
                     .await
                     .map_err(|e| RuleError::Eval(format!("FindOne failed: {}", e)))?;
 
                 match result {
                     Some(doc) => {
-                        let bson_val = bson::to_bson(&doc)
-                            .map_err(|e| RuleError::Eval(format!("BSON conversion failed: {}", e)))?;
-                        let json_val = serde_json::to_value(bson_val)
-                            .map_err(|e| RuleError::Eval(format!("JSON conversion failed: {}", e)))?;
+                        let bson_val = bson::to_bson(&doc).map_err(|e| {
+                            RuleError::Eval(format!("BSON conversion failed: {}", e))
+                        })?;
+                        let json_val = serde_json::to_value(bson_val).map_err(|e| {
+                            RuleError::Eval(format!("JSON conversion failed: {}", e))
+                        })?;
                         Ok(json_val)
                     }
                     None => Ok(Value::Null),
@@ -142,7 +175,8 @@ impl MongoNode {
 
                 info!("MongoNode[{}]: INSERT document: {:?}", self.id, doc);
 
-                let result = collection.insert_one(doc, None)
+                let result = collection
+                    .insert_one(doc, None)
                     .await
                     .map_err(|e| RuleError::Eval(format!("Insert failed: {}", e)))?;
 
@@ -155,9 +189,13 @@ impl MongoNode {
                 let filter_doc = self.json_to_document(&processed_filter)?;
                 let update_doc = self.json_to_document(&processed_update)?;
 
-                info!("MongoNode[{}]: UPDATE filter: {:?}, update: {:?}", self.id, filter_doc, update_doc);
+                info!(
+                    "MongoNode[{}]: UPDATE filter: {:?}, update: {:?}",
+                    self.id, filter_doc, update_doc
+                );
 
-                let result = collection.update_many(filter_doc, update_doc, None)
+                let result = collection
+                    .update_many(filter_doc, update_doc, None)
                     .await
                     .map_err(|e| RuleError::Eval(format!("Update failed: {}", e)))?;
 
@@ -170,7 +208,8 @@ impl MongoNode {
 
                 info!("MongoNode[{}]: DELETE filter: {:?}", self.id, filter_doc);
 
-                let result = collection.delete_many(filter_doc, None)
+                let result = collection
+                    .delete_many(filter_doc, None)
                     .await
                     .map_err(|e| RuleError::Eval(format!("Delete failed: {}", e)))?;
 
@@ -227,7 +266,8 @@ impl Node for MongoNode {
         match self.execute_operation(ctx).await {
             Ok(result) => {
                 info!("MongoNode[{}]: Operation successful", self.id);
-                ctx.data.insert(format!("{}_result", self.id), result.clone());
+                ctx.data
+                    .insert(format!("{}_result", self.id), result.clone());
                 Ok(result)
             }
             Err(e) => {

@@ -101,10 +101,14 @@ pub struct RustLogicGraphError {
 
 impl RustLogicGraphError {
     /// Create a new error with code and message
-    pub fn new(code: impl Into<String>, message: impl Into<String>, category: ErrorCategory) -> Self {
+    pub fn new(
+        code: impl Into<String>,
+        message: impl Into<String>,
+        category: ErrorCategory,
+    ) -> Self {
         let code = code.into();
         let doc_link = Some(format!("https://docs.rust-logic-graph.dev/errors/{}", code));
-        
+
         Self {
             code,
             message: message.into(),
@@ -136,12 +140,18 @@ impl RustLogicGraphError {
 
     /// Check if error is retryable
     pub fn is_retryable(&self) -> bool {
-        matches!(self.category, ErrorCategory::Retryable | ErrorCategory::Transient)
+        matches!(
+            self.category,
+            ErrorCategory::Retryable | ErrorCategory::Transient
+        )
     }
 
     /// Check if error is permanent
     pub fn is_permanent(&self) -> bool {
-        matches!(self.category, ErrorCategory::Permanent | ErrorCategory::Configuration)
+        matches!(
+            self.category,
+            ErrorCategory::Permanent | ErrorCategory::Configuration
+        )
     }
 }
 
@@ -189,7 +199,9 @@ impl fmt::Display for RustLogicGraphError {
 
 impl std::error::Error for RustLogicGraphError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        self.source.as_ref().map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
+        self.source
+            .as_ref()
+            .map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
     }
 }
 
@@ -200,7 +212,9 @@ impl RustLogicGraphError {
     pub fn node_execution_error(node_id: impl Into<String>, message: impl Into<String>) -> Self {
         Self::new("E001", message, ErrorCategory::Retryable)
             .with_context(ErrorContext::new().with_node(node_id))
-            .with_suggestion("Check node configuration and input data. Verify all dependencies are available.")
+            .with_suggestion(
+                "Check node configuration and input data. Verify all dependencies are available.",
+            )
     }
 
     /// Database connection error
@@ -247,8 +261,9 @@ impl RustLogicGraphError {
 
     /// Cache error
     pub fn cache_error(message: impl Into<String>) -> Self {
-        Self::new("E009", message, ErrorCategory::Transient)
-            .with_suggestion("Check cache configuration and connectivity. Verify cache backend is operational.")
+        Self::new("E009", message, ErrorCategory::Transient).with_suggestion(
+            "Check cache configuration and connectivity. Verify cache backend is operational.",
+        )
     }
 
     /// Context error
@@ -305,7 +320,7 @@ mod tests {
     fn test_error_display() {
         let err = RustLogicGraphError::database_connection_error("Connection timeout");
         let display = format!("{}", err);
-        
+
         assert!(display.contains("[E002]"));
         assert!(display.contains("Connection timeout"));
         assert!(display.contains("💡 Suggestion:"));

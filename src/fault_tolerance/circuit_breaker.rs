@@ -2,8 +2,8 @@ use crate::distributed::store::ContextStore;
 use crate::distributed::InMemoryStore;
 use crate::fault_tolerance::health::{HealthCheck, HealthStatus};
 use std::sync::Arc;
-use tokio::time::{Duration, Instant};
 use tokio::sync::RwLock;
+use tokio::time::{Duration, Instant};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CircuitState {
@@ -39,7 +39,11 @@ pub struct CircuitBreaker {
 }
 
 impl CircuitBreaker {
-    pub fn new(key: impl Into<String>, store: Option<Arc<dyn ContextStore>>, config: Option<CircuitConfig>) -> Self {
+    pub fn new(
+        key: impl Into<String>,
+        store: Option<Arc<dyn ContextStore>>,
+        config: Option<CircuitConfig>,
+    ) -> Self {
         let cfg = config.unwrap_or_default();
         let st: Arc<dyn ContextStore> = match store {
             Some(s) => s,
@@ -158,7 +162,11 @@ impl CircuitBreaker {
         }
     }
 
-    async fn persist_state_payload(&self, state_debug: String, failures: u32) -> anyhow::Result<()> {
+    async fn persist_state_payload(
+        &self,
+        state_debug: String,
+        failures: u32,
+    ) -> anyhow::Result<()> {
         use serde_json::json;
         let payload = json!({"state": state_debug, "failures": failures, "version": self.config.failure_threshold});
         let mut ctx = crate::distributed::DistributedContext::new(format!("cb:{}", self.key));
@@ -190,7 +198,15 @@ mod tests {
     #[tokio::test]
     async fn test_circuit_transitions() {
         let store = Arc::new(InMemoryStore::new());
-        let cb = Arc::new(CircuitBreaker::new("svc-a", Some(store), Some(CircuitConfig { failure_threshold: 2, recovery_timeout: Duration::from_millis(100), probe_interval: Duration::from_millis(50) })));
+        let cb = Arc::new(CircuitBreaker::new(
+            "svc-a",
+            Some(store),
+            Some(CircuitConfig {
+                failure_threshold: 2,
+                recovery_timeout: Duration::from_millis(100),
+                probe_interval: Duration::from_millis(50),
+            }),
+        ));
 
         assert!(cb.is_allowed().await);
         cb.record_failure().await;

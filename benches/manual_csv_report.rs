@@ -25,7 +25,11 @@ async fn main() -> anyhow::Result<()> {
             for i in 0..size {
                 nodes.insert(format!("n{}", i), node_type.clone());
                 if i + 1 < size {
-                    edges.push(rust_logic_graph::core::Edge { from: format!("n{}", i), to: format!("n{}", i+1), rule: None });
+                    edges.push(rust_logic_graph::core::Edge {
+                        from: format!("n{}", i),
+                        to: format!("n{}", i + 1),
+                        rule: None,
+                    });
                 }
             }
             GraphDef::from_node_types(nodes, edges)
@@ -35,8 +39,14 @@ async fn main() -> anyhow::Result<()> {
         for id in graph_def.nodes.keys() {
             let boxed: Box<dyn rust_logic_graph::node::Node> = match node_type {
                 NodeType::RuleNode => Box::new(rust_logic_graph::node::RuleNode::new(id, "true")),
-                NodeType::DBNode => Box::new(rust_logic_graph::node::DBNode::new(id, format!("SELECT {}", id))),
-                NodeType::AINode => Box::new(rust_logic_graph::node::AINode::new(id, format!("Prompt {}", id))),
+                NodeType::DBNode => Box::new(rust_logic_graph::node::DBNode::new(
+                    id,
+                    format!("SELECT {}", id),
+                )),
+                NodeType::AINode => Box::new(rust_logic_graph::node::AINode::new(
+                    id,
+                    format!("Prompt {}", id),
+                )),
             };
             exec.register_node(boxed);
         }

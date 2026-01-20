@@ -4,11 +4,11 @@
 
 use crate::core::Context;
 use crate::node::{Node, NodeType};
-use crate::rule::{RuleResult, RuleError};
+use crate::rule::{RuleError, RuleResult};
 use async_trait::async_trait;
 use serde_json::Value;
-use sqlx::{PgPool, Row, Column};
-use tracing::{info, error};
+use sqlx::{Column, PgPool, Row};
+use tracing::{error, info};
 
 /// PostgreSQL database node
 #[derive(Debug, Clone)]
@@ -39,13 +39,18 @@ impl PostgresNode {
 
     /// Execute query and return results
     async fn execute_query(&self, query: &str, ctx: &Context) -> Result<Vec<Value>, RuleError> {
-        let pool = self.pool.as_ref()
+        let pool = self
+            .pool
+            .as_ref()
             .ok_or_else(|| RuleError::Eval("PostgreSQL pool not initialized".to_string()))?;
 
         // Replace placeholders from context
         let processed_query = self.process_query(query, ctx);
 
-        info!("PostgresNode[{}]: Executing query: {}", self.id, processed_query);
+        info!(
+            "PostgresNode[{}]: Executing query: {}",
+            self.id, processed_query
+        );
 
         let rows = sqlx::query(&processed_query)
             .fetch_all(pool)
@@ -118,11 +123,19 @@ impl Node for PostgresNode {
 
         match self.execute_query(&self.query, ctx).await {
             Ok(results) => {
-                info!("PostgresNode[{}]: Query returned {} rows", self.id, results.len());
+                info!(
+                    "PostgresNode[{}]: Query returned {} rows",
+                    self.id,
+                    results.len()
+                );
 
                 // Store results in context
-                ctx.data.insert(format!("{}_result", self.id), Value::Array(results.clone()));
-                ctx.data.insert(format!("{}_count", self.id), Value::Number(results.len().into()));
+                ctx.data
+                    .insert(format!("{}_result", self.id), Value::Array(results.clone()));
+                ctx.data.insert(
+                    format!("{}_count", self.id),
+                    Value::Number(results.len().into()),
+                );
 
                 Ok(Value::Array(results))
             }
@@ -145,7 +158,8 @@ mod tests {
         let mut ctx = Context {
             data: HashMap::new(),
         };
-        ctx.data.insert("user_id".to_string(), Value::Number(42.into()));
+        ctx.data
+            .insert("user_id".to_string(), Value::Number(42.into()));
 
         let processed = node.process_query(&node.query, &ctx);
         assert_eq!(processed, "SELECT * FROM users WHERE id = 42");

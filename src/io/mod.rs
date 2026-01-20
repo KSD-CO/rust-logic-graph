@@ -1,7 +1,7 @@
-use std::fs;
-use std::path::Path;
 use anyhow::{Context, Result};
 use serde_json;
+use std::fs;
+use std::path::Path;
 
 use crate::core::GraphDef;
 
@@ -13,8 +13,8 @@ impl GraphIO {
         let data = fs::read_to_string(&path)
             .with_context(|| format!("Failed to read file: {:?}", path.as_ref()))?;
 
-        let graph_def: GraphDef = serde_json::from_str(&data)
-            .with_context(|| "Failed to parse JSON")?;
+        let graph_def: GraphDef =
+            serde_json::from_str(&data).with_context(|| "Failed to parse JSON")?;
 
         Ok(graph_def)
     }
@@ -32,8 +32,7 @@ impl GraphIO {
 
     /// Load a graph definition from a JSON string
     pub fn from_json(json: &str) -> Result<GraphDef> {
-        serde_json::from_str(json)
-            .with_context(|| "Failed to parse JSON string")
+        serde_json::from_str(json).with_context(|| "Failed to parse JSON string")
     }
 
     /// Convert a graph definition to JSON string

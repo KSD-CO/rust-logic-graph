@@ -1,14 +1,13 @@
+use rust_logic_graph::node::{Node, SubgraphNode};
 /// Example: Subgraph execution for reusable components
-/// 
+///
 /// This example demonstrates SubgraphNode for creating modular,
 /// reusable workflow components using YAML configuration.
-/// 
+///
 /// Files:
 /// - examples/discount_subgraph.yaml: Reusable discount calculation logic
 /// - examples/order_with_subgraph.yaml: Main workflow that calls the subgraph
-
 use rust_logic_graph::{Context, GraphDef};
-use rust_logic_graph::node::{SubgraphNode, Node};
 use serde_json::json;
 use std::fs;
 
@@ -20,8 +19,11 @@ async fn main() -> anyhow::Result<()> {
     println!("📄 Loading subgraph from: examples/discount_subgraph.yaml");
     let subgraph_yaml = fs::read_to_string("examples/discount_subgraph.yaml")?;
     let discount_subgraph: GraphDef = serde_yaml::from_str(&subgraph_yaml)?;
-    
-    println!("✅ Subgraph loaded with {} nodes:", discount_subgraph.nodes.len());
+
+    println!(
+        "✅ Subgraph loaded with {} nodes:",
+        discount_subgraph.nodes.len()
+    );
     for (name, _) in &discount_subgraph.nodes {
         println!("   • {}", name);
     }
@@ -31,12 +33,20 @@ async fn main() -> anyhow::Result<()> {
     println!("📄 Loading main workflow from: examples/order_with_subgraph.yaml");
     let main_yaml = fs::read_to_string("examples/order_with_subgraph.yaml")?;
     let main_workflow: GraphDef = serde_yaml::from_str(&main_yaml)?;
-    
-    println!("✅ Main workflow loaded with {} nodes:", main_workflow.nodes.len());
+
+    println!(
+        "✅ Main workflow loaded with {} nodes:",
+        main_workflow.nodes.len()
+    );
     for (name, config) in &main_workflow.nodes {
-        println!("   • {} ({})", name, 
-            if name == "calculate_discount" { "SubgraphNode" } 
-            else { &format!("{:?}", config.node_type) }
+        println!(
+            "   • {} ({})",
+            name,
+            if name == "calculate_discount" {
+                "SubgraphNode"
+            } else {
+                &format!("{:?}", config.node_type)
+            }
         );
     }
     println!();
@@ -46,8 +56,11 @@ async fn main() -> anyhow::Result<()> {
     let mut input_mapping = std::collections::HashMap::new();
     input_mapping.insert("product_price".to_string(), "base_price".to_string());
     input_mapping.insert("customer_tier".to_string(), "customer_tier".to_string());
-    input_mapping.insert("months_active".to_string(), "purchase_history_months".to_string());
-    
+    input_mapping.insert(
+        "months_active".to_string(),
+        "purchase_history_months".to_string(),
+    );
+
     let mut output_mapping = std::collections::HashMap::new();
     output_mapping.insert("final_price".to_string(), "order_total".to_string());
     output_mapping.insert("discount_amount".to_string(), "savings".to_string());
@@ -62,12 +75,11 @@ async fn main() -> anyhow::Result<()> {
     }
     println!();
 
-    let subgraph_node: Box<dyn Node> = Box::new(SubgraphNode::new(
-        "discount_calculator",
-        discount_subgraph
-    )
-    .with_input_mapping(input_mapping)
-    .with_output_mapping(output_mapping));
+    let subgraph_node: Box<dyn Node> = Box::new(
+        SubgraphNode::new("discount_calculator", discount_subgraph)
+            .with_input_mapping(input_mapping)
+            .with_output_mapping(output_mapping),
+    );
 
     // Simulate execution with sample data
     println!("🚀 Executing subgraph with sample data:");
@@ -77,17 +89,23 @@ async fn main() -> anyhow::Result<()> {
     ctx.set("months_active", json!(18));
 
     println!("   Input:");
-    println!("      product_price: ${}", ctx.get("product_price").unwrap());
+    println!(
+        "      product_price: ${}",
+        ctx.get("product_price").unwrap()
+    );
     println!("      customer_tier: {}", ctx.get("customer_tier").unwrap());
-    println!("      months_active: {} months", ctx.get("months_active").unwrap());
+    println!(
+        "      months_active: {} months",
+        ctx.get("months_active").unwrap()
+    );
     println!();
 
     let result = subgraph_node.run(&mut ctx).await?;
-    
+
     println!("✅ Subgraph execution completed:");
     println!("{}", serde_json::to_string_pretty(&result)?);
     println!();
-    
+
     if let Some(order_total) = ctx.get("order_total") {
         println!("📊 Results:");
         println!("   Order total: ${}", order_total);
@@ -103,7 +121,7 @@ async fn main() -> anyhow::Result<()> {
     println!("   ✅ Easy to version control and review");
     println!("   ✅ Encapsulation and modularity");
     println!("   ✅ Easier testing and maintenance");
-    
+
     println!("\n🔍 Inspect the YAML files:");
     println!("   cat examples/discount_subgraph.yaml");
     println!("   cat examples/order_with_subgraph.yaml");

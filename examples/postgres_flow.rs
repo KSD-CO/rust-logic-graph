@@ -29,23 +29,19 @@ async fn main() -> anyhow::Result<()> {
         println!("🚀 PostgreSQL Integration Example\n");
 
         // Get database URL from environment
-        let database_url = std::env::var("DATABASE_URL")
-            .unwrap_or_else(|_| {
-                println!("⚠️  DATABASE_URL not set, using mock example");
-                println!("Set DATABASE_URL to test with real database");
-                println!("\nExample workflow:\n");
-                "postgres://user:pass@localhost/db".to_string()
-            });
+        let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+            println!("⚠️  DATABASE_URL not set, using mock example");
+            println!("Set DATABASE_URL to test with real database");
+            println!("\nExample workflow:\n");
+            "postgres://user:pass@localhost/db".to_string()
+        });
 
         println!("Database URL: {}\n", database_url);
 
         // Example 1: Simple query
         println!("=== Example 1: Simple SELECT Query ===\n");
 
-        let node = PostgresNode::new(
-            "fetch_users",
-            "SELECT id, name, email FROM users LIMIT 10"
-        );
+        let node = PostgresNode::new("fetch_users", "SELECT id, name, email FROM users LIMIT 10");
 
         if database_url.starts_with("postgres://") && !database_url.contains("localhost") {
             let node = node.with_pool(&database_url).await?;
@@ -72,13 +68,14 @@ async fn main() -> anyhow::Result<()> {
 
         let node2 = PostgresNode::new(
             "fetch_user_by_id",
-            "SELECT * FROM users WHERE id = {{user_id}}"
+            "SELECT * FROM users WHERE id = {{user_id}}",
         );
 
         let mut ctx2 = Context {
             data: HashMap::new(),
         };
-        ctx2.data.insert("user_id".to_string(), serde_json::json!(42));
+        ctx2.data
+            .insert("user_id".to_string(), serde_json::json!(42));
 
         println!("📝 Query with user_id = 42");
         println!("SQL: SELECT * FROM users WHERE id = 42\n");

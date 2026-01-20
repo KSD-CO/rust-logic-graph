@@ -1,8 +1,8 @@
 //! E-commerce order flow with Saga pattern
 //! Demonstrates distributed transaction with compensation and timeout
 
-use rust_logic_graph::saga::{SagaCoordinator, SagaStep, SagaStepStatus};
 use anyhow::Result;
+use rust_logic_graph::saga::{SagaCoordinator, SagaStep, SagaStepStatus};
 use std::time::Duration;
 
 fn main() -> Result<()> {
@@ -13,12 +13,14 @@ fn main() -> Result<()> {
         id: "reserve_inventory".to_string(),
         action: Box::new(|ctx| {
             println!("[Inventory] Reserving items...");
-            ctx.data.insert("inventory_reserved".to_string(), serde_json::json!(true));
+            ctx.data
+                .insert("inventory_reserved".to_string(), serde_json::json!(true));
             Ok(())
         }),
         compensation: Some(Box::new(|ctx| {
             println!("[Inventory] Releasing reserved items...");
-            ctx.data.insert("inventory_reserved".to_string(), serde_json::json!(false));
+            ctx.data
+                .insert("inventory_reserved".to_string(), serde_json::json!(false));
             Ok(())
         })),
         status: SagaStepStatus::Pending,
@@ -31,12 +33,14 @@ fn main() -> Result<()> {
         action: Box::new(|ctx| {
             println!("[Payment] Charging customer...");
             // Simulate success
-            ctx.data.insert("payment_charged".to_string(), serde_json::json!(true));
+            ctx.data
+                .insert("payment_charged".to_string(), serde_json::json!(true));
             Ok(())
         }),
         compensation: Some(Box::new(|ctx| {
             println!("[Payment] Refunding customer...");
-            ctx.data.insert("payment_charged".to_string(), serde_json::json!(false));
+            ctx.data
+                .insert("payment_charged".to_string(), serde_json::json!(false));
             Ok(())
         })),
         status: SagaStepStatus::Pending,

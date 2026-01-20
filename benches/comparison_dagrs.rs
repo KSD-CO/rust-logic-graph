@@ -3,8 +3,8 @@ use std::time::Duration;
 
 // Benchmark rust-logic-graph
 mod rlg {
-    use rust_logic_graph::{Executor, Graph, GraphDef, NodeType};
     use rust_logic_graph::node::RuleNode;
+    use rust_logic_graph::{Executor, Graph, GraphDef, NodeType};
     use serde_json::json;
 
     pub async fn execute_linear_chain(size: usize, iterations: usize) {
@@ -45,7 +45,7 @@ mod rlg {
 
         let graph_def = GraphDef::from_node_types(
             nodes,
-            vec![] // All nodes execute in parallel
+            vec![], // All nodes execute in parallel
         );
 
         let mut executor = Executor::new();
@@ -64,7 +64,10 @@ mod rlg {
 // Benchmark dagrs
 mod dagrs_bench {
     use async_trait::async_trait;
-    use dagrs::{Action, Content, DefaultNode, EnvVar, Graph, InChannels, Node, NodeTable, OutChannels, Output};
+    use dagrs::{
+        Action, Content, DefaultNode, EnvVar, Graph, InChannels, Node, NodeTable, OutChannels,
+        Output,
+    };
     use std::sync::Arc;
 
     struct SimpleAction;
@@ -99,11 +102,8 @@ mod dagrs_bench {
 
             // Create nodes
             for i in 0..size {
-                let node = DefaultNode::with_action(
-                    format!("node{}", i),
-                    SimpleAction,
-                    &mut node_table,
-                );
+                let node =
+                    DefaultNode::with_action(format!("node{}", i), SimpleAction, &mut node_table);
                 node_ids.push(node.id());
                 graph.add_node(node);
             }
@@ -126,11 +126,8 @@ mod dagrs_bench {
 
             // Create tasks without dependencies (parallel execution)
             for i in 0..size {
-                let node = DefaultNode::with_action(
-                    format!("node{}", i),
-                    SimpleAction,
-                    &mut node_table,
-                );
+                let node =
+                    DefaultNode::with_action(format!("node{}", i), SimpleAction, &mut node_table);
                 graph.add_node(node);
             }
 
@@ -164,15 +161,11 @@ fn bench_linear_chain(c: &mut Criterion) {
             },
         );
 
-        group.bench_with_input(
-            BenchmarkId::new("dagrs", size),
-            &size,
-            |b, &s| {
-                b.iter(|| {
-                    dagrs_bench::execute_linear_chain(s, iterations);
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("dagrs", size), &size, |b, &s| {
+            b.iter(|| {
+                dagrs_bench::execute_linear_chain(s, iterations);
+            });
+        });
     }
 
     group.finish();
@@ -201,15 +194,11 @@ fn bench_parallel_tasks(c: &mut Criterion) {
             },
         );
 
-        group.bench_with_input(
-            BenchmarkId::new("dagrs", size),
-            &size,
-            |b, &s| {
-                b.iter(|| {
-                    dagrs_bench::execute_parallel_tasks(s, iterations);
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("dagrs", size), &size, |b, &s| {
+            b.iter(|| {
+                dagrs_bench::execute_parallel_tasks(s, iterations);
+            });
+        });
     }
 
     group.finish();

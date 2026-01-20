@@ -8,9 +8,9 @@
 //!
 //! To run: cargo run --example parallel_execution
 
-use rust_logic_graph::{Graph, GraphDef, Node, NodeType};
-use rust_logic_graph::parallel::{ParallelExecutor, ParallelConfig};
 use rust_logic_graph::node::RuleNode;
+use rust_logic_graph::parallel::{ParallelConfig, ParallelExecutor};
+use rust_logic_graph::{Graph, GraphDef, Node, NodeType};
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -178,7 +178,7 @@ fn create_wide_graph() -> GraphDef {
 /// Create a linear graph with no parallelism
 fn create_linear_graph() -> GraphDef {
     let node_names = vec!["A", "B", "C", "D", "E"];
-    
+
     let mut nodes = HashMap::new();
     for node in &node_names {
         nodes.insert(node.to_string(), NodeType::RuleNode);
@@ -199,7 +199,7 @@ fn create_linear_graph() -> GraphDef {
 /// Create a complex graph with mixed parallelism
 fn create_complex_graph() -> GraphDef {
     let node_names = vec!["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
-    
+
     let mut nodes = HashMap::new();
     for node in &node_names {
         nodes.insert(node.to_string(), NodeType::RuleNode);
@@ -316,16 +316,28 @@ async fn compare_performance() -> anyhow::Result<()> {
 
     // Sequential execution simulation
     let sequential_time = def.nodes.len(); // Assume 1 unit per node
-    println!("Sequential execution time (simulated): {} units", sequential_time);
+    println!(
+        "Sequential execution time (simulated): {} units",
+        sequential_time
+    );
 
     // Parallel execution analysis
     let executor = ParallelExecutor::default();
     let stats = executor.get_parallelism_stats(&def)?;
     let parallel_time = stats.num_layers; // Each layer is 1 unit
 
-    println!("Parallel execution time (simulated): {} units", parallel_time);
-    println!("Speedup: {:.2}x", sequential_time as f64 / parallel_time as f64);
-    println!("Efficiency: {:.1}%", (stats.theoretical_speedup / def.nodes.len() as f64) * 100.0);
+    println!(
+        "Parallel execution time (simulated): {} units",
+        parallel_time
+    );
+    println!(
+        "Speedup: {:.2}x",
+        sequential_time as f64 / parallel_time as f64
+    );
+    println!(
+        "Efficiency: {:.1}%",
+        (stats.theoretical_speedup / def.nodes.len() as f64) * 100.0
+    );
 
     Ok(())
 }

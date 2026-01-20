@@ -3,14 +3,14 @@
 //! This module provides memory pooling and optimization features to reduce
 //! allocations and improve performance in high-throughput scenarios.
 
-pub mod pool;
 pub mod metrics;
+pub mod pool;
 
+pub use metrics::{AllocationTracker, MemoryMetrics};
 pub use pool::{ContextPool, PoolConfig};
-pub use metrics::{MemoryMetrics, AllocationTracker};
 
-use std::sync::Arc;
 use parking_lot::RwLock;
+use std::sync::Arc;
 
 /// Global memory metrics instance
 static MEMORY_METRICS: once_cell::sync::Lazy<Arc<RwLock<MemoryMetrics>>> =

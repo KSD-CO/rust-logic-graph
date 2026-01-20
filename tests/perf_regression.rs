@@ -1,5 +1,5 @@
-use rust_logic_graph::{Executor, Graph, GraphDef, NodeType};
 use rust_logic_graph::bench_helpers::ExpensiveComputeNode;
+use rust_logic_graph::{Executor, Graph, GraphDef, NodeType};
 use serde_json::json;
 
 #[tokio::test]
@@ -8,7 +8,9 @@ async fn perf_regression_check() {
     // This is a long-running performance regression test. Run with:
     // cargo test -- --ignored --nocapture
     let graph_def = GraphDef::from_node_types(
-        vec![("compute".to_string(), NodeType::RuleNode)].into_iter().collect(),
+        vec![("compute".to_string(), NodeType::RuleNode)]
+            .into_iter()
+            .collect(),
         vec![],
     );
 
